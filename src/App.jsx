@@ -1,18 +1,28 @@
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import LoginPage from './pages/LoginPage'
+import RegisterPage from './pages/RegisterPage'
+import FeedPage from './pages/FeedPage'
+import ProfilePage from './pages/ProfilePage'
+
 function App() {
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-      <div className="bg-white p-8 rounded-lg shadow-lg">
-        <h1 className="text-4xl font-bold text-blue-600 mb-4">
-          Social Media App
-        </h1>
-        <p className="text-gray-600 text-lg">
-          Frontend con React + Vite + Tailwind CSS
-        </p>
-        <button className="mt-6 bg-blue-500 hover:bg-blue-600 text-white font-semibold px-6 py-3 rounded-lg transition duration-300">
-          Inizia
-        </button>
-      </div>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        {/* Redirect root to login */}
+        <Route path="/" element={<Navigate to="/login" replace />} />
+        
+        {/* Public routes */}
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        
+        {/* Protected routes (per ora accessibili) */}
+        <Route path="/feed" element={<FeedPage />} />
+        <Route path="/profile/:username" element={<ProfilePage />} />
+        
+        {/* 404 - Not found */}
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
+    </BrowserRouter>
   )
 }
 
