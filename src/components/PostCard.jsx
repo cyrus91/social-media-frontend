@@ -2,12 +2,14 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { toggleLike } from "../services/postService";
 import toast from "react-hot-toast";
+import CommentSection from "./CommentSection";
 
 function PostCard({ post, onLikeUpdate }) {
   // State locale per like (ottimistic UI)
   const [isLiked, setIsLiked] = useState(post.liked || false);
   const [likeCount, setLikeCount] = useState(post.likeCount || 0);
   const [isLiking, setIsLiking] = useState(false);
+  const [commentCount, setCommentCount] = useState(post.commentCount ?? 0)
 
   // Formatta la data (es: "3h ago", "2 days ago")
   const formatDate = (dateString) => {
@@ -55,6 +57,10 @@ function PostCard({ post, onLikeUpdate }) {
     }
 
     setIsLiking(false);
+  };
+
+  const handleCommentCountChange = (newCount) => {
+    setCommentCount(newCount);
   };
 
   return (
@@ -129,9 +135,8 @@ function PostCard({ post, onLikeUpdate }) {
         </button>
 
         {/* Comment button */}
-        <Link
-          to={`/post/${post.id}`}
-          className="flex items-center space-x-2 text-gray-500 hover:text-blue-500 transition">
+        {/* Comment button */}
+        <button className="flex items-center space-x-2 text-gray-500 hover:text-blue-500 transition">
           <svg
             className="w-6 h-6"
             fill="none"
@@ -144,8 +149,8 @@ function PostCard({ post, onLikeUpdate }) {
               d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
             />
           </svg>
-          <span className="font-semibold">{post.commentCount || 0}</span>
-        </Link>
+          <span className="font-semibold">{commentCount}</span>
+        </button>
 
         {/* Share button (placeholder) */}
         <button className="flex items-center space-x-2 text-gray-500 hover:text-green-500 transition">
@@ -163,6 +168,12 @@ function PostCard({ post, onLikeUpdate }) {
           </svg>
         </button>
       </div>
+      {/* Comment Section */}
+      <CommentSection
+        postId={post.id}
+        initialCommentCount={commentCount}
+        onCommentCountChange={handleCommentCountChange}
+      />
     </div>
   );
 }
