@@ -28,7 +28,14 @@ function Navbar() {
               to="/feed"
               className="text-gray-600 hover:text-blue-500 font-medium transition"
             >
-              Feed
+              Home
+            </Link>
+
+            <Link
+              to="/explore"
+              className="text-gray-600 hover:text-purple-500 font-medium transition"
+            >
+              Esplora
             </Link>
             
             <Link
