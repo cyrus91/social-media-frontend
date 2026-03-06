@@ -1,13 +1,29 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { logout } from '../services/authService'
 import useAuthStore from '../store/authStore'
+import toast from 'react-hot-toast'
 
 function Navbar() {
   const user = useAuthStore((state) => state.user)
+  const authLogout = useAuthStore((state) => state.logout)
+  const navigate = useNavigate()
   
-  const handleLogout = () => {
+  const handleLogout = async () => {
     if (window.confirm('Sei sicuro di voler uscire?')) {
-      logout()
+      console.log('🚪 Logout in corso...')
+      
+      // 1. Chiama API backend (ignora il risultato, facciamo logout locale comunque)
+      await logout()
+      
+      // 2. Pulisci store e localStorage
+      authLogout()
+      
+      // 3. Toast feedback
+      toast.success('Logout effettuato!')
+      
+      // 4. Redirect a login
+      console.log('🚀 Reindirizzamento a /login')
+      navigate('/login')
     }
   }
   
