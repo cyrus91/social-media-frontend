@@ -1,8 +1,5 @@
 import { create } from 'zustand'
 
-// ============================================
-// HELPER FUNCTION (DEVE ESSERE PRIMA!)
-// ============================================
 const getCurrentUser = () => {
   const userStr = localStorage.getItem('user')
   if (userStr) {
@@ -16,20 +13,24 @@ const getCurrentUser = () => {
   return null
 }
 
-// ============================================
-// ZUSTAND STORE
-// ============================================
 const useAuthStore = create((set) => ({
-  // State
   user: getCurrentUser(),
   token: localStorage.getItem('token'),
   isAuthenticated: !!localStorage.getItem('token'),
   
-  // Actions
   login: (user, token) => {
+    console.log('💾 Salvataggio user e token in localStorage')
+    console.log('👤 User:', user)
+    console.log('🔑 Token:', token)
+    
+    // Salva in localStorage
     localStorage.setItem('user', JSON.stringify(user))
     localStorage.setItem('token', token)
     
+    console.log('✅ User salvato:', localStorage.getItem('user'))
+    console.log('✅ Token salvato:', localStorage.getItem('token'))
+    
+    // Aggiorna state
     set({
       user,
       token,
@@ -38,6 +39,8 @@ const useAuthStore = create((set) => ({
   },
   
   logout: () => {
+    console.log('🚪 Logout - Rimozione dati da localStorage')
+    
     localStorage.removeItem('user')
     localStorage.removeItem('token')
     

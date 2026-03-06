@@ -1,72 +1,146 @@
-import api from "./api";
+import api from './api'
 
-// Login
+// ============================================
+// POST - Login
+// ============================================
 export const login = async (username, password) => {
-  console.log("🔐 Tentativo login:", username);
-
+  console.log('🔐 Tentativo login:', username)
+  
   try {
-    console.log("📤 Invio richiesta POST /auth/login");
-    const response = await api.post("/auth/login", { username, password });
-
-    console.log("✅ Risposta ricevuta:", response.data);
-
-    // Normalizza response (backend ritorna "refreshToken" invece di "token")
+    console.log('📤 Invio richiesta POST /auth/login')
+    const response = await api.post('/auth/login', { 
+      username, 
+      password 
+    })
+    
+    console.log('✅ Risposta login completa:', response.data)
+    
+    // Estrai TUTTI i token dalla response
+    const accessToken = response.data.accessToken
+    const token = response.data.token
+    const refreshToken = response.data.refreshToken
+    
+    console.log('🔑 accessToken:', accessToken?.substring(0, 30) + '...')
+    console.log('🔑 token:', token?.substring(0, 30) + '...')
+    console.log('🔑 refreshToken:', refreshToken?.substring(0, 30) + '...')
+    
+    // Priorità: accessToken > token > refreshToken
+    const finalToken = accessToken || token || refreshToken
+    
+    if (!finalToken) {
+      console.error('❌ NESSUN TOKEN TROVATO NELLA RESPONSE!')
+      return {
+        success: false,
+        error: 'Nessun token ricevuto dal server',
+      }
+    }
+    
+    console.log('✅ Token selezionato:', finalToken.substring(0, 30) + '...')
+    console.log('📏 Lunghezza token:', finalToken.length)
+    console.log('🏷️ Tipo token:', finalToken.startsWith('eyJ') ? 'JWT' : 'UUID')
+    
+    // Normalizza response
     const normalizedData = {
       user: response.data.user,
-      token: response.data.refreshToken || response.data.token, // ← FIX!
-      tokenType: response.data.type || "Bearer",
-    };
-
-    console.log("📦 Data normalizzata:", normalizedData);
-
+      token: finalToken,
+      tokenType: response.data.type || 'Bearer',
+    }
+    
+    console.log('📦 Data normalizzata:', normalizedData)
+    
     return {
       success: true,
       data: normalizedData,
-    };
+    }
   } catch (error) {
-    console.error("❌ Errore login:", error);
-    console.error("📦 Error response:", error.response);
-
+    console.error('❌ Errore login:', error)
+    console.error('📦 Error response:', error.response?.data)
+    
     return {
       success: false,
-      error: error.response?.data?.message || "Credenziali non valide",
-    };
+      error: error.response?.data?.message || 'Credenziali non valide',
+    }
   }
-};
+}
 
-// Register
-export const register = async (userData) => {
+// ============================================
+// POST - Register
+// ============================================
+export const register = async (username, email, password) => {
+  console.log('📝 Tentativo registrazione:', { username, email })
+  
   try {
-    const response = await api.post("/auth/register", userData);
-
-    // Dopo la registrazione, fai login automatico
-    const { token, user } = response.data;
-    localStorage.setItem("token", token);
-    localStorage.setItem("user", JSON.stringify(user));
-
-    return { success: true, data: response.data };
+    console.log('📤 Invio richiesta POST /auth/register')
+    
+    const payload = {
+      username: String(username),
+      email: String(email),
+      password: String(password),
+    }
+    
+    console.log('📦 Payload:', payload)
+    
+    const response = await api.post('/auth/register', payload)
+    
+    console.log('✅ Risposta register completa:', response.data)
+    
+    // Estrai TUTTI i token dalla response
+    const accessToken = response.data.accessToken
+    const token = response.data.token
+    const refreshToken = response.data.refreshToken
+    
+    console.log('🔑 accessToken:', accessToken?.substring(0, 30) + '...')
+    console.log('🔑 token:', token?.substring(0, 30) + '...')
+    console.log('🔑 refreshToken:', refreshToken?.substring(0, 30) + '...')
+    
+    // Priorità: accessToken > token > refreshToken
+    const finalToken = accessToken || token || refreshToken
+    
+    if (!finalToken) {
+      console.error('❌ NESSUN TOKEN TROVATO NELLA RESPONSE!')
+      return {
+        success: false,
+        error: 'Nessun token ricevuto dal server',
+      }
+    }
+    
+    console.log('✅ Token selezionato:', finalToken.substring(0, 30) + '...')
+    console.log('📏 Lunghezza token:', finalToken.length)
+    console.log('🏷️ Tipo token:', finalToken.startsWith('eyJ') ? 'JWT' : 'UUID')
+    
+    // Normalizza response
+    const normalizedData = {
+      user: response.data.user,
+      token: finalToken,
+      tokenType: response.data.type || 'Bearer',
+    }
+    
+    console.log('📦 Data normalizzata:', normalizedData)
+    
+    return {
+      success: true,
+      data: normalizedData,
+    }
   } catch (error) {
+    console.error('❌ Errore registrazione:', error)
+    console.error('📦 Error response:', error.response?.data)
+    
     return {
       success: false,
-      error: error.response?.data?.message || "Errore durante la registrazione",
-    };
+      error: error.response?.data?.message || 'Errore nella registrazione',
+    }
   }
-};
+}
 
-// Logout
-export const logout = () => {
-  localStorage.removeItem("token");
-  localStorage.removeItem("user");
-  window.location.href = "/login";
-};
-
-// Controlla se l'utente è loggato
-export const isAuthenticated = () => {
-  return !!localStorage.getItem("token");
-};
-
-// Ottieni utente corrente
-export const getCurrentUser = () => {
-  const userStr = localStorage.getItem("user");
-  return userStr ? JSON.parse(userStr) : null;
-};
+// ============================================
+// POST - Logout
+// ============================================
+export const logout = async () => {
+  try {
+    await api.post('/auth/logout')
+    return { success: true }
+  } catch (error) {
+    console.error('Errore logout:', error)
+    return { success: false }
+  }
+}

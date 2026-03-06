@@ -1,24 +1,39 @@
 import axios from 'axios'
-import useAuthStore from "../store/authStore";
+import useAuthStore from '../store/authStore'
 
-// Base URL del backend
 const API_BASE_URL = 'https://social-media-backend-1hw4.onrender.com/api'
 
-// Crea istanza axios con configurazione base
 const api = axios.create({
   baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  // ❌ NON FORZARE Content-Type qui! Lascia che axios lo gestisca automaticamente
+  // headers: {
+  //   'Content-Type': 'application/json',
+  // },
 })
 
-// Interceptor: aggiunge automaticamente il JWT token a ogni richiesta
+// ============================================
+// REQUEST INTERCEPTOR - Aggiunge JWT token
+// ============================================
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token')
+    
+    console.log('📤 Request:', config.method?.toUpperCase(), config.url)
+    console.log('🔑 Token presente:', !!token)
+    console.log('📋 Content-Type:', config.headers['Content-Type'])
+    
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
+      console.log('✅ Token aggiunto:', token.substring(0, 20) + '...')
+    } else {
+      console.warn('⚠️ Nessun token trovato in localStorage!')
     }
+    
+    // ✅ Se NON è FormData, imposta Content-Type a JSON
+    if (!config.headers['Content-Type']) {
+      config.headers['Content-Type'] = 'application/json'
+    }
+    
     return config
   },
   (error) => {
@@ -26,33 +41,63 @@ api.interceptors.request.use(
   }
 )
 
-// Interceptor: gestisce errori di autenticazione
+// ============================================
+// RESPONSE INTERCEPTOR - Gestisce errori 401
+// ============================================
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
+      const requestUrl = error.config?.url || ''
+      const requestMethod = error.config?.method?.toUpperCase() || 'GET'
       const currentPath = window.location.pathname
       
-      // NON fare logout se l'errore è su endpoint pubblici
-      const publicEndpoints = [
-        '/api/auth/login',
-        '/api/auth/register',
-        '/api/posts',
-        '/api/users',
-        '/api/comments'
+      console.log('🔒 401 Unauthorized ricevuto')
+      console.log('📍 Request:', requestMethod, requestUrl)
+      console.log('🌐 Current path:', currentPath)
+      console.log('📦 Error response:', error.response?.data)
+      
+      // ============================================
+      // ENDPOINT PUBBLICI GET (NON FARE LOGOUT!)
+      // ============================================
+      const publicGetEndpoints = [
+        '/users/',
+        '/users/id/',
+        '/posts/',
+        '/posts',
+        '/comments/',
       ]
       
-      const isPublicEndpoint = publicEndpoints.some(endpoint => 
-        error.config.url.includes(endpoint)
-      )
+      // Check se è un endpoint pubblico GET
+      const isPublicGetEndpoint = requestMethod === 'GET' && 
+        publicGetEndpoints.some(endpoint => requestUrl.includes(endpoint))
       
-      // Fai logout SOLO se:
-      // 1. NON è un endpoint pubblico
-      // 2. NON sei già nella pagina di login
-      if (!isPublicEndpoint && currentPath !== '/login' && currentPath !== '/register') {
-        console.warn('401 Unauthorized - Logout forzato')
+      // Check se siamo già nella pagina di login/register
+      const isAuthPage = currentPath === '/login' || currentPath === '/register'
+      
+      // ============================================
+      // DECISIONE: FARE LOGOUT O NO?
+      // ============================================
+      
+      // NON fare logout se:
+      // 1. È una GET request su endpoint pubblico
+      // 2. Siamo già nella pagina di auth
+      const shouldLogout = !isPublicGetEndpoint && !isAuthPage
+      
+      if (shouldLogout) {
+        console.warn('🚪 Logout forzato - Token invalido o mancante')
+        console.warn('📋 Motivo 401:', error.response?.data?.message || 'Unknown')
+        
         useAuthStore.getState().logout()
-        window.location.href = '/login'
+        
+        // Redirect solo se non siamo già in login
+        if (!isAuthPage) {
+          setTimeout(() => {
+            window.location.href = '/login'
+          }, 100)
+        }
+      } else {
+        console.log('ℹ️ 401 ignorato - GET request su endpoint pubblico')
       }
     }
     

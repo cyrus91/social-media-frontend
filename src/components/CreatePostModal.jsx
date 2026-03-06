@@ -91,49 +91,33 @@ function CreatePostModal({ isOpen, onClose, onPostCreated }) {
   };
 
   // Handle submit
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
-
-    // Validazione
-    if (!content.trim()) {
-      setError("Scrivi qualcosa prima di pubblicare!");
-      return;
-    }
-
-    if (content.length > MAX_CHARS) {
-      setError(`Massimo ${MAX_CHARS} caratteri`);
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      // Per ora mandiamo l'immagine come base64
-      // In futuro useremo Cloudinary
-      const postData = {
-        content: content.trim(),
-        imageUrl: imagePreview || "",
-      };
-
-      const result = await createPost(postData);
-
-      if (result.success) {
-        // Success! Chiudi modal e notifica parent
-        toast.success("Post pubblicato con successo! 🎉");
-        onPostCreated(result.data);
-        handleClose();
-      } else {
-        toast.error(result.error || "Errore nella pubblicazione del post");
-        setError(result.error);
-      }
-    } catch (err) {
-      setError("Errore nella creazione del post");
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+const handleSubmit = async (e) => {
+  e.preventDefault()
+  setLoading(true)
+  
+  console.log('📝 Creating post...')
+  console.log('📦 Content:', content)
+  console.log('🏷️ Content type:', typeof content)
+  console.log('🖼️ Image:', imageFile ? imageFile.name : 'None')
+  
+  // ✅ ASSICURATI CHE content SIA STRINGA
+  const contentString = String(content).trim()
+  
+  console.log('📦 Content string:', contentString)
+  
+  // Chiama service
+  const result = await createPost(contentString, imageFile)
+  
+  if (result.success) {
+    toast.success('Post creato!')
+    onPostCreated(result.data)
+    handleClose()
+  } else {
+    toast.error(result.error)
+  }
+  
+  setLoading(false)
+}
 
   // Reset form e chiudi
   const handleClose = () => {
