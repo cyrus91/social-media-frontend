@@ -8,6 +8,7 @@ import { fetchPosts } from "../services/postService";
 import useAuthStore from "../store/authStore";
 import toast from "react-hot-toast";
 import FollowButton from "../components/FollowButton";
+import api from "../services/api";
 
 function ProfilePage() {
   const { username } = useParams(); // URL: /profile/:username
@@ -38,11 +39,33 @@ function ProfilePage() {
       if (!ignore) {
         if (result.success) {
           setProfile(result.data);
+          
+          // ✅ Carica anche il post count
+          fetchPostCount(result.data.id);
         } else {
           setError(result.error);
           toast.error("Utente non trovato");
         }
         setLoading(false);
+      }
+    }
+
+    // ✅ Funzione per caricare il post count
+    async function fetchPostCount(userId) {
+      try {
+        console.log('📊 Fetching post count for user:', userId);
+        const response = await api.get(`/posts/author/${userId}/count`);
+        
+        console.log('✅ Post count ricevuto:', response.data.count);
+        
+        // Aggiorna il profilo con il count
+        setProfile(prev => ({
+          ...prev,
+          postCount: response.data.count
+        }));
+      } catch (error) {
+        console.error('❌ Errore nel caricamento del post count:', error);
+        // Non bloccare l'app, lascia postCount a 0
       }
     }
 
@@ -104,6 +127,7 @@ function ProfilePage() {
       year: "numeric",
     });
   };
+  
 
   // Loading state
   if (loading) {
