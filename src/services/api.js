@@ -1,4 +1,5 @@
 import axios from 'axios'
+import useAuthStore from "../store/authStore";
 
 // Base URL del backend
 const API_BASE_URL = 'https://social-media-backend-1hw4.onrender.com/api'
@@ -30,11 +31,31 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Token scaduto o invalido → logout
-      localStorage.removeItem('token')
-      localStorage.removeItem('user')
-      window.location.href = '/login'
+      const currentPath = window.location.pathname
+      
+      // NON fare logout se l'errore è su endpoint pubblici
+      const publicEndpoints = [
+        '/api/auth/login',
+        '/api/auth/register',
+        '/api/posts',
+        '/api/users',
+        '/api/comments'
+      ]
+      
+      const isPublicEndpoint = publicEndpoints.some(endpoint => 
+        error.config.url.includes(endpoint)
+      )
+      
+      // Fai logout SOLO se:
+      // 1. NON è un endpoint pubblico
+      // 2. NON sei già nella pagina di login
+      if (!isPublicEndpoint && currentPath !== '/login' && currentPath !== '/register') {
+        console.warn('401 Unauthorized - Logout forzato')
+        useAuthStore.getState().logout()
+        window.location.href = '/login'
+      }
     }
+    
     return Promise.reject(error)
   }
 )

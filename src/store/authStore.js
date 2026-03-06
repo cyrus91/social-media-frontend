@@ -1,19 +1,63 @@
 import { create } from 'zustand'
-import { getCurrentUser, isAuthenticated } from '../services/authService'
 
+// ============================================
+// HELPER FUNCTION (DEVE ESSERE PRIMA!)
+// ============================================
+const getCurrentUser = () => {
+  const userStr = localStorage.getItem('user')
+  if (userStr) {
+    try {
+      return JSON.parse(userStr)
+    } catch (e) {
+      console.error('Errore nel parsing user:', e)
+      return null
+    }
+  }
+  return null
+}
+
+// ============================================
+// ZUSTAND STORE
+// ============================================
 const useAuthStore = create((set) => ({
   // State
   user: getCurrentUser(),
-  isAuthenticated: isAuthenticated(),
+  token: localStorage.getItem('token'),
+  isAuthenticated: !!localStorage.getItem('token'),
   
   // Actions
-  setUser: (user) => set({ user, isAuthenticated: true }),
+  login: (user, token) => {
+    localStorage.setItem('user', JSON.stringify(user))
+    localStorage.setItem('token', token)
+    
+    set({
+      user,
+      token,
+      isAuthenticated: true,
+    })
+  },
   
-  clearUser: () => set({ user: null, isAuthenticated: false }),
+  logout: () => {
+    localStorage.removeItem('user')
+    localStorage.removeItem('token')
+    
+    set({
+      user: null,
+      token: null,
+      isAuthenticated: false,
+    })
+  },
   
-  updateUser: (userData) => set((state) => ({
-    user: { ...state.user, ...userData }
-  })),
+  updateUser: (userData) => {
+    const currentUser = getCurrentUser()
+    const updatedUser = { ...currentUser, ...userData }
+    
+    localStorage.setItem('user', JSON.stringify(updatedUser))
+    
+    set({
+      user: updatedUser,
+    })
+  },
 }))
 
 export default useAuthStore
