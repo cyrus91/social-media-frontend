@@ -185,3 +185,37 @@ export const fetchFollowing = async (userId, page = 0, size = 20) => {
     };
   }
 };
+
+// ============================================
+// GET - Ricerca utenti
+// ============================================
+export const searchUsers = async (query) => {
+  try {
+    if (!query || query.trim().length === 0) {
+      return {
+        success: true,
+        data: [],
+      };
+    }
+
+    console.log("🔍 Ricerca utenti:", query);
+
+    const response = await api.get(`/users/search`, {
+      params: { q: query.trim() },
+    });
+
+    console.log("✅ Risultati ricerca:", response.data.length);
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    console.error("❌ Errore nella ricerca utenti:", error);
+    return {
+      success: false,
+      data: [],
+      error: error.response?.data?.message || "Errore nella ricerca",
+    };
+  }
+};
