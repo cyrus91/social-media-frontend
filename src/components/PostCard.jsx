@@ -9,7 +9,7 @@ function PostCard({ post, onLikeUpdate }) {
   const [isLiked, setIsLiked] = useState(post.liked || false);
   const [likeCount, setLikeCount] = useState(post.likeCount || 0);
   const [isLiking, setIsLiking] = useState(false);
-  const [commentCount, setCommentCount] = useState(post.commentCount ?? 0)
+  const [commentCount, setCommentCount] = useState(post.commentCount ?? 0);
 
   // Formatta la data (es: "3h ago", "2 days ago")
   const formatDate = (dateString) => {
@@ -70,8 +70,26 @@ function PostCard({ post, onLikeUpdate }) {
         <Link
           to={`/profile/${post.authorUsername}`}
           className="flex items-center space-x-3 hover:opacity-80 transition">
-          {/* Avatar */}
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold">
+          
+          {/* ✅ AVATAR DINAMICO - SE ESISTE USA IMMAGINE, ALTRIMENTI INIZIALE */}
+          {post.authorAvatarUrl ? (
+            <img
+              src={post.authorAvatarUrl}
+              alt={`${post.authorUsername} avatar`}
+              className="w-10 h-10 rounded-full object-cover border-2 border-transparent hover:border-blue-500 transition"
+              onError={(e) => {
+                // Fallback se immagine non carica
+                console.error("❌ Errore caricamento avatar:", post.authorAvatarUrl);
+                e.target.style.display = 'none';
+                e.target.nextElementSibling.style.display = 'flex';
+              }}
+            />
+          ) : null}
+          
+          {/* Fallback iniziale (sempre presente come backup) */}
+          <div 
+            className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold"
+            style={{ display: post.authorAvatarUrl ? 'none' : 'flex' }}>
             {post.authorUsername?.charAt(0).toUpperCase() || "U"}
           </div>
 
@@ -135,7 +153,6 @@ function PostCard({ post, onLikeUpdate }) {
         </button>
 
         {/* Comment button */}
-        {/* Comment button */}
         <button className="flex items-center space-x-2 text-gray-500 hover:text-blue-500 transition">
           <svg
             className="w-6 h-6"
@@ -168,6 +185,7 @@ function PostCard({ post, onLikeUpdate }) {
           </svg>
         </button>
       </div>
+
       {/* Comment Section */}
       <CommentSection
         postId={post.id}

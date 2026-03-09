@@ -9,6 +9,7 @@ import useAuthStore from "../store/authStore";
 import toast from "react-hot-toast";
 import FollowButton from "../components/FollowButton";
 import api from "../services/api";
+import EditProfileModal from "../components/EditProfileModal";
 
 function ProfilePage() {
   const { username } = useParams(); // URL: /profile/:username
@@ -22,54 +23,59 @@ function ProfilePage() {
   const [postsLoading, setPostsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("posts"); // posts | likes | media
+  const [editModalOpen, setEditModalOpen] = useState(false);
 
   // Check if it's my profile
   const isMyProfile = currentUser?.username === username;
+
+  // Funzione per caricare il post count
+  const fetchPostCount = async (userId) => {
+    try {
+      console.log("📊 Fetching post count for user:", userId);
+      const response = await api.get(`/posts/author/${userId}/count`);
+
+      console.log("✅ Post count ricevuto:", response.data.count);
+
+      setProfile((prev) => ({
+        ...prev,
+        postCount: response.data.count,
+      }));
+    } catch (error) {
+      console.error("❌ Errore nel caricamento del post count:", error);
+    }
+  };
+
+  // Funzione per caricare il profilo (riutilizzabile)
+  const loadProfile = async () => {
+    setLoading(true);
+    setError(null);
+
+    const result = await fetchUserProfile(username);
+
+    if (result.success) {
+      setProfile(result.data);
+
+      // Carica post count
+      fetchPostCount(result.data.id);
+    } else {
+      setError(result.error);
+      toast.error("Utente non trovato");
+    }
+    setLoading(false);
+  };
 
   // Load profile
   useEffect(() => {
     let ignore = false;
 
     async function doLoadProfile() {
-      setLoading(true);
-      setError(null);
-
-      const result = await fetchUserProfile(username);
-
-      if (!ignore) {
-        if (result.success) {
-          setProfile(result.data);
-          
-          // ✅ Carica anche il post count
-          fetchPostCount(result.data.id);
-        } else {
-          setError(result.error);
-          toast.error("Utente non trovato");
-        }
-        setLoading(false);
-      }
+      await loadProfile();
     }
 
-    // ✅ Funzione per caricare il post count
-    async function fetchPostCount(userId) {
-      try {
-        console.log('📊 Fetching post count for user:', userId);
-        const response = await api.get(`/posts/author/${userId}/count`);
-        
-        console.log('✅ Post count ricevuto:', response.data.count);
-        
-        // Aggiorna il profilo con il count
-        setProfile(prev => ({
-          ...prev,
-          postCount: response.data.count
-        }));
-      } catch (error) {
-        console.error('❌ Errore nel caricamento del post count:', error);
-        // Non bloccare l'app, lascia postCount a 0
-      }
+    if (!ignore) {
+      doLoadProfile();
     }
 
-    doLoadProfile();
     return () => {
       ignore = true;
     };
@@ -127,7 +133,6 @@ function ProfilePage() {
       year: "numeric",
     });
   };
-  
 
   // Loading state
   if (loading) {
@@ -177,9 +182,17 @@ function ProfilePage() {
           <div className="flex items-start space-x-6">
             {/* Avatar */}
             <div className="flex-shrink-0">
-              <div className="w-32 h-32 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-5xl shadow-lg">
-                {profile.username.charAt(0).toUpperCase()}
-              </div>
+              {profile.avatarUrl ? (
+                <img
+                  src={profile.avatarUrl}
+                  alt={`${profile.username} avatar`}
+                  className="w-32 h-32 rounded-full object-cover border-4 border-blue-500 shadow-lg"
+                />
+              ) : (
+                <div className="w-32 h-32 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-5xl shadow-lg">
+                  {profile.username.charAt(0).toUpperCase()}
+                </div>
+              )}
             </div>
 
             {/* Info */}
@@ -196,7 +209,7 @@ function ProfilePage() {
                 {/* Edit button (se è il tuo profilo) */}
                 {isMyProfile && (
                   <button
-                    onClick={() => toast("Edit profile - Coming soon!")}
+                    onClick={() => setEditModalOpen(true)}
                     className="flex items-center space-x-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold px-6 py-2 rounded-lg transition">
                     <svg
                       className="w-5 h-5"
@@ -381,6 +394,20 @@ function ProfilePage() {
           </div>
         )}
       </div>
+      
+      {/* Edit Profile Modal */}
+      {isMyProfile && (
+        <EditProfileModal
+          isOpen={editModalOpen}
+          onClose={() => setEditModalOpen(false)}
+          currentProfile={profile}
+          onProfileUpdated={async () => {
+            // Ricarica il profilo completo dall'API
+            await loadProfile();
+            setEditModalOpen(false);
+          }}
+        />
+      )}
     </div>
   );
 }

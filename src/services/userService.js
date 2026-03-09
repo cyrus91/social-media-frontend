@@ -219,3 +219,106 @@ export const searchUsers = async (query) => {
     };
   }
 };
+
+// ============================================
+// PUT - Aggiorna Bio
+// ============================================
+export const updateBio = async (bio) => {
+  try {
+    console.log("📝 Aggiornamento bio:", bio);
+
+    const response = await api.put(`/users/me/bio`, { bio });
+
+    console.log("✅ Bio aggiornata:", response.data);
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    console.error("❌ Errore aggiornamento bio:", error);
+    return {
+      success: false,
+      error: error.response?.data?.message || "Errore aggiornamento bio",
+    };
+  }
+};
+
+// ============================================
+// POST - Upload Avatar
+// ============================================
+export const uploadAvatar = async (file) => {
+  try {
+    console.log("📸 Upload avatar:", file.name);
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await api.post(`/users/me/avatar`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+
+    console.log("✅ Avatar caricato:", response.data);
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    console.error("❌ Errore upload avatar:", error);
+    return {
+      success: false,
+      error: error.response?.data?.message || "Errore upload avatar",
+    };
+  }
+};
+
+// ============================================
+// DELETE - Rimuovi Avatar
+// ============================================
+export const deleteAvatar = async () => {
+  try {
+    console.log("🗑️ Rimozione avatar");
+
+    const response = await api.delete(`/users/me/avatar`);
+
+    console.log("✅ Avatar rimosso:", response.data);
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    console.error("❌ Errore rimozione avatar:", error);
+    return {
+      success: false,
+      error: error.response?.data?.message || "Errore rimozione avatar",
+    };
+  }
+};
+
+// ============================================
+// PUT - Aggiorna Profilo Completo
+// ============================================
+export const updateProfile = async (profileData) => {
+  try {
+    console.log("🔧 Aggiornamento profilo:", profileData);
+
+    const response = await api.put(`/users/me`, profileData);
+
+    console.log("✅ Profilo aggiornato:", response.data);
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    console.error("❌ Errore aggiornamento profilo:", error);
+    return {
+      success: false,
+      error: error.response?.data?.message || "Errore aggiornamento profilo",
+    };
+  }
+};

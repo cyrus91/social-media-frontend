@@ -27,35 +27,38 @@ function Navbar() {
   const handleLogout = () => {
     // Chiudi dropdown
     setDropdownOpen(false);
-    
+
     // Mostra toast di conferma personalizzato
-    toast((t) => (
-      <div className="flex flex-col space-y-3">
-        <p className="font-semibold text-white-800">
-          Sei sicuro di voler uscire?
-        </p>
-        <div className="flex space-x-2">
-          <button
-            onClick={() => {
-              logout();
-              toast.dismiss(t.id);
-              toast.success("Logout effettuato! 👋");
-              navigate("/login");
-            }}
-            className="flex-1 bg-red-500 hover:bg-red-600 text-white font-semibold px-4 py-2 rounded-lg transition">
-            Sì, esci
-          </button>
-          <button
-            onClick={() => toast.dismiss(t.id)}
-            className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold px-4 py-2 rounded-lg transition">
-            Annulla
-          </button>
+    toast(
+      (t) => (
+        <div className="flex flex-col space-y-3">
+          <p className="font-semibold text-white-800">
+            Sei sicuro di voler uscire?
+          </p>
+          <div className="flex space-x-2">
+            <button
+              onClick={() => {
+                logout();
+                toast.dismiss(t.id);
+                toast.success("Logout effettuato! 👋");
+                navigate("/login");
+              }}
+              className="flex-1 bg-red-500 hover:bg-red-600 text-white font-semibold px-4 py-2 rounded-lg transition">
+              Sì, esci
+            </button>
+            <button
+              onClick={() => toast.dismiss(t.id)}
+              className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold px-4 py-2 rounded-lg transition">
+              Annulla
+            </button>
+          </div>
         </div>
-      </div>
-    ), {
-      duration: 5000,
-      position: "top-center",
-    });
+      ),
+      {
+        duration: 5000,
+        position: "top-center",
+      },
+    );
   };
 
   return (
@@ -66,10 +69,7 @@ function Navbar() {
           <Link
             to="/feed"
             className="flex items-center space-x-2 text-blue-500 font-bold text-xl hover:text-blue-600 transition">
-            <svg
-              className="w-8 h-8"
-              fill="currentColor"
-              viewBox="0 0 24 24">
+            <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
               <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z" />
             </svg>
             <span>Social App</span>
@@ -101,8 +101,17 @@ function Navbar() {
             <button
               onClick={() => toast("Notifiche - Coming soon!")}
               className="relative hover:text-blue-400 transition text-gray-700">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                />
               </svg>
               <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-semibold">
                 3
@@ -117,10 +126,33 @@ function Navbar() {
               <button
                 onClick={() => setDropdownOpen(!dropdownOpen)}
                 className="flex items-center space-x-2 bg-gradient-to-br from-blue-500 to-purple-500 text-white px-4 py-2 rounded-full hover:opacity-90 transition">
-                <div className="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center font-bold">
+                {/* ✅ AVATAR DINAMICO */}
+                {user?.avatarUrl ? (
+                  <img
+                    src={user.avatarUrl}
+                    alt={user.username}
+                    className="w-8 h-8 rounded-full object-cover border-2 border-white border-opacity-30"
+                    onError={(e) => {
+                      // Fallback se immagine non carica
+                      console.error(
+                        "❌ Errore caricamento avatar navbar:",
+                        user.avatarUrl,
+                      );
+                      e.target.style.display = "none";
+                      e.target.nextElementSibling.style.display = "flex";
+                    }}
+                  />
+                ) : null}
+
+                {/* Fallback iniziale */}
+                <div
+                  className="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center font-bold"
+                  style={{ display: user?.avatarUrl ? "none" : "flex" }}>
                   {user?.username?.charAt(0).toUpperCase()}
                 </div>
+
                 <span className="font-semibold">{user?.username}</span>
+
                 <svg
                   className={`w-4 h-4 transition-transform ${
                     dropdownOpen ? "rotate-180" : ""
