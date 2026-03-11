@@ -1,14 +1,21 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { toggleLike } from "../services/postService";
+import { toggleLike, deletePost } from "../services/postService";
 import toast from "react-hot-toast";
 import CommentSection from "./CommentSection";
+import useAuthStore from "../store/authStore";
 
-function PostCard({ post, onLikeUpdate }) {
+function PostCard({ post, onLikeUpdate, onPostDeleted }) {
+  const currentUser = useAuthStore((state) => state.user);
   const [isLiked, setIsLiked] = useState(post.liked || false);
   const [likeCount, setLikeCount] = useState(post.likeCount || 0);
   const [isLiking, setIsLiking] = useState(false);
   const [commentCount, setCommentCount] = useState(post.commentCount ?? 0);
+  const [showMenu, setShowMenu] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // ✅ CHECK SE È IL MIO POST
+  const isMyPost = currentUser?.username === post.authorUsername;
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -55,6 +62,47 @@ function PostCard({ post, onLikeUpdate }) {
     setCommentCount(newCount);
   };
 
+  // ✅ HANDLE DELETE POST
+  const handleDeletePost = async () => {
+    const confirmed = window.confirm(
+      "Sei sicuro di voler eliminare questo post? Questa azione non può essere annullata."
+    );
+
+    if (!confirmed) return;
+
+    setIsDeleting(true);
+    setShowMenu(false);
+
+    const result = await deletePost(post.id);
+
+    if (result.success) {
+      toast.success("Post eliminato con successo!");
+      
+      // Notifica il parent per rimuovere il post dalla lista
+      if (onPostDeleted) {
+        onPostDeleted(post.id);
+      }
+    } else {
+      toast.error(result.error || "Errore nell'eliminazione del post");
+    }
+
+    setIsDeleting(false);
+  };
+
+  // ✅ HANDLE EDIT POST (TODO - per ora mostra toast)
+  const handleEditPost = () => {
+    setShowMenu(false);
+    toast("Modifica post - Coming soon!", { icon: "🚧" });
+    // TODO: Aprire modal di modifica post
+  };
+
+  // ✅ HANDLE REPORT POST
+  const handleReportPost = () => {
+    setShowMenu(false);
+    toast("Segnalazione post - Coming soon!", { icon: "🚧" });
+    // TODO: Implementare sistema di segnalazione
+  };
+
   return (
     <div className="bg-white rounded-lg shadow hover:shadow-md transition-shadow duration-300 overflow-hidden">
       {/* Header - User info - ✅ RESPONSIVE! */}
@@ -89,11 +137,85 @@ function PostCard({ post, onLikeUpdate }) {
           </div>
         </Link>
 
-        <button className="text-gray-400 hover:text-gray-600 p-1">
-          <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
-          </svg>
-        </button>
+        {/* ✅ MENU DROPDOWN CON FUNZIONALITÀ! */}
+        <div className="relative">
+          <button
+            onClick={() => setShowMenu(!showMenu)}
+            className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition">
+            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+            </svg>
+          </button>
+
+          {/* Dropdown Menu */}
+          {showMenu && (
+            <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl py-2 z-50 border border-gray-200">
+              {isMyPost ? (
+                <>
+                  {/* Modifica (TODO) */}
+                  <button
+                    onClick={handleEditPost}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition flex items-center space-x-2">
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                      />
+                    </svg>
+                    <span>Modifica</span>
+                  </button>
+
+                  {/* Elimina */}
+                  <button
+                    onClick={handleDeletePost}
+                    disabled={isDeleting}
+                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 transition flex items-center space-x-2 disabled:opacity-50">
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                      />
+                    </svg>
+                    <span>{isDeleting ? "Eliminazione..." : "Elimina"}</span>
+                  </button>
+                </>
+              ) : (
+                <>
+                  {/* Segnala (TODO) */}
+                  <button
+                    onClick={handleReportPost}
+                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 transition flex items-center space-x-2">
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                      />
+                    </svg>
+                    <span>Segnala</span>
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Body - Content - ✅ RESPONSIVE! */}

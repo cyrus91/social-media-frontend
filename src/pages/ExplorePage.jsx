@@ -68,6 +68,11 @@ function ExplorePage() {
     );
   }
 
+  const handlePostDeleted = (postId) => {
+    console.log(`🗑️ Post ${postId} eliminato`);
+    reset();
+  };
+
   return (
     <div className="min-h-screen bg-gray-100">
       <Navbar />
@@ -101,6 +106,7 @@ function ExplorePage() {
                 key={post.id}
                 post={post}
                 onLikeUpdate={handleLikeUpdate}
+                onPostDeleted={handlePostDeleted}
               />
             ))}
 

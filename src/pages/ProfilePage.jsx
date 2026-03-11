@@ -83,7 +83,7 @@ function ProfilePage() {
       if (!ignore) {
         if (result.success) {
           const userPosts = (result.data.content || result.data).filter(
-            (post) => post.authorUsername === username
+            (post) => post.authorUsername === username,
           );
           setPosts(userPosts);
         }
@@ -106,8 +106,8 @@ function ProfilePage() {
               liked: isLiked,
               likeCount: isLiked ? post.likeCount + 1 : post.likeCount - 1,
             }
-          : post
-      )
+          : post,
+      ),
     );
   };
 
@@ -153,6 +153,16 @@ function ProfilePage() {
       </div>
     );
   }
+
+  const handlePostDeleted = (postId) => {
+    console.log(`🗑️ Post ${postId} eliminato`);
+    // Rimuovi il post dalla lista
+    setPosts((prevPosts) => prevPosts.filter((post) => post.id !== postId));
+    // Ricarica il conteggio post
+    if (profile?.id) {
+      fetchPostCount(profile.id);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -212,7 +222,9 @@ function ProfilePage() {
                             d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
                           />
                         </svg>
-                        <span className="hidden sm:inline">Modifica profilo</span>
+                        <span className="hidden sm:inline">
+                          Modifica profilo
+                        </span>
                         <span className="sm:hidden">Modifica</span>
                       </button>
                     ) : (
@@ -221,7 +233,9 @@ function ProfilePage() {
                           userId={profile.id}
                           username={profile.username}
                           onFollowChange={async (isFollowing) => {
-                            console.log("🔄 Follow cambiato - ricarico profilo...");
+                            console.log(
+                              "🔄 Follow cambiato - ricarico profilo...",
+                            );
                             await loadProfile();
                           }}
                         />
@@ -269,7 +283,9 @@ function ProfilePage() {
                     <p className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800">
                       {profile.followerCount || 0}
                     </p>
-                    <p className="text-xs sm:text-sm text-gray-500">Followers</p>
+                    <p className="text-xs sm:text-sm text-gray-500">
+                      Followers
+                    </p>
                   </button>
 
                   <button
@@ -278,7 +294,9 @@ function ProfilePage() {
                     <p className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800">
                       {profile.followingCount || 0}
                     </p>
-                    <p className="text-xs sm:text-sm text-gray-500">Following</p>
+                    <p className="text-xs sm:text-sm text-gray-500">
+                      Following
+                    </p>
                   </button>
                 </div>
               </div>
@@ -351,6 +369,7 @@ function ProfilePage() {
                     key={post.id}
                     post={post}
                     onLikeUpdate={handleLikeUpdate}
+                    onPostDeleted={handlePostDeleted}
                   />
                 ))}
               </div>

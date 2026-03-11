@@ -74,6 +74,12 @@ function FeedPage() {
     );
   }
 
+  const handlePostDeleted = (postId) => {
+    console.log(`🗑️ Post ${postId} eliminato - rimuovo dalla lista`);
+    // Non serve fare nulla, il reset() ricaricherà il feed
+    reset();
+  };
+
   return (
     <div className="min-h-screen bg-gray-100">
       <Navbar />
@@ -117,6 +123,7 @@ function FeedPage() {
                 key={post.id}
                 post={post}
                 onLikeUpdate={handleLikeUpdate}
+                onPostDeleted={handlePostDeleted}
               />
             ))}
 
