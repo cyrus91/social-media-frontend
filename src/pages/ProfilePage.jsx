@@ -12,30 +12,25 @@ import api from "../services/api";
 import EditProfileModal from "../components/EditProfileModal";
 
 function ProfilePage() {
-  const { username } = useParams(); // URL: /profile/:username
+  const { username } = useParams();
   const navigate = useNavigate();
   const currentUser = useAuthStore((state) => state.user);
 
-  // State
   const [profile, setProfile] = useState(null);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [postsLoading, setPostsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState("posts"); // posts | likes | media
+  const [activeTab, setActiveTab] = useState("posts");
   const [editModalOpen, setEditModalOpen] = useState(false);
 
-  // Check if it's my profile
   const isMyProfile = currentUser?.username === username;
 
-  // Funzione per caricare il post count
   const fetchPostCount = async (userId) => {
     try {
       console.log("📊 Fetching post count for user:", userId);
       const response = await api.get(`/posts/author/${userId}/count`);
-
       console.log("✅ Post count ricevuto:", response.data.count);
-
       setProfile((prev) => ({
         ...prev,
         postCount: response.data.count,
@@ -45,7 +40,6 @@ function ProfilePage() {
     }
   };
 
-  // Funzione per caricare il profilo (riutilizzabile)
   const loadProfile = async () => {
     setLoading(true);
     setError(null);
@@ -54,8 +48,6 @@ function ProfilePage() {
 
     if (result.success) {
       setProfile(result.data);
-
-      // Carica post count
       fetchPostCount(result.data.id);
     } else {
       setError(result.error);
@@ -64,7 +56,6 @@ function ProfilePage() {
     setLoading(false);
   };
 
-  // Load profile
   useEffect(() => {
     let ignore = false;
 
@@ -81,23 +72,18 @@ function ProfilePage() {
     };
   }, [username]);
 
-  // Load posts quando cambia profilo
   useEffect(() => {
     if (!profile) return;
     let ignore = false;
 
     async function doLoadPosts() {
       setPostsLoading(true);
-
-      // TODO: Implementare endpoint per post utente specifico
-      // Per ora usiamo fetchPosts generico
       const result = await fetchPosts(0, 20);
 
       if (!ignore) {
         if (result.success) {
-          // Filtra solo post di questo utente
           const userPosts = (result.data.content || result.data).filter(
-            (post) => post.authorUsername === username,
+            (post) => post.authorUsername === username
           );
           setPosts(userPosts);
         }
@@ -120,12 +106,11 @@ function ProfilePage() {
               liked: isLiked,
               likeCount: isLiked ? post.likeCount + 1 : post.likeCount - 1,
             }
-          : post,
-      ),
+          : post
+      )
     );
   };
 
-  // Format date
   const formatJoinDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString("it-IT", {
@@ -134,7 +119,6 @@ function ProfilePage() {
     });
   };
 
-  // Loading state
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100">
@@ -146,23 +130,22 @@ function ProfilePage() {
     );
   }
 
-  // Error state
   if (error || !profile) {
     return (
       <div className="min-h-screen bg-gray-100">
         <Navbar />
-        <div className="max-w-2xl mx-auto p-4 mt-20">
-          <div className="bg-white rounded-lg shadow p-12 text-center">
-            <div className="text-6xl mb-4">😕</div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 p-4 mt-8 sm:mt-20">
+          <div className="bg-white rounded-lg shadow p-8 sm:p-12 text-center">
+            <div className="text-5xl sm:text-6xl mb-4">😕</div>
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2">
               Utente non trovato
             </h2>
-            <p className="text-gray-600 mb-6">
+            <p className="text-sm sm:text-base text-gray-600 mb-6">
               L'utente @{username} non esiste o è stato eliminato.
             </p>
             <button
               onClick={() => navigate("/feed")}
-              className="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-6 py-3 rounded-lg transition">
+              className="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-6 py-3 rounded-lg transition text-sm sm:text-base">
               Torna al Feed
             </button>
           </div>
@@ -175,131 +158,140 @@ function ProfilePage() {
     <div className="min-h-screen bg-gray-100">
       <Navbar />
 
-      <div className="max-w-4xl mx-auto p-4 mt-8">
-        {/* Profile Header */}
-        <div className="bg-white rounded-lg shadow-lg p-8 mb-6">
-          {/* Top section */}
-          <div className="flex items-start space-x-6">
-            {/* Avatar */}
-            <div className="flex-shrink-0">
-              {profile.avatarUrl ? (
-                <img
-                  src={profile.avatarUrl}
-                  alt={`${profile.username} avatar`}
-                  className="w-32 h-32 rounded-full object-cover border-4 border-blue-500 shadow-lg"
-                />
-              ) : (
-                <div className="w-32 h-32 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-5xl shadow-lg">
-                  {profile.username.charAt(0).toUpperCase()}
-                </div>
-              )}
-            </div>
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
+        {/* Profile Header - ✅ RESPONSIVE! */}
+        <div className="bg-white rounded-lg shadow overflow-hidden mb-4 sm:mb-6">
+          {/* Cover Photo */}
+          <div className="h-24 sm:h-32 md:h-48 bg-gradient-to-r from-blue-500 to-purple-500"></div>
 
-            {/* Info */}
-            <div className="flex-1">
-              {/* Username + Button */}
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h1 className="text-3xl font-bold text-gray-800">
-                    {profile.username}
-                  </h1>
-                  <p className="text-gray-500">@{profile.username}</p>
+          {/* Profile Info */}
+          <div className="px-4 sm:px-6 pb-4 sm:pb-6">
+            <div className="flex flex-col sm:flex-row sm:items-end sm:space-x-5 -mt-12 sm:-mt-16">
+              {/* Avatar */}
+              <div className="flex justify-center sm:justify-start">
+                {profile.avatarUrl ? (
+                  <img
+                    src={profile.avatarUrl}
+                    alt={profile.username}
+                    className="w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32 rounded-full object-cover border-4 border-white shadow-lg"
+                  />
+                ) : (
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-3xl sm:text-4xl md:text-5xl font-bold border-4 border-white shadow-lg">
+                    {profile.username?.charAt(0).toUpperCase()}
+                  </div>
+                )}
+              </div>
+
+              {/* Name & Actions */}
+              <div className="flex-1 mt-4 sm:mt-0 text-center sm:text-left">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800">
+                      {profile.username}
+                    </h1>
+                    <p className="text-xs sm:text-sm text-gray-500">
+                      @{profile.username}
+                    </p>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="mt-3 sm:mt-0">
+                    {isMyProfile ? (
+                      <button
+                        onClick={() => setEditModalOpen(true)}
+                        className="flex items-center justify-center space-x-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold px-4 sm:px-6 py-2 rounded-lg transition text-sm sm:text-base w-full sm:w-auto">
+                        <svg
+                          className="w-4 h-4 sm:w-5 sm:h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24">
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                          />
+                        </svg>
+                        <span className="hidden sm:inline">Modifica profilo</span>
+                        <span className="sm:hidden">Modifica</span>
+                      </button>
+                    ) : (
+                      profile.id && (
+                        <FollowButton
+                          userId={profile.id}
+                          username={profile.username}
+                          onFollowChange={async (isFollowing) => {
+                            console.log("🔄 Follow cambiato - ricarico profilo...");
+                            await loadProfile();
+                          }}
+                        />
+                      )
+                    )}
+                  </div>
                 </div>
 
-                {/* Edit button (se è il tuo profilo) */}
-                {isMyProfile && (
+                {/* Bio */}
+                {profile.bio && (
+                  <p className="text-sm sm:text-base text-gray-700 mt-3 sm:mt-4">
+                    {profile.bio}
+                  </p>
+                )}
+
+                {/* Join date */}
+                <div className="flex items-center justify-center sm:justify-start space-x-2 text-gray-500 text-xs sm:text-sm mt-3 sm:mt-4">
+                  <svg
+                    className="w-3 h-3 sm:w-4 sm:h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
+                  <span>Membro da {formatJoinDate(profile.createdAt)}</span>
+                </div>
+
+                {/* Stats - ✅ RESPONSIVE! */}
+                <div className="flex justify-center sm:justify-start space-x-4 sm:space-x-6 md:space-x-8 mt-3 sm:mt-4">
+                  <div className="text-center">
+                    <p className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800">
+                      {profile.postCount || 0}
+                    </p>
+                    <p className="text-xs sm:text-sm text-gray-500">Post</p>
+                  </div>
+
                   <button
-                    onClick={() => setEditModalOpen(true)}
-                    className="flex items-center space-x-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold px-6 py-2 rounded-lg transition">
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                      />
-                    </svg>
-                    <span>Modifica profilo</span>
+                    onClick={() => toast("Followers list - Coming soon!")}
+                    className="text-center hover:opacity-80 transition">
+                    <p className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800">
+                      {profile.followerCount || 0}
+                    </p>
+                    <p className="text-xs sm:text-sm text-gray-500">Followers</p>
                   </button>
-                )}
 
-                {/* Follow button (se NON è il tuo profilo) */}
-                {!isMyProfile && profile.id && (
-                  <FollowButton
-                    userId={profile.id}
-                    username={profile.username}
-                    onFollowChange={async (isFollowing) => {
-                      // ✅ RICARICA PROFILO DAL BACKEND!
-                      console.log("🔄 Follow cambiato - ricarico profilo...");
-                      await loadProfile();
-                    }}
-                  />
-                )}
-              </div>
-
-              {/* Bio */}
-              {profile.bio && (
-                <p className="text-gray-700 mb-4">{profile.bio}</p>
-              )}
-
-              {/* Join date */}
-              <div className="flex items-center space-x-2 text-gray-500 text-sm mb-4">
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                  />
-                </svg>
-                <span>Membro da {formatJoinDate(profile.createdAt)}</span>
-              </div>
-
-              {/* Stats */}
-              <div className="flex items-center space-x-6">
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-gray-800">
-                    {profile.postCount ?? 0}
-                  </p>
-                  <p className="text-gray-500 text-sm">Post</p>
+                  <button
+                    onClick={() => toast("Following list - Coming soon!")}
+                    className="text-center hover:opacity-80 transition">
+                    <p className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800">
+                      {profile.followingCount || 0}
+                    </p>
+                    <p className="text-xs sm:text-sm text-gray-500">Following</p>
+                  </button>
                 </div>
-
-                <button
-                  onClick={() => toast("Followers list - Coming soon!")}
-                  className="text-center hover:opacity-80 transition">
-                  <p className="text-2xl font-bold text-gray-800">
-                    {profile.followerCount ?? 0}
-                  </p>
-                  <p className="text-gray-500 text-sm">Followers</p>
-                </button>
-
-                <button
-                  onClick={() => toast("Following list - Coming soon!")}
-                  className="text-center hover:opacity-80 transition">
-                  <p className="text-2xl font-bold text-gray-800">
-                    {profile.followingCount ?? 0}
-                  </p>
-                  <p className="text-gray-500 text-sm">Following</p>
-                </button>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="bg-white rounded-lg shadow mb-6">
+        {/* Tabs - ✅ RESPONSIVE! */}
+        <div className="bg-white rounded-lg shadow mb-4 sm:mb-6">
           <div className="flex border-b border-gray-200">
             <button
               onClick={() => setActiveTab("posts")}
-              className={`flex-1 py-4 px-6 font-semibold transition ${
+              className={`flex-1 py-3 sm:py-4 px-3 sm:px-6 font-semibold transition text-sm sm:text-base ${
                 activeTab === "posts"
                   ? "text-blue-500 border-b-2 border-blue-500"
                   : "text-gray-500 hover:text-gray-700"
@@ -309,7 +301,7 @@ function ProfilePage() {
 
             <button
               onClick={() => setActiveTab("likes")}
-              className={`flex-1 py-4 px-6 font-semibold transition ${
+              className={`flex-1 py-3 sm:py-4 px-3 sm:px-6 font-semibold transition text-sm sm:text-base ${
                 activeTab === "likes"
                   ? "text-blue-500 border-b-2 border-blue-500"
                   : "text-gray-500 hover:text-gray-700"
@@ -319,7 +311,7 @@ function ProfilePage() {
 
             <button
               onClick={() => setActiveTab("media")}
-              className={`flex-1 py-4 px-6 font-semibold transition ${
+              className={`flex-1 py-3 sm:py-4 px-3 sm:px-6 font-semibold transition text-sm sm:text-base ${
                 activeTab === "media"
                   ? "text-blue-500 border-b-2 border-blue-500"
                   : "text-gray-500 hover:text-gray-700"
@@ -333,16 +325,18 @@ function ProfilePage() {
         {activeTab === "posts" && (
           <div>
             {postsLoading && (
-              <LoadingSpinner size="lg" text="Caricamento post..." />
+              <div className="flex justify-center py-8">
+                <LoadingSpinner size="lg" text="Caricamento post..." />
+              </div>
             )}
 
             {!postsLoading && posts.length === 0 && (
-              <div className="bg-white rounded-lg shadow p-12 text-center">
-                <div className="text-6xl mb-4">📭</div>
-                <h2 className="text-2xl font-bold text-gray-800 mb-2">
+              <div className="bg-white rounded-lg shadow p-8 sm:p-12 text-center">
+                <div className="text-5xl sm:text-6xl mb-4">📭</div>
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2">
                   Nessun post
                 </h2>
-                <p className="text-gray-600">
+                <p className="text-sm sm:text-base text-gray-600">
                   {isMyProfile
                     ? "Non hai ancora pubblicato nulla!"
                     : `${profile.username} non ha ancora pubblicato nulla.`}
@@ -366,12 +360,12 @@ function ProfilePage() {
 
         {/* Likes section */}
         {activeTab === "likes" && (
-          <div className="bg-white rounded-lg shadow p-12 text-center">
-            <div className="text-6xl mb-4">❤️</div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">
+          <div className="bg-white rounded-lg shadow p-8 sm:p-12 text-center">
+            <div className="text-5xl sm:text-6xl mb-4">❤️</div>
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2">
               Coming soon!
             </h2>
-            <p className="text-gray-600">
+            <p className="text-sm sm:text-base text-gray-600">
               Post piaciuti sarà disponibile a breve
             </p>
           </div>
@@ -379,12 +373,12 @@ function ProfilePage() {
 
         {/* Media section */}
         {activeTab === "media" && (
-          <div className="bg-white rounded-lg shadow p-12 text-center">
-            <div className="text-6xl mb-4">🖼️</div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">
+          <div className="bg-white rounded-lg shadow p-8 sm:p-12 text-center">
+            <div className="text-5xl sm:text-6xl mb-4">🖼️</div>
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2">
               Coming soon!
             </h2>
-            <p className="text-gray-600">
+            <p className="text-sm sm:text-base text-gray-600">
               Galleria media sarà disponibile a breve
             </p>
           </div>
@@ -398,7 +392,6 @@ function ProfilePage() {
           onClose={() => setEditModalOpen(false)}
           currentProfile={profile}
           onProfileUpdated={async () => {
-            // Ricarica il profilo completo dall'API
             await loadProfile();
             setEditModalOpen(false);
           }}

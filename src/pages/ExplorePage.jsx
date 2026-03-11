@@ -50,7 +50,7 @@ function ExplorePage() {
     return (
       <div className="min-h-screen bg-gray-100">
         <Navbar />
-        <div className="max-w-2xl mx-auto p-4 mt-8">
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 py-4">
           <div className="bg-white rounded-lg shadow p-8 text-center">
             <div className="text-6xl mb-4">⚠️</div>
             <h2 className="text-2xl font-bold text-gray-800 mb-2">
@@ -74,11 +74,11 @@ function ExplorePage() {
 
       <div className="max-w-2xl mx-auto p-4">
         {/* Header */}
-        <div className="mb-6 mt-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">
+        <div className="mb-4 sm:mb-6 mt-4 sm:mt-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">
             Esplora 🌍
           </h1>
-          <p className="text-gray-600">
+          <p className="text-sm sm:text-base text-gray-600">
             Scopri nuovi contenuti e utenti
           </p>
         </div>

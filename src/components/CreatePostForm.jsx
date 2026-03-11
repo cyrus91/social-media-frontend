@@ -72,7 +72,7 @@ function CreatePostForm({ onPostCreated }) {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
+    <div className="bg-white rounded-lg shadow p-4 sm:p-6">
       <form onSubmit={handleSubmit}>
         {/* Header */}
         <div className="flex items-center space-x-3 mb-4">
@@ -80,14 +80,14 @@ function CreatePostForm({ onPostCreated }) {
             <img
               src={currentUser.avatarUrl}
               alt={currentUser.username}
-              className="w-10 h-10 rounded-full object-cover"
+              className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover"
             />
           ) : (
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-sm sm:text-base">
               {currentUser?.username?.charAt(0).toUpperCase()}
             </div>
           )}
-          <p className="font-semibold text-gray-800">
+          <p className="font-semibold text-gray-800 text-sm sm:text-base">
             {currentUser?.username}
           </p>
         </div>
@@ -99,7 +99,7 @@ function CreatePostForm({ onPostCreated }) {
           placeholder="A cosa stai pensando?"
           rows={3}
           disabled={loading}
-          className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none disabled:opacity-50 mb-3"
+          className="w-full border border-gray-300 rounded-lg px-3 sm:px-4 py-2 sm:py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none disabled:opacity-50 mb-3 text-sm sm:text-base"
         />
 
         {/* Image Preview */}
@@ -108,14 +108,14 @@ function CreatePostForm({ onPostCreated }) {
             <img
               src={imagePreview}
               alt="Preview"
-              className="w-full rounded-lg max-h-64 object-cover"
+              className="w-full rounded-lg max-h-48 sm:max-h-64 object-cover"
             />
             <button
               type="button"
               onClick={handleRemoveImage}
-              className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-8 h-8 flex items-center justify-center transition">
+              className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center transition">
               <svg
-                className="w-5 h-5"
+                className="w-4 h-4 sm:w-5 sm:h-5"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24">
@@ -141,7 +141,7 @@ function CreatePostForm({ onPostCreated }) {
               disabled={loading}
             />
             <svg
-              className="w-6 h-6"
+              className="w-5 h-5 sm:w-6 sm:h-6"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24">
@@ -152,17 +152,19 @@ function CreatePostForm({ onPostCreated }) {
                 d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
               />
             </svg>
-            <span className="font-semibold">Foto</span>
+            <span className="font-semibold text-sm sm:text-base hidden sm:inline">
+              Foto
+            </span>
           </label>
 
           <button
             type="submit"
             disabled={loading || (!content.trim() && !image)}
-            className="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-6 py-2 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2">
+            className="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-4 sm:px-6 py-2 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 text-sm sm:text-base">
             {loading ? (
               <>
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                <span>Pubblicazione...</span>
+                <span className="hidden sm:inline">Pubblicazione...</span>
               </>
             ) : (
               <span>Pubblica</span>
