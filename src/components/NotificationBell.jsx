@@ -74,25 +74,21 @@ function NotificationBell(props) {
       );
     }
 
-    // ✅ FIX: Naviga al contenuto specifico
     setIsOpen(false);
 
+    // ✅ NAVIGAZIONE INTELLIGENTE!
     if (notification.type === "FOLLOW" && notification.actorUsername) {
-      // Segui → Vai al profilo
+      // FOLLOW → Vai al profilo
       navigate(`/profile/${notification.actorUsername}`);
     } else if (notification.postId) {
-      // Like o Comment → Vai al feed e scrolla (per ora vai al feed)
-      // TODO: Implementare pagina post singolo
-      navigate(`/feed`);
-      toast.success("Navigato al feed - Post ID: " + notification.postId, {
-        duration: 2000,
-      });
+      // LIKE o COMMENT → Vai al post specifico!
+      navigate(`/post/${notification.postId}`);
     } else if (notification.actorUsername) {
-      // Fallback: vai al profilo dell'attore
+      // Fallback: vai al profilo
       navigate(`/profile/${notification.actorUsername}`);
     }
 
-    // Chiudi anche il menu mobile se passato come prop
+    // Chiudi menu mobile
     if (props.onClose) {
       props.onClose();
     }

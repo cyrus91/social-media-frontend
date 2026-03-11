@@ -5,6 +5,7 @@ import FeedPage from "./pages/FeedPage";
 import ProfilePage from "./pages/ProfilePage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ExplorePage from "./pages/ExplorePage";
+import PostPage from "./pages/PostPage";
 import { Toaster } from "react-hot-toast";
 
 function App() {
@@ -43,7 +44,7 @@ function App() {
             </ProtectedRoute>
           }
         />
-
+        <Route path="/post/:postId" element={<PostPage />} />
         {/* 404 - Not found */}
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
