@@ -8,7 +8,7 @@ import {
 } from "../services/notificationService";
 import toast from "react-hot-toast";
 
-function NotificationBell() {
+function NotificationBell(props) {
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -68,17 +68,33 @@ function NotificationBell() {
       await markAsRead(notification.id);
       setUnreadCount((prev) => Math.max(0, prev - 1));
       setNotifications((prev) =>
-        prev.map((n) => (n.id === notification.id ? { ...n, isRead: true } : n))
+        prev.map((n) =>
+          n.id === notification.id ? { ...n, isRead: true } : n,
+        ),
       );
     }
 
-    // Naviga al contenuto
-    if (notification.postId) {
-      navigate(`/feed`); // TODO: Naviga al post specifico
-      setIsOpen(false);
-    } else if (notification.actorUsername) {
+    // ✅ FIX: Naviga al contenuto specifico
+    setIsOpen(false);
+
+    if (notification.type === "FOLLOW" && notification.actorUsername) {
+      // Segui → Vai al profilo
       navigate(`/profile/${notification.actorUsername}`);
-      setIsOpen(false);
+    } else if (notification.postId) {
+      // Like o Comment → Vai al feed e scrolla (per ora vai al feed)
+      // TODO: Implementare pagina post singolo
+      navigate(`/feed`);
+      toast.success("Navigato al feed - Post ID: " + notification.postId, {
+        duration: 2000,
+      });
+    } else if (notification.actorUsername) {
+      // Fallback: vai al profilo dell'attore
+      navigate(`/profile/${notification.actorUsername}`);
+    }
+
+    // Chiudi anche il menu mobile se passato come prop
+    if (props.onClose) {
+      props.onClose();
     }
   };
 
@@ -128,7 +144,12 @@ function NotificationBell() {
       {/* Bell Button */}
       <button
         onClick={handleToggle}
-        className="relative text-gray-700 hover:text-blue-600 transition p-2 rounded-full hover:bg-gray-100">
+        className={`relative text-gray-700 hover:text-blue-600 transition p-2 rounded-full hover:bg-gray-100 ${
+          props.isMobile
+            ? "w-full flex items-center justify-start space-x-3"
+            : ""
+        }`}>
+        {props.isMobile && <span className="text-lg">🔔</span>}
         <svg
           className="w-6 h-6"
           fill="none"
@@ -141,10 +162,20 @@ function NotificationBell() {
             d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
           />
         </svg>
+        {props.isMobile && (
+          <span className="text-gray-700 font-semibold flex-1 text-left">
+            Notifiche
+          </span>
+        )}
 
         {/* Badge rosso */}
         {unreadCount > 0 && (
-          <span className="absolute top-1 right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+          <span
+            className={`absolute bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center ${
+              props.isMobile
+                ? "right-2 top-1/2 -translate-y-1/2"
+                : "top-1 right-1"
+            }`}>
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}

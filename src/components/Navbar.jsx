@@ -56,7 +56,7 @@ function Navbar() {
               Esplora
             </Link>
 
-            {/* Notifications Icon */}
+            {/* ✅ NOTIFICATION BELL DESKTOP */}
             <NotificationBell />
 
             {/* User Dropdown */}
@@ -185,14 +185,12 @@ function Navbar() {
                 className="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition">
                 🌍 Esplora
               </Link>
-              <button
-                onClick={() => {
-                  toast("Notifiche - Coming soon! 🔔");
-                  setShowMobileMenu(false);
-                }}
-                className="text-left px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition">
-                🔔 Notifiche
-              </button>
+
+              {/* ✅ NOTIFICATION BELL MOBILE */}
+              <div className="px-4">
+                <NotificationBell isMobile={true} onClose={() => setShowMobileMenu(false)} />
+              </div>
+
               <Link
                 to={`/profile/${user?.username}`}
                 onClick={() => setShowMobileMenu(false)}
