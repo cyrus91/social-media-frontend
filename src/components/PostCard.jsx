@@ -4,6 +4,8 @@ import { toggleLike, deletePost } from "../services/postService";
 import toast from "react-hot-toast";
 import CommentSection from "./CommentSection";
 import useAuthStore from "../store/authStore";
+import Lightbox from "yet-another-react-lightbox";
+import "yet-another-react-lightbox/styles.css";
 
 function PostCard({ post, onLikeUpdate, onPostDeleted }) {
   const currentUser = useAuthStore((state) => state.user);
@@ -13,6 +15,7 @@ function PostCard({ post, onLikeUpdate, onPostDeleted }) {
   const [commentCount, setCommentCount] = useState(post.commentCount ?? 0);
   const [showMenu, setShowMenu] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
 
   // ✅ CHECK SE È IL MIO POST
   const isMyPost = currentUser?.username === post.authorUsername;
@@ -65,7 +68,7 @@ function PostCard({ post, onLikeUpdate, onPostDeleted }) {
   // ✅ HANDLE DELETE POST
   const handleDeletePost = async () => {
     const confirmed = window.confirm(
-      "Sei sicuro di voler eliminare questo post? Questa azione non può essere annullata."
+      "Sei sicuro di voler eliminare questo post? Questa azione non può essere annullata.",
     );
 
     if (!confirmed) return;
@@ -77,7 +80,7 @@ function PostCard({ post, onLikeUpdate, onPostDeleted }) {
 
     if (result.success) {
       toast.success("Post eliminato con successo!");
-      
+
       // Notifica il parent per rimuovere il post dalla lista
       if (onPostDeleted) {
         onPostDeleted(post.id);
@@ -116,7 +119,10 @@ function PostCard({ post, onLikeUpdate, onPostDeleted }) {
               alt={`${post.authorUsername} avatar`}
               className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover border-2 border-transparent hover:border-blue-500 transition"
               onError={(e) => {
-                console.error("❌ Errore caricamento avatar:", post.authorAvatarUrl);
+                console.error(
+                  "❌ Errore caricamento avatar:",
+                  post.authorAvatarUrl,
+                );
                 e.target.style.display = "none";
                 e.target.nextElementSibling.style.display = "flex";
               }}
@@ -133,7 +139,9 @@ function PostCard({ post, onLikeUpdate, onPostDeleted }) {
             <p className="font-semibold text-gray-800 text-sm sm:text-base">
               {post.authorUsername || "Utente"}
             </p>
-            <p className="text-xs text-gray-500">{formatDate(post.createdAt)}</p>
+            <p className="text-xs text-gray-500">
+              {formatDate(post.createdAt)}
+            </p>
           </div>
         </Link>
 
@@ -142,7 +150,10 @@ function PostCard({ post, onLikeUpdate, onPostDeleted }) {
           <button
             onClick={() => setShowMenu(!showMenu)}
             className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition">
-            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20">
+            <svg
+              className="w-4 h-4 sm:w-5 sm:h-5"
+              fill="currentColor"
+              viewBox="0 0 20 20">
               <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
             </svg>
           </button>
@@ -225,16 +236,51 @@ function PostCard({ post, onLikeUpdate, onPostDeleted }) {
         </p>
       </div>
 
-      {/* Image - ✅ RESPONSIVE! */}
+      {/* Image - ✅ RESPONSIVE + LIGHTBOX! */}
       {post.imageUrl && (
-        <div className="relative w-full">
-          <img
-            src={post.imageUrl}
-            alt="Post"
-            className="w-full h-auto max-h-[400px] sm:max-h-[600px] object-contain bg-gray-100"
-            loading="lazy"
+        <>
+          <div
+            className="relative w-full cursor-pointer group"
+            onClick={() => setIsLightboxOpen(true)}>
+            <img
+              src={post.imageUrl}
+              alt="Post"
+              className="w-full h-auto max-h-[400px] sm:max-h-[600px] object-contain bg-gray-100 transition-opacity group-hover:opacity-95"
+              loading="lazy"
+            />
+            {/* Overlay hover con icona zoom */}
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition flex items-center justify-center opacity-0 group-hover:opacity-100">
+              <div className="bg-white/90 rounded-full p-3 shadow-lg">
+                <svg
+                  className="w-6 h-6 text-gray-800"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7"
+                  />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          {/* Lightbox Modal */}
+          <Lightbox
+            open={isLightboxOpen}
+            close={() => setIsLightboxOpen(false)}
+            slides={[
+              {
+                src: post.imageUrl,
+                alt: `Post di ${post.authorUsername}`,
+                title: post.authorUsername,
+                description: post.content,
+              },
+            ]}
           />
-        </div>
+        </>
       )}
 
       {/* Actions - Like & Comment - ✅ RESPONSIVE! */}
@@ -258,7 +304,9 @@ function PostCard({ post, onLikeUpdate, onPostDeleted }) {
                 d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
               />
             </svg>
-            <span className="font-semibold text-sm sm:text-base">{likeCount}</span>
+            <span className="font-semibold text-sm sm:text-base">
+              {likeCount}
+            </span>
           </button>
 
           {/* Comment icon */}
@@ -275,7 +323,9 @@ function PostCard({ post, onLikeUpdate, onPostDeleted }) {
                 d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
               />
             </svg>
-            <span className="font-semibold text-sm sm:text-base">{commentCount}</span>
+            <span className="font-semibold text-sm sm:text-base">
+              {commentCount}
+            </span>
           </div>
         </div>
 
