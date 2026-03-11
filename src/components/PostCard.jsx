@@ -268,6 +268,7 @@ function PostCard({ post, onLikeUpdate, onPostDeleted }) {
           </div>
 
           {/* Lightbox Modal */}
+          {/* Lightbox Modal */}
           <Lightbox
             open={isLightboxOpen}
             close={() => setIsLightboxOpen(false)}
@@ -279,6 +280,11 @@ function PostCard({ post, onLikeUpdate, onPostDeleted }) {
                 description: post.content,
               },
             ]}
+            carousel={{ finite: true }} // ✅ Disabilita loop
+            render={{
+              buttonPrev: () => null, // ✅ Nascondi freccia prev
+              buttonNext: () => null, // ✅ Nascondi freccia next
+            }}
           />
         </>
       )}
