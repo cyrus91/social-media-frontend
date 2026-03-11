@@ -67,7 +67,9 @@ function NotificationBell(props) {
       await markAsRead(notification.id);
       setUnreadCount((prev) => Math.max(0, prev - 1));
       setNotifications((prev) =>
-        prev.map((n) => (n.id === notification.id ? { ...n, isRead: true } : n))
+        prev.map((n) =>
+          n.id === notification.id ? { ...n, isRead: true } : n,
+        ),
       );
     }
 
@@ -98,40 +100,60 @@ function NotificationBell(props) {
   };
 
   // Gestione corretta timezone UTC
+  // ✅ FIX: Parsing corretto timezone + precisione secondi
   const formatDate = (dateString) => {
-    // Parse come UTC (il backend invia LocalDateTime senza timezone)
-    const date = new Date(dateString);
+    // Il backend invia LocalDateTime senza timezone (es: "2026-03-11T09:44:21.987617")
+    // JavaScript lo interpreta come UTC, causando sfasamento!
+
+    // Soluzione: Assumiamo che il backend usi lo stesso timezone del client
+    let date;
+
+    if (dateString.includes("Z") || dateString.includes("+")) {
+      // Ha già timezone (formato ISO completo)
+      date = new Date(dateString);
+    } else {
+      // LocalDateTime senza timezone → Lo trattiamo come locale
+      date = new Date(dateString.replace("T", " "));
+    }
+
     const now = new Date();
-    
+
     // Calcola differenza in millisecondi
     const diffMs = now - date;
-    const diffMins = Math.floor(diffMs / 60000);
+    const diffSecs = Math.floor(diffMs / 1000);
+    const diffMins = Math.floor(diffSecs / 60);
     const diffHours = Math.floor(diffMins / 60);
     const diffDays = Math.floor(diffHours / 24);
 
+    // Debug (rimuovi dopo il fix)
     console.log("🕐 Debug date:", {
       dateString,
       parsedDate: date.toISOString(),
       now: now.toISOString(),
-      diffMs,
+      diffSecs,
       diffMins,
       diffHours,
     });
 
-    if (diffMins < 0) {
-      // Data nel futuro (problema timezone!)
-      console.warn("⚠��� Data nel futuro rilevata - possibile problema timezone");
+    // ✅ Gestione date future (problema timezone)
+    if (diffSecs < 0) {
+      console.warn("⚠️ Data nel futuro - problema timezone!");
       return "Adesso";
     }
 
-    if (diffMins < 1) return "Adesso";
+    // ✅ Precisione al secondo!
+    if (diffSecs < 10) return "Adesso";
+    if (diffSecs < 60) return `${diffSecs}s fa`;
     if (diffMins < 60) return `${diffMins}m fa`;
     if (diffHours < 24) return `${diffHours}h fa`;
+    if (diffDays === 1) return "Ieri";
     if (diffDays < 7) return `${diffDays}g fa`;
 
+    // Oltre 7 giorni: mostra data formattata
     return date.toLocaleDateString("it-IT", {
       day: "numeric",
       month: "short",
+      year: now.getFullYear() !== date.getFullYear() ? "numeric" : undefined,
     });
   };
 
@@ -154,7 +176,9 @@ function NotificationBell(props) {
       <button
         onClick={handleToggle}
         className={`relative text-gray-700 hover:text-blue-600 transition p-2 rounded-full hover:bg-gray-100 ${
-          props.isMobile ? "w-full flex items-center justify-start space-x-3" : ""
+          props.isMobile
+            ? "w-full flex items-center justify-start space-x-3"
+            : ""
         }`}>
         {props.isMobile && <span className="text-lg">🔔</span>}
         <svg
