@@ -83,7 +83,7 @@ function ProfilePage() {
       if (!ignore) {
         if (result.success) {
           const userPosts = (result.data.content || result.data).filter(
-            (post) => post.authorUsername === username,
+            (post) => post.authorUsername === username
           );
           setPosts(userPosts);
         }
@@ -106,9 +106,17 @@ function ProfilePage() {
               liked: isLiked,
               likeCount: isLiked ? post.likeCount + 1 : post.likeCount - 1,
             }
-          : post,
-      ),
+          : post
+      )
     );
+  };
+
+  const handlePostDeleted = (postId) => {
+    console.log(`🗑️ Post ${postId} eliminato`);
+    setPosts((prevPosts) => prevPosts.filter((post) => post.id !== postId));
+    if (profile?.id) {
+      fetchPostCount(profile.id);
+    }
   };
 
   const formatJoinDate = (dateString) => {
@@ -154,22 +162,12 @@ function ProfilePage() {
     );
   }
 
-  const handlePostDeleted = (postId) => {
-    console.log(`🗑️ Post ${postId} eliminato`);
-    // Rimuovi il post dalla lista
-    setPosts((prevPosts) => prevPosts.filter((post) => post.id !== postId));
-    // Ricarica il conteggio post
-    if (profile?.id) {
-      fetchPostCount(profile.id);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gray-100">
       <Navbar />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
-        {/* Profile Header - ✅ RESPONSIVE! */}
+        {/* Profile Header - ✅ RESPONSIVE + LEGGIBILE! */}
         <div className="bg-white rounded-lg shadow overflow-hidden mb-4 sm:mb-6">
           {/* Cover Photo */}
           <div className="h-24 sm:h-32 md:h-48 bg-gradient-to-r from-blue-500 to-purple-500"></div>
@@ -192,11 +190,11 @@ function ProfilePage() {
                 )}
               </div>
 
-              {/* Name & Actions - ✅ NOME ORA È SU SFONDO BIANCO! */}
+              {/* Name & Actions */}
               <div className="flex-1 mt-4 sm:mt-0 text-center sm:text-left">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    {/* ✅ ORA IL TESTO È NERO SU BIANCO! */}
+                    {/* ✅ NOME E USERNAME LEGGIBILI (NERO SU BIANCO)! */}
                     <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
                       {profile.username}
                     </h1>
@@ -207,12 +205,91 @@ function ProfilePage() {
 
                   {/* Action Buttons */}
                   <div className="mt-3 sm:mt-0">
-                    {/* ... resto del codice ... */}
+                    {isMyProfile ? (
+                      <button
+                        onClick={() => setEditModalOpen(true)}
+                        className="flex items-center justify-center space-x-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold px-4 sm:px-6 py-2 rounded-lg transition text-sm sm:text-base w-full sm:w-auto">
+                        <svg
+                          className="w-4 h-4 sm:w-5 sm:h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24">
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                          />
+                        </svg>
+                        <span className="hidden sm:inline">Modifica profilo</span>
+                        <span className="sm:hidden">Modifica</span>
+                      </button>
+                    ) : (
+                      profile.id && (
+                        <FollowButton
+                          userId={profile.id}
+                          username={profile.username}
+                          onFollowChange={async (isFollowing) => {
+                            console.log("🔄 Follow cambiato - ricarico profilo...");
+                            await loadProfile();
+                          }}
+                        />
+                      )
+                    )}
                   </div>
                 </div>
 
-                {/* Bio, stats, ecc... */}
-                {/* ... */}
+                {/* Bio */}
+                {profile.bio && (
+                  <p className="text-sm sm:text-base text-gray-700 mt-3 sm:mt-4">
+                    {profile.bio}
+                  </p>
+                )}
+
+                {/* Join date */}
+                <div className="flex items-center justify-center sm:justify-start space-x-2 text-gray-500 text-xs sm:text-sm mt-3 sm:mt-4">
+                  <svg
+                    className="w-3 h-3 sm:w-4 sm:h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
+                  <span>Membro da {formatJoinDate(profile.createdAt)}</span>
+                </div>
+
+                {/* ✅ STATS - COUNTER PRESENTI! */}
+                <div className="flex justify-center sm:justify-start space-x-4 sm:space-x-6 md:space-x-8 mt-3 sm:mt-4">
+                  <div className="text-center">
+                    <p className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800">
+                      {profile.postCount || 0}
+                    </p>
+                    <p className="text-xs sm:text-sm text-gray-500">Post</p>
+                  </div>
+
+                  <button
+                    onClick={() => toast("Followers list - Coming soon!")}
+                    className="text-center hover:opacity-80 transition">
+                    <p className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800">
+                      {profile.followerCount || 0}
+                    </p>
+                    <p className="text-xs sm:text-sm text-gray-500">Followers</p>
+                  </button>
+
+                  <button
+                    onClick={() => toast("Following list - Coming soon!")}
+                    className="text-center hover:opacity-80 transition">
+                    <p className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800">
+                      {profile.followingCount || 0}
+                    </p>
+                    <p className="text-xs sm:text-sm text-gray-500">Following</p>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
