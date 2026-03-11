@@ -232,14 +232,10 @@ function ProfilePage() {
                   <FollowButton
                     userId={profile.id}
                     username={profile.username}
-                    onFollowChange={(isFollowing) => {
-                      // Aggiorna contatore followers
-                      setProfile((prev) => ({
-                        ...prev,
-                        followerCount: isFollowing
-                          ? (prev.followerCount || 0) + 1
-                          : (prev.followerCount || 1) - 1,
-                      }));
+                    onFollowChange={async (isFollowing) => {
+                      // ✅ RICARICA PROFILO DAL BACKEND!
+                      console.log("🔄 Follow cambiato - ricarico profilo...");
+                      await loadProfile();
                     }}
                   />
                 )}
@@ -394,7 +390,7 @@ function ProfilePage() {
           </div>
         )}
       </div>
-      
+
       {/* Edit Profile Modal */}
       {isMyProfile && (
         <EditProfileModal

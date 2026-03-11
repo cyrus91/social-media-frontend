@@ -12,7 +12,7 @@ function FeedPage() {
   const fetchFeedData = useCallback(async (page, size) => {
     console.log(`📥 Fetching feed page ${page}`);
     return await fetchFeed(page, size);
-  }, []); // ✅ NESSUNA DIPENDENZA = FUNZIONE STABILE!
+  }, []);
 
   // ✅ USA HOOK INFINITE SCROLL
   const {
@@ -31,7 +31,7 @@ function FeedPage() {
   // Handle post creato
   const handlePostCreated = () => {
     console.log("✅ Nuovo post creato - ricarico feed");
-    reset(); // Reset infinite scroll
+    reset();
   };
 
   // Handle like update
@@ -81,12 +81,8 @@ function FeedPage() {
       <div className="max-w-2xl mx-auto p-4">
         {/* Header */}
         <div className="mb-6 mt-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">
-            Home 🏠
-          </h1>
-          <p className="text-gray-600">
-            Post degli utenti che segui
-          </p>
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">Home 🏠</h1>
+          <p className="text-gray-600">Post degli utenti che segui</p>
         </div>
 
         {/* Create Post Form */}

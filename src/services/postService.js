@@ -24,6 +24,33 @@ export const fetchPosts = async (page = 0, size = 10) => {
 };
 
 // ============================================
+// GET - Feed personalizzato
+// ============================================
+export const fetchFeed = async (page = 0, size = 10) => {
+  try {
+    console.log(`📥 Fetching feed - page: ${page}, size: ${size}`);
+
+    const response = await api.get("/posts/feed", {
+      params: { page, size },
+    });
+
+    console.log("✅ Feed ricevuto:", response.data);
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    console.error("❌ Errore fetch feed:", error);
+    return {
+      success: false,
+      error: error.response?.data?.message || "Errore caricamento feed",
+      data: { content: [], last: true },
+    };
+  }
+};
+
+// ============================================
 // GET - Fetch post di un utente specifico
 // ============================================
 export const fetchUserPosts = async (userId) => {
@@ -43,23 +70,28 @@ export const fetchUserPosts = async (userId) => {
 };
 
 // ============================================
-// GET - Feed "Esplora" (utenti non seguiti)
+// GET - Feed Esplora
 // ============================================
 export const fetchExplorePosts = async (page = 0, size = 10) => {
   try {
+    console.log(`📥 Fetching explore - page: ${page}, size: ${size}`);
+
     const response = await api.get("/posts/explore", {
       params: { page, size },
     });
+
+    console.log("✅ Explore ricevuto:", response.data);
 
     return {
       success: true,
       data: response.data,
     };
   } catch (error) {
-    console.error("Errore nel fetch dei post esplora:", error);
+    console.error("❌ Errore fetch explore:", error);
     return {
       success: false,
-      error: error.response?.data?.message || "Errore nel caricamento dei post",
+      error: error.response?.data?.message || "Errore caricamento explore",
+      data: { content: [], last: true },
     };
   }
 };

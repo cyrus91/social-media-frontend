@@ -5,6 +5,7 @@ import LoadingSpinner from "../components/LoadingSpinner";
 import InfiniteScrollTrigger from "../components/InfiniteScrollTrigger";
 import useInfiniteScroll from "../hooks/useInfiniteScroll";
 import { fetchExplorePosts } from "../services/postService";
+import FollowButton from "../components/FollowButton";
 
 function ExplorePage() {
   // ✅ FETCH FUNCTION per infinite scroll (MEMOIZZATA!)
