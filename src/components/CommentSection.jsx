@@ -299,7 +299,7 @@ function CommentSection({
               </div>
             )}
 
-            {/* Input */}
+            {/* Input + Button */}
             <div className="flex-1">
               <textarea
                 value={commentText}
@@ -309,7 +309,15 @@ function CommentSection({
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none text-sm"
               />
 
-              {/* ... resto del form ... */}
+              {/* ✅ BOTTONE COMMENTA! */}
+              <div className="flex justify-end mt-2">
+                <button
+                  type="submit"
+                  disabled={submitting || !commentText.trim()}
+                  className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold text-sm transition disabled:opacity-50 disabled:cursor-not-allowed">
+                  {submitting ? "Invio..." : "Commenta"}
+                </button>
+              </div>
             </div>
           </form>
         </div>
