@@ -16,7 +16,6 @@ function NotificationBell(props) {
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
 
-  // ✅ FIX: Fetch unread count ogni 30 secondi (inline function)
   useEffect(() => {
     const loadCount = async () => {
       const result = await fetchUnreadCount();
@@ -29,10 +28,10 @@ function NotificationBell(props) {
 
     const interval = setInterval(() => {
       loadCount();
-    }, 30000); // 30 secondi
+    }, 5000); // ✅ 5 secondi (più reattivo!)
 
     return () => clearInterval(interval);
-  }, []); // ✅ Nessuna dipendenza
+  }, []);
 
   // Close dropdown quando clicchi fuori
   useEffect(() => {
@@ -68,23 +67,18 @@ function NotificationBell(props) {
       await markAsRead(notification.id);
       setUnreadCount((prev) => Math.max(0, prev - 1));
       setNotifications((prev) =>
-        prev.map((n) =>
-          n.id === notification.id ? { ...n, isRead: true } : n,
-        ),
+        prev.map((n) => (n.id === notification.id ? { ...n, isRead: true } : n))
       );
     }
 
     setIsOpen(false);
 
-    // ✅ NAVIGAZIONE INTELLIGENTE!
+    // Navigazione intelligente
     if (notification.type === "FOLLOW" && notification.actorUsername) {
-      // FOLLOW → Vai al profilo
       navigate(`/profile/${notification.actorUsername}`);
     } else if (notification.postId) {
-      // LIKE o COMMENT → Vai al post specifico!
       navigate(`/post/${notification.postId}`);
     } else if (notification.actorUsername) {
-      // Fallback: vai al profilo
       navigate(`/profile/${notification.actorUsername}`);
     }
 
@@ -103,13 +97,32 @@ function NotificationBell(props) {
     }
   };
 
+  // Gestione corretta timezone UTC
   const formatDate = (dateString) => {
+    // Parse come UTC (il backend invia LocalDateTime senza timezone)
     const date = new Date(dateString);
     const now = new Date();
+    
+    // Calcola differenza in millisecondi
     const diffMs = now - date;
     const diffMins = Math.floor(diffMs / 60000);
     const diffHours = Math.floor(diffMins / 60);
     const diffDays = Math.floor(diffHours / 24);
+
+    console.log("🕐 Debug date:", {
+      dateString,
+      parsedDate: date.toISOString(),
+      now: now.toISOString(),
+      diffMs,
+      diffMins,
+      diffHours,
+    });
+
+    if (diffMins < 0) {
+      // Data nel futuro (problema timezone!)
+      console.warn("⚠��� Data nel futuro rilevata - possibile problema timezone");
+      return "Adesso";
+    }
 
     if (diffMins < 1) return "Adesso";
     if (diffMins < 60) return `${diffMins}m fa`;
@@ -141,9 +154,7 @@ function NotificationBell(props) {
       <button
         onClick={handleToggle}
         className={`relative text-gray-700 hover:text-blue-600 transition p-2 rounded-full hover:bg-gray-100 ${
-          props.isMobile
-            ? "w-full flex items-center justify-start space-x-3"
-            : ""
+          props.isMobile ? "w-full flex items-center justify-start space-x-3" : ""
         }`}>
         {props.isMobile && <span className="text-lg">🔔</span>}
         <svg
@@ -181,7 +192,7 @@ function NotificationBell(props) {
       {isOpen && (
         <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-lg shadow-xl border border-gray-200 max-h-96 overflow-y-auto z-50">
           {/* Header */}
-          <div className="p-4 border-b border-gray-200 flex items-center justify-between sticky top-0 bg-white">
+          <div className="p-4 border-b border-gray-200 flex items-center justify-between sticky top-0 bg-white z-10">
             <h3 className="font-bold text-gray-800">Notifiche</h3>
             {unreadCount > 0 && (
               <button
