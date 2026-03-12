@@ -32,21 +32,58 @@ function CommentSection({
   // FORMAT DATE
   // ============================================
   const formatDate = (dateString) => {
-    const date = new Date(dateString);
+    // Il backend invia LocalDateTime senza timezone (es: "2026-03-11T09:44:21.987617")
+    // JavaScript lo interpreta come UTC, causando sfasamento!
+
+    let date;
+
+    if (dateString.includes("Z") || dateString.includes("+")) {
+      // Ha già timezone (formato ISO completo)
+      date = new Date(dateString);
+    } else {
+      // LocalDateTime senza timezone → Lo trattiamo come locale
+      // Soluzione: parse come stringa e crea Date nel timezone locale
+      date = new Date(dateString.replace("T", " "));
+    }
+
     const now = new Date();
+
+    // Calcola differenza in millisecondi
     const diffMs = now - date;
-    const diffMins = Math.floor(diffMs / 60000);
+    const diffSecs = Math.floor(diffMs / 1000);
+    const diffMins = Math.floor(diffSecs / 60);
     const diffHours = Math.floor(diffMins / 60);
     const diffDays = Math.floor(diffHours / 24);
 
-    if (diffMins < 1) return "Adesso";
+    // Debug (puoi rimuovere dopo il fix)
+    console.log("🕐 Comment date debug:", {
+      dateString,
+      parsedDate: date.toISOString(),
+      now: now.toISOString(),
+      diffSecs,
+      diffMins,
+      diffHours,
+    });
+
+    // Gestione date future (problema timezone non risolto)
+    if (diffSecs < 0) {
+      console.warn("⚠️ Data nel futuro - problema timezone!");
+      return "Adesso";
+    }
+
+    // ✅ PRECISIONE AL SECONDO
+    if (diffSecs < 10) return "Adesso";
+    if (diffSecs < 60) return `${diffSecs}s fa`;
     if (diffMins < 60) return `${diffMins}m fa`;
     if (diffHours < 24) return `${diffHours}h fa`;
+    if (diffDays === 1) return "Ieri";
     if (diffDays < 7) return `${diffDays}g fa`;
 
+    // Oltre 7 giorni: mostra data formattata
     return date.toLocaleDateString("it-IT", {
       day: "numeric",
       month: "short",
+      year: now.getFullYear() !== date.getFullYear() ? "numeric" : undefined,
     });
   };
 
