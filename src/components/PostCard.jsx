@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 import CommentSection from "./CommentSection";
 import useAuthStore from "../store/authStore";
 import Lightbox from "yet-another-react-lightbox";
+import LikesDrawer from "./LikesDrawer";
 import "yet-another-react-lightbox/styles.css";
 
 function PostCard({ post, onLikeUpdate, onPostDeleted }) {
@@ -16,6 +17,7 @@ function PostCard({ post, onLikeUpdate, onPostDeleted }) {
   const [showMenu, setShowMenu] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [showLikesDrawer, setShowLikesDrawer] = useState(false);
 
   // ✅ CHECK SE È IL MIO POST
   const isMyPost = currentUser?.username === post.authorUsername;
@@ -373,7 +375,11 @@ function PostCard({ post, onLikeUpdate, onPostDeleted }) {
               />
             </svg>
             <span className="font-semibold text-sm sm:text-base">
-              {likeCount}
+              <button
+                onClick={() => setShowLikesDrawer(true)}
+                className="text-sm font-semibold text-gray-800 hover:text-blue-500 transition">
+                {likeCount} {likeCount === 1 ? "like" : "likes"}
+              </button>
             </span>
           </button>
 
@@ -419,6 +425,12 @@ function PostCard({ post, onLikeUpdate, onPostDeleted }) {
         postId={post.id}
         initialCommentCount={commentCount}
         onCommentCountChange={handleCommentCountChange}
+      />
+      {/* Likes Drawer */}
+      <LikesDrawer
+        isOpen={showLikesDrawer}
+        onClose={() => setShowLikesDrawer(false)}
+        postId={post.id}
       />
     </div>
   );
