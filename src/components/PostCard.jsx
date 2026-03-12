@@ -7,6 +7,7 @@ import useAuthStore from "../store/authStore";
 import Lightbox from "yet-another-react-lightbox";
 import LikesDrawer from "./LikesDrawer";
 import "yet-another-react-lightbox/styles.css";
+import ImageCarousel from "./ImageCarousel";
 
 function PostCard({ post, onLikeUpdate, onPostDeleted }) {
   const currentUser = useAuthStore((state) => state.user);
@@ -16,8 +17,9 @@ function PostCard({ post, onLikeUpdate, onPostDeleted }) {
   const [commentCount, setCommentCount] = useState(post.commentCount ?? 0);
   const [showMenu, setShowMenu] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [showLikesDrawer, setShowLikesDrawer] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
 
   // ✅ CHECK SE È IL MIO POST
   const isMyPost = currentUser?.username === post.authorUsername;
@@ -300,57 +302,24 @@ function PostCard({ post, onLikeUpdate, onPostDeleted }) {
         </p>
       </div>
 
-      {/* Image - ✅ RESPONSIVE + LIGHTBOX! */}
-      {post.imageUrl && (
-        <>
-          <div
-            className="relative w-full cursor-pointer group"
-            onClick={() => setIsLightboxOpen(true)}>
-            <img
-              src={post.imageUrl}
-              alt="Post"
-              className="w-full h-auto max-h-[400px] sm:max-h-[600px] object-contain bg-gray-100 transition-opacity group-hover:opacity-95"
-              loading="lazy"
-            />
-            {/* Overlay hover con icona zoom */}
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition flex items-center justify-center opacity-0 group-hover:opacity-100">
-              <div className="bg-white/90 rounded-full p-3 shadow-lg">
-                <svg
-                  className="w-6 h-6 text-gray-800"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7"
-                  />
-                </svg>
-              </div>
-            </div>
-          </div>
+      {/* Images Carousel */}
+      {post.imageUrls && post.imageUrls.length > 0 && (
+        <ImageCarousel
+          images={post.imageUrls}
+          onImageClick={(index) => {
+            setLightboxIndex(index);
+            setLightboxOpen(true);
+          }}
+        />
+      )}
 
-          {/* Lightbox Modal */}
-          {/* Lightbox Modal */}
-          <Lightbox
-            open={isLightboxOpen}
-            close={() => setIsLightboxOpen(false)}
-            slides={[
-              {
-                src: post.imageUrl,
-                alt: `Post di ${post.authorUsername}`,
-                title: post.authorUsername,
-                description: post.content,
-              },
-            ]}
-            carousel={{ finite: true }} // ✅ Disabilita loop
-            render={{
-              buttonPrev: () => null, // ✅ Nascondi freccia prev
-              buttonNext: () => null, // ✅ Nascondi freccia next
-            }}
-          />
-        </>
+      {/* Lightbox Gallery */}
+      {lightboxOpen && (
+        <Lightbox
+          images={post.imageUrls}
+          initialIndex={lightboxIndex}
+          onClose={() => setLightboxOpen(false)}
+        />
       )}
 
       {/* Actions - Like & Comment - ✅ RESPONSIVE! */}

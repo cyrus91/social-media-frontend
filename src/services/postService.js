@@ -210,3 +210,38 @@ export const toggleLike = async (postId) => {
     };
   }
 };
+
+// ============================================
+// POST - Crea post con immagini multiple
+// ============================================
+export const createPostWithImages = async (content, images) => {
+  try {
+    const formData = new FormData();
+
+    if (content) {
+      formData.append("content", content);
+    }
+
+    // Aggiungi tutte le immagini con la stessa chiave "images"
+    images.forEach((image) => {
+      formData.append("images", image);
+    });
+
+    const response = await api.post("/posts", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    console.error("❌ Errore creazione post:", error);
+    return {
+      success: false,
+      error: error.response?.data?.message || "Errore nella creazione del post",
+    };
+  }
+};
