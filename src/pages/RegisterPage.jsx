@@ -20,7 +20,40 @@ function RegisterPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    setLoading(true);
+
+    // ✅ VALIDAZIONE USERNAME
+    const trimmedUsername = username.trim();
+    const usernameRegex = /^[a-zA-Z0-9_]+$/;
+
+    if (trimmedUsername.length < 3) {
+      toast.error("Lo username deve essere almeno 3 caratteri");
+      return;
+    }
+
+    if (trimmedUsername.length > 20) {
+      toast.error("Lo username deve essere massimo 20 caratteri");
+      return;
+    }
+
+    if (!usernameRegex.test(trimmedUsername)) {
+      toast.error(
+        "Lo username può contenere solo lettere, numeri e underscore",
+      );
+      return;
+    }
+
+    //  VALIDAZIONE EMAIL
+    const trimmedEmail = email.trim().toLowerCase();
+    if (!trimmedEmail.includes("@")) {
+      toast.error("Email non valida");
+      return;
+    }
+
+    //  VALIDAZIONE PASSWORD
+    if (password.length < 6) {
+      toast.error("La password deve essere almeno 6 caratteri");
+      return;
+    }
 
     // Validazione
     if (password !== confirmPassword) {
@@ -28,6 +61,8 @@ function RegisterPage() {
       setLoading(false);
       return;
     }
+
+    setLoading(true);
 
     const result = await register(username, email, password);
 
