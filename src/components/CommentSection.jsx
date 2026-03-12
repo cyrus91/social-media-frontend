@@ -3,6 +3,7 @@ import {
   fetchCommentsByPost,
   createComment,
   deleteComment,
+  updateComment,
 } from "../services/commentService";
 import useAuthStore from "../store/authStore";
 import toast from "react-hot-toast";
@@ -23,9 +24,12 @@ function CommentSection({
   const [commentText, setCommentText] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [commentCount, setCommentCount] = useState(initialCommentCount);
+  const [editingCommentId, setEditingCommentId] = useState(null);
+  const [editText, setEditText] = useState("");
+  const [showMenuId, setShowMenuId] = useState(null);
 
   // ============================================
-  // FORMAT DATE (dichiarato prima per essere usato ovunque)
+  // FORMAT DATE
   // ============================================
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -47,7 +51,7 @@ function CommentSection({
   };
 
   // ============================================
-  // LOAD COMMENTS (dichiarato prima del useEffect)
+  // LOAD COMMENTS
   // ============================================
   const loadComments = async () => {
     setLoading(true);
@@ -57,7 +61,6 @@ function CommentSection({
       setComments(result.data);
       setCommentCount(result.data.length);
 
-      // Notifica parent component del nuovo count
       if (onCommentCountChange) {
         onCommentCountChange(result.data.length);
       }
@@ -75,7 +78,6 @@ function CommentSection({
     if (isExpanded && comments.length === 0) {
       loadComments();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isExpanded]);
 
   // ============================================
@@ -89,7 +91,6 @@ function CommentSection({
       return;
     }
 
-    // Verifica che user sia autenticato
     if (!user || !user.id) {
       toast.error("Devi essere autenticato per commentare");
       return;
@@ -101,13 +102,14 @@ function CommentSection({
       const result = await createComment(postId, commentText.trim());
 
       if (result.success && result.data) {
-        // Optimistic UI: aggiungi subito il commento
         const newComment = {
-          id: result.data.id || Date.now(), // Fallback se manca id
+          id: result.data.id || Date.now(),
           content: commentText.trim(),
           authorUsername: result.data.authorUsername || user.username,
           authorId: result.data.authorId || user.id,
+          authorAvatarUrl: user.avatarUrl,
           createdAt: result.data.createdAt || new Date().toISOString(),
+          updatedAt: result.data.updatedAt,
           postId: postId,
         };
 
@@ -117,7 +119,6 @@ function CommentSection({
 
         toast.success("Commento pubblicato!");
 
-        // Notifica parent
         if (onCommentCountChange) {
           onCommentCountChange((commentCount || 0) + 1);
         }
@@ -133,10 +134,56 @@ function CommentSection({
   };
 
   // ============================================
+  // HANDLE EDIT START
+  // ============================================
+  const handleEditStart = (comment) => {
+    setEditingCommentId(comment.id);
+    setEditText(comment.content);
+    setShowMenuId(null);
+  };
+
+  // ============================================
+  // HANDLE EDIT SAVE
+  // ============================================
+  const handleEditSave = async (commentId) => {
+    if (!editText.trim()) {
+      toast.error("Il commento non può essere vuoto");
+      return;
+    }
+
+    const result = await updateComment(commentId, editText.trim());
+
+    if (result.success) {
+      setComments((prev) =>
+        prev.map((c) =>
+          c.id === commentId
+            ? { ...c, content: editText.trim(), updatedAt: new Date().toISOString() }
+            : c
+        )
+      );
+      setEditingCommentId(null);
+      setEditText("");
+      toast.success("Commento modificato");
+    } else {
+      toast.error(result.error || "Errore nella modifica");
+    }
+  };
+
+  // ============================================
+  // HANDLE EDIT CANCEL
+  // ============================================
+  const handleEditCancel = () => {
+    setEditingCommentId(null);
+    setEditText("");
+  };
+
+  // ============================================
   // HANDLE DELETE COMMENT
   // ============================================
   const handleDelete = async (commentId) => {
     if (!window.confirm("Eliminare questo commento?")) return;
+
+    setShowMenuId(null);
 
     const result = await deleteComment(commentId);
 
@@ -146,7 +193,6 @@ function CommentSection({
 
       toast.success("Commento eliminato");
 
-      // Notifica parent
       if (onCommentCountChange) {
         onCommentCountChange(commentCount - 1);
       }
@@ -197,10 +243,10 @@ function CommentSection({
 
       {/* Expanded section */}
       {isExpanded && (
-        <div className="mt-4 space-y-4">
+        <div className="mt-3 space-y-3">
           {/* Loading */}
           {loading && (
-            <div className="text-center py-4">
+            <div className="flex justify-center py-4">
               <div className="inline-block w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
             </div>
           )}
@@ -211,15 +257,14 @@ function CommentSection({
               {comments.map((comment) => (
                 <div
                   key={comment.id}
-                  className="flex space-x-3 bg-gray-50 rounded-lg p-3">
-                  {/* ✅ Avatar con immagine reale! */}
+                  className="flex space-x-3 bg-gray-50 rounded-lg p-3 relative group">
+                  {/* Avatar */}
                   {comment.authorAvatarUrl ? (
                     <img
                       src={comment.authorAvatarUrl}
                       alt={comment.authorUsername}
                       className="w-8 h-8 rounded-full object-cover flex-shrink-0 border-2 border-transparent hover:border-green-500 transition"
                       onError={(e) => {
-                        // Fallback se l'immagine non carica
                         e.target.style.display = "none";
                         e.target.nextElementSibling.style.display = "flex";
                       }}
@@ -244,33 +289,103 @@ function CommentSection({
                         <span className="text-xs text-gray-500">
                           {formatDate(comment.createdAt)}
                         </span>
+                        {comment.updatedAt &&
+                          comment.updatedAt !== comment.createdAt && (
+                            <span className="text-xs text-gray-400 italic">
+                              (modificato)
+                            </span>
+                          )}
                       </div>
 
-                      {/* Delete button (solo se sei l'autore) */}
+                      {/* Menu 3 pallini (solo se sei l'autore) */}
                       {user?.id === comment.authorId && (
-                        <button
-                          onClick={() => handleDelete(comment.id)}
-                          className="text-red-500 hover:text-red-600 transition"
-                          title="Elimina commento">
-                          <svg
-                            className="w-4 h-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24">
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                            />
-                          </svg>
-                        </button>
+                        <div className="relative">
+                          <button
+                            onClick={() =>
+                              setShowMenuId(
+                                showMenuId === comment.id ? null : comment.id
+                              )
+                            }
+                            className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-200 transition opacity-0 group-hover:opacity-100">
+                            <svg
+                              className="w-4 h-4"
+                              fill="currentColor"
+                              viewBox="0 0 20 20">
+                              <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                            </svg>
+                          </button>
+
+                          {/* Dropdown Menu */}
+                          {showMenuId === comment.id && (
+                            <div className="absolute right-0 mt-2 w-32 bg-white rounded-lg shadow-xl py-1 z-50 border border-gray-200">
+                              <button
+                                onClick={() => handleEditStart(comment)}
+                                className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition flex items-center space-x-2">
+                                <svg
+                                  className="w-4 h-4"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24">
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                  />
+                                </svg>
+                                <span>Modifica</span>
+                              </button>
+                              <button
+                                onClick={() => handleDelete(comment.id)}
+                                className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-gray-100 transition flex items-center space-x-2">
+                                <svg
+                                  className="w-4 h-4"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24">
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                  />
+                                </svg>
+                                <span>Elimina</span>
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       )}
                     </div>
 
-                    <p className="text-gray-700 text-sm mt-1 break-words">
-                      {comment.content}
-                    </p>
+                    {/* Commento normale o in edit */}
+                    {editingCommentId === comment.id ? (
+                      <div className="mt-2">
+                        <textarea
+                          value={editText}
+                          onChange={(e) => setEditText(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none text-sm"
+                          rows="2"
+                          autoFocus
+                        />
+                        <div className="flex items-center space-x-2 mt-2">
+                          <button
+                            onClick={() => handleEditSave(comment.id)}
+                            className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-lg transition">
+                            Salva
+                          </button>
+                          <button
+                            onClick={handleEditCancel}
+                            className="px-3 py-1 bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm rounded-lg transition">
+                            Annulla
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-gray-700 text-sm mt-1 break-words">
+                        {comment.content}
+                      </p>
+                    )}
                   </div>
                 </div>
               ))}
@@ -286,7 +401,7 @@ function CommentSection({
 
           {/* Add comment form */}
           <form onSubmit={handleSubmit} className="flex space-x-3">
-            {/* ✅ Avatar con immagine reale! */}
+            {/* Avatar */}
             {user?.avatarUrl ? (
               <img
                 src={user.avatarUrl}
@@ -299,7 +414,7 @@ function CommentSection({
               </div>
             )}
 
-            {/* Input + Button */}
+            {/* Input */}
             <div className="flex-1">
               <textarea
                 value={commentText}
@@ -309,7 +424,6 @@ function CommentSection({
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none text-sm"
               />
 
-              {/* ✅ BOTTONE COMMENTA! */}
               <div className="flex justify-end mt-2">
                 <button
                   type="submit"

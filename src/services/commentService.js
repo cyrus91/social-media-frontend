@@ -68,3 +68,26 @@ export const deleteComment = async (commentId) => {
     };
   }
 };
+
+// ============================================
+// PUT - Modifica commento
+// ============================================
+export const updateComment = async (commentId, content) => {
+  try {
+    const response = await api.put(`/comments/${commentId}`, {
+      content,
+    });
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    console.error("Errore nella modifica del commento:", error);
+    return {
+      success: false,
+      error:
+        error.response?.data?.message || "Errore nella modifica del commento",
+    };
+  }
+};
