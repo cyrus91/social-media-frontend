@@ -157,9 +157,13 @@ function CommentSection({
       setComments((prev) =>
         prev.map((c) =>
           c.id === commentId
-            ? { ...c, content: editText.trim(), updatedAt: new Date().toISOString() }
-            : c
-        )
+            ? {
+                ...c,
+                content: editText.trim(),
+                updatedAt: new Date().toISOString(),
+              }
+            : c,
+        ),
       );
       setEditingCommentId(null);
       setEditText("");
@@ -289,12 +293,17 @@ function CommentSection({
                         <span className="text-xs text-gray-500">
                           {formatDate(comment.createdAt)}
                         </span>
-                        {comment.updatedAt &&
-                          comment.updatedAt !== comment.createdAt && (
+                        {(() => {
+                          if (!comment.updatedAt) return null;
+                          const created = new Date(comment.createdAt).getTime();
+                          const updated = new Date(comment.updatedAt).getTime();
+                          // Differenza superiore a 1 secondo = è stato modificato
+                          return updated - created > 1000 ? (
                             <span className="text-xs text-gray-400 italic">
                               (modificato)
                             </span>
-                          )}
+                          ) : null;
+                        })()}
                       </div>
 
                       {/* Menu 3 pallini (solo se sei l'autore) */}
@@ -303,7 +312,7 @@ function CommentSection({
                           <button
                             onClick={() =>
                               setShowMenuId(
-                                showMenuId === comment.id ? null : comment.id
+                                showMenuId === comment.id ? null : comment.id,
                               )
                             }
                             className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-200 transition opacity-0 group-hover:opacity-100">
