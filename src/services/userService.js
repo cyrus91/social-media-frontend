@@ -322,3 +322,22 @@ export const updateProfile = async (profileData) => {
     };
   }
 };
+
+// ============================================
+// DELETE - Elimina account
+// ============================================
+export const deleteAccount = async (userId) => {
+  try {
+    await api.delete(`/users/${userId}`);
+
+    return {
+      success: true,
+    };
+  } catch (error) {
+    console.error("❌ Errore eliminazione account:", error);
+    return {
+      success: false,
+      error: error.response?.data?.message || "Errore eliminazione account",
+    };
+  }
+};
