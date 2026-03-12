@@ -376,7 +376,11 @@ function PostCard({ post, onLikeUpdate, onPostDeleted }) {
             </svg>
             <span className="font-semibold text-sm sm:text-base">
               <button
-                onClick={() => setShowLikesDrawer(true)}
+                onClick={(e) => {
+                  e.stopPropagation(); // BLOCCA PROPAGAZIONE
+                  e.preventDefault(); // PREVIENI DEFAULT
+                  setShowLikesDrawer(true);
+                }}
                 className="text-sm font-semibold text-gray-800 hover:text-blue-500 transition">
                 {likeCount} {likeCount === 1 ? "like" : "likes"}
               </button>
@@ -431,6 +435,7 @@ function PostCard({ post, onLikeUpdate, onPostDeleted }) {
         isOpen={showLikesDrawer}
         onClose={() => setShowLikesDrawer(false)}
         postId={post.id}
+        post={post}
       />
     </div>
   );

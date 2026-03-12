@@ -4,7 +4,7 @@ import UserListItem from "./UserListItem";
 import api from "../services/api";
 import toast from "react-hot-toast";
 
-function LikesDrawer({ isOpen, onClose, postId }) {
+function LikesDrawer({ isOpen, onClose, postId, post }) {  // ✅ AGGIUNGI post prop
   const [likes, setLikes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(0);
@@ -68,12 +68,59 @@ function LikesDrawer({ isOpen, onClose, postId }) {
     }
   };
 
+  // ============================================
+  // POST PREVIEW COMPONENT
+  // ============================================
+  const PostPreview = post ? (
+    <div className="bg-white rounded-xl shadow-2xl overflow-hidden max-w-lg">
+      {/* Post Image (se esiste) */}
+      {post.imageUrl && (
+        <img
+          src={post.imageUrl}
+          alt="Post"
+          className="w-full max-h-[60vh] object-contain bg-black"
+        />
+      )}
+
+      {/* Post Content */}
+      <div className="p-6">
+        {/* Author */}
+        <div className="flex items-center space-x-3 mb-4">
+          {post.authorAvatarUrl ? (
+            <img
+              src={post.authorAvatarUrl}
+              alt={post.authorUsername}
+              className="w-10 h-10 rounded-full object-cover border-2 border-gray-200"
+            />
+          ) : (
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold">
+              {post.authorUsername?.charAt(0).toUpperCase()}
+            </div>
+          )}
+          <div>
+            <p className="font-semibold text-gray-800">{post.authorUsername}</p>
+            <p className="text-xs text-gray-500">{formatDate(post.createdAt)}</p>
+          </div>
+        </div>
+
+        {/* Content */}
+        {post.content && (
+          <p className="text-gray-800 whitespace-pre-wrap break-words">
+            {post.content}
+          </p>
+        )}
+      </div>
+    </div>
+  ) : null;
+
   return (
     <Drawer
       isOpen={isOpen}
       onClose={onClose}
       title="Mi piace"
-      size="md">
+      size="md"
+      showPostPreview={!!post}  // ✅ Abilita preview se post esiste
+      postContent={PostPreview}>  // ✅ Passa post preview
       
       <div onScroll={handleScroll} className="h-full overflow-y-auto">
         {/* Loading Skeleton */}
