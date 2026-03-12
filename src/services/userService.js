@@ -326,9 +326,13 @@ export const updateProfile = async (profileData) => {
 // ============================================
 // DELETE - Elimina account
 // ============================================
-export const deleteAccount = async (userId) => {
+export const deleteAccount = async () => {
   try {
-    await api.delete(`/users/${userId}`);
+    console.log("🗑️ Richiesta eliminazione account");
+
+    await api.delete("/users/me");
+
+    console.log("✅ Account eliminato");
 
     return {
       success: true,
