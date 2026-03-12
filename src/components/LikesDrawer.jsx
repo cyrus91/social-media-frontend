@@ -119,8 +119,8 @@ function LikesDrawer({ isOpen, onClose, postId, post }) {  // ✅ AGGIUNGI post 
       onClose={onClose}
       title="Mi piace"
       size="md"
-      showPostPreview={!!post}  // ✅ Abilita preview se post esiste
-      postContent={PostPreview}>  // ✅ Passa post preview
+      showPostPreview={!!post}
+      postContent={PostPreview}>
       
       <div onScroll={handleScroll} className="h-full overflow-y-auto">
         {/* Loading Skeleton */}
