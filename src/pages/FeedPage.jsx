@@ -8,13 +8,13 @@ import useInfiniteScroll from "../hooks/useInfiniteScroll";
 import { fetchFeed } from "../services/postService";
 
 function FeedPage() {
-  // ✅ FETCH FUNCTION per infinite scroll (MEMOIZZATA!)
+  //  FETCH FUNCTION per infinite scroll (MEMOIZZATA!)
   const fetchFeedData = useCallback(async (page, size) => {
     console.log(`📥 Fetching feed page ${page}`);
     return await fetchFeed(page, size);
   }, []);
 
-  // ✅ USA HOOK INFINITE SCROLL
+  //  USA HOOK INFINITE SCROLL
   const {
     items: posts,
     loading,
@@ -30,7 +30,7 @@ function FeedPage() {
 
   // Handle post creato
   const handleNewPost = () => {
-    console.log("✅ Nuovo post creato - ricarico feed");
+    console.log(" Nuovo post creato - ricarico feed");
     reset();
   };
 
@@ -127,7 +127,7 @@ function FeedPage() {
               />
             ))}
 
-            {/* ✅ INFINITE SCROLL TRIGGER */}
+            {/*  INFINITE SCROLL TRIGGER */}
             <InfiniteScrollTrigger
               onIntersect={loadMore}
               loading={loading}

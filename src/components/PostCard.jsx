@@ -143,7 +143,7 @@ function PostCard({ post, onLikeUpdate, onPostDeleted, onPostUpdated }) {
 
       toast.success("Post modificato!");
 
-      // ✅ Notifica il parent
+      //  Notifica il parent
       if (onPostUpdated) {
         onPostUpdated(post.id, { content: editContent.trim() });
       }
@@ -158,13 +158,13 @@ function PostCard({ post, onLikeUpdate, onPostDeleted, onPostUpdated }) {
     }
   };
 
-  // ✅ HANDLE CANCEL EDIT
+  //  HANDLE CANCEL EDIT
   const handleCancelEdit = () => {
     setEditContent(localPost.content || "");
     setIsEditing(false);
   };
 
-  // ✅ HANDLE REPORT POST
+  //  HANDLE REPORT POST
   const handleReportPost = () => {
     setShowMenu(false);
     toast("Segnalazione post - Coming soon!", { icon: "🚧" });
@@ -173,7 +173,7 @@ function PostCard({ post, onLikeUpdate, onPostDeleted, onPostUpdated }) {
 
   return (
     <div className="bg-white rounded-lg shadow hover:shadow-md transition-shadow duration-300 overflow-hidden">
-      {/* Header - User info - ✅ RESPONSIVE! */}
+      {/* Header - User info -  RESPONSIVE! */}
       <div className="p-3 sm:p-4 flex items-center justify-between border-b border-gray-100">
         <Link
           to={`/profile/${post.authorUsername}`}
@@ -210,7 +210,7 @@ function PostCard({ post, onLikeUpdate, onPostDeleted, onPostUpdated }) {
           </div>
         </Link>
 
-        {/* ✅ LINK "VEDI POST" + MENU 3 PALLINI */}
+        {/*  LINK "VEDI POST" + MENU 3 PALLINI */}
         <div className="flex items-center space-x-2 sm:space-x-3">
           {/* Link "Vedi post" - visibile solo su desktop */}
           <Link
@@ -249,7 +249,7 @@ function PostCard({ post, onLikeUpdate, onPostDeleted, onPostUpdated }) {
               <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl py-2 z-50 border border-gray-200">
                 {isMyPost ? (
                   <>
-                    {/* ✅ AGGIUNGI "Vedi post" ANCHE NEL MENU (per mobile) */}
+                    {/*  AGGIUNGI "Vedi post" ANCHE NEL MENU (per mobile) */}
                     <Link
                       to={`/post/${post.id}`}
                       onClick={() => setShowMenu(false)}
@@ -310,7 +310,7 @@ function PostCard({ post, onLikeUpdate, onPostDeleted, onPostUpdated }) {
                   </>
                 ) : (
                   <>
-                    {/* ✅ AGGIUNGI "Vedi post" ANCHE PER POST ALTRUI (per mobile) */}
+                    {/*  AGGIUNGI "Vedi post" ANCHE PER POST ALTRUI (per mobile) */}
                     <Link
                       to={`/post/${post.id}`}
                       onClick={() => setShowMenu(false)}
@@ -359,7 +359,7 @@ function PostCard({ post, onLikeUpdate, onPostDeleted, onPostUpdated }) {
       {/* Body - Content */}
       <div className="p-3 sm:p-4">
         {isEditing ? (
-          // ✅ MODALITÀ EDIT
+          //  MODALITÀ EDIT
           <div className="space-y-3">
             <div className="flex items-center space-x-2">
               <button
@@ -375,7 +375,7 @@ function PostCard({ post, onLikeUpdate, onPostDeleted, onPostUpdated }) {
             </div>
           </div>
         ) : (
-          // ✅ VISUALIZZAZIONE NORMALE
+          //  VISUALIZZAZIONE NORMALE
           <p className="text-gray-800 whitespace-pre-wrap break-words text-sm sm:text-base">
             {localPost.content}
           </p>
@@ -414,7 +414,7 @@ function PostCard({ post, onLikeUpdate, onPostDeleted, onPostUpdated }) {
         </>
       )}
 
-      {/* Actions - Like & Comment - ✅ RESPONSIVE! */}
+      {/* Actions - Like & Comment -  RESPONSIVE! */}
       <div className="p-3 sm:p-4 flex items-center justify-between border-t border-b border-gray-100">
         <div className="flex items-center space-x-4 sm:space-x-6">
           {/* Like button */}

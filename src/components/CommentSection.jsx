@@ -71,7 +71,7 @@ function CommentSection({
       return "Adesso";
     }
 
-    // ✅ PRECISIONE AL SECONDO
+    //  PRECISIONE AL SECONDO
     if (diffSecs < 10) return "Adesso";
     if (diffSecs < 60) return `${diffSecs}s fa`;
     if (diffMins < 60) return `${diffMins}m fa`;

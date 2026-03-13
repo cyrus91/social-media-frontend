@@ -4,7 +4,8 @@ import UserListItem from "./UserListItem";
 import api from "../services/api";
 import toast from "react-hot-toast";
 
-function LikesDrawer({ isOpen, onClose, postId, post }) {  // ✅ AGGIUNGI post prop
+function LikesDrawer({ isOpen, onClose, postId, post }) {
+  //  AGGIUNGI post prop
   const [likes, setLikes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(0);
@@ -99,7 +100,9 @@ function LikesDrawer({ isOpen, onClose, postId, post }) {  // ✅ AGGIUNGI post 
           )}
           <div>
             <p className="font-semibold text-gray-800">{post.authorUsername}</p>
-            <p className="text-xs text-gray-500">{formatDate(post.createdAt)}</p>
+            <p className="text-xs text-gray-500">
+              {formatDate(post.createdAt)}
+            </p>
           </div>
         </div>
 
@@ -121,13 +124,14 @@ function LikesDrawer({ isOpen, onClose, postId, post }) {  // ✅ AGGIUNGI post 
       size="md"
       showPostPreview={!!post}
       postContent={PostPreview}>
-      
       <div onScroll={handleScroll} className="h-full overflow-y-auto">
         {/* Loading Skeleton */}
         {loading && page === 0 && (
           <div className="space-y-3 p-6">
             {[...Array(5)].map((_, i) => (
-              <div key={i} className="flex items-center space-x-3 animate-pulse">
+              <div
+                key={i}
+                className="flex items-center space-x-3 animate-pulse">
                 <div className="w-12 h-12 bg-gray-200 rounded-full" />
                 <div className="flex-1">
                   <div className="h-4 bg-gray-200 rounded w-1/3 mb-2" />

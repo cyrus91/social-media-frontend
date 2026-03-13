@@ -21,7 +21,7 @@ function Navbar() {
         loading: "Disconnessione...",
         success: "Logout effettuato!",
         error: "Errore nel logout",
-      }
+      },
     );
     setShowDropdown(false);
     setShowMobileMenu(false);
@@ -56,7 +56,7 @@ function Navbar() {
               Esplora
             </Link>
 
-            {/* ✅ NOTIFICATION BELL DESKTOP */}
+            {/*  NOTIFICATION BELL DESKTOP */}
             <NotificationBell />
 
             {/* User Dropdown */}
@@ -186,9 +186,12 @@ function Navbar() {
                 🌍 Esplora
               </Link>
 
-              {/* ✅ NOTIFICATION BELL MOBILE */}
+              {/*  NOTIFICATION BELL MOBILE */}
               <div className="px-4">
-                <NotificationBell isMobile={true} onClose={() => setShowMobileMenu(false)} />
+                <NotificationBell
+                  isMobile={true}
+                  onClose={() => setShowMobileMenu(false)}
+                />
               </div>
 
               <Link

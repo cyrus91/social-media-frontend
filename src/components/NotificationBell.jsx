@@ -28,7 +28,7 @@ function NotificationBell(props) {
 
     const interval = setInterval(() => {
       loadCount();
-    }, 5000); // ✅ 5 secondi (più reattivo!)
+    }, 5000); //  5 secondi (più reattivo!)
 
     return () => clearInterval(interval);
   }, []);
@@ -100,7 +100,7 @@ function NotificationBell(props) {
   };
 
   // Gestione corretta timezone UTC
-  // ✅ FIX: Parsing corretto timezone + precisione secondi
+  //  FIX: Parsing corretto timezone + precisione secondi
   const formatDate = (dateString) => {
     // Il backend invia LocalDateTime senza timezone (es: "2026-03-11T09:44:21.987617")
     // JavaScript lo interpreta come UTC, causando sfasamento!
@@ -135,13 +135,13 @@ function NotificationBell(props) {
       diffHours,
     });
 
-    // ✅ Gestione date future (problema timezone)
+    //  Gestione date future (problema timezone)
     if (diffSecs < 0) {
       console.warn("⚠️ Data nel futuro - problema timezone!");
       return "Adesso";
     }
 
-    // ✅ Precisione al secondo!
+    //  Precisione al secondo!
     if (diffSecs < 10) return "Adesso";
     if (diffSecs < 60) return `${diffSecs}s fa`;
     if (diffMins < 60) return `${diffMins}m fa`;

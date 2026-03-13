@@ -9,11 +9,11 @@ export const login = async (credentials) => {
 
     const response = await api.post("/auth/login", credentials);
 
-    console.log("✅ Login riuscito:", response.data);
+    console.log(" Login riuscito:", response.data);
 
     const { token, user } = response.data;
 
-    // ✅ Carica profilo completo per avere avatar
+    //  Carica profilo completo per avere avatar
     try {
       const profileResponse = await api.get(`/users/${user.username}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -22,12 +22,12 @@ export const login = async (credentials) => {
       // Usa i dati completi del profilo (include avatarUrl!)
       const fullUser = profileResponse.data;
 
-      console.log("✅ Profilo completo caricato:", fullUser);
+      console.log(" Profilo completo caricato:", fullUser);
 
       return {
         success: true,
         token,
-        user: fullUser, // ✅ Include avatarUrl!
+        user: fullUser, //  Include avatarUrl!
       };
     } catch (error) {
       console.warn("⚠️ Impossibile caricare profilo completo, uso dati base");
@@ -65,7 +65,7 @@ export const register = async (username, email, password) => {
 
     const response = await api.post("/auth/register", payload);
 
-    console.log("✅ Risposta register completa:", response.data);
+    console.log(" Risposta register completa:", response.data);
 
     // Estrai TUTTI i token dalla response
     const accessToken = response.data.accessToken;
@@ -87,11 +87,11 @@ export const register = async (username, email, password) => {
       };
     }
 
-    console.log("✅ Token selezionato:", finalToken.substring(0, 30) + "...");
+    console.log(" Token selezionato:", finalToken.substring(0, 30) + "...");
 
     const user = response.data.user;
 
-    // ✅ AGGIUNGI QUESTO: Carica profilo completo per avere avatar
+    //  AGGIUNGI QUESTO: Carica profilo completo per avere avatar
     try {
       const profileResponse = await api.get(`/users/${user.username}`, {
         headers: { Authorization: `Bearer ${finalToken}` },
@@ -100,15 +100,17 @@ export const register = async (username, email, password) => {
       // Usa i dati completi del profilo (include avatarUrl!)
       const fullUser = profileResponse.data;
 
-      console.log("✅ Profilo completo caricato dopo register:", fullUser);
+      console.log(" Profilo completo caricato dopo register:", fullUser);
 
       return {
         success: true,
         token: finalToken,
-        user: fullUser, // ✅ Include avatarUrl!
+        user: fullUser, //  Include avatarUrl!
       };
     } catch (error) {
-      console.warn("⚠️ Impossibile caricare profilo completo dopo register, uso dati base");
+      console.warn(
+        "⚠️ Impossibile caricare profilo completo dopo register, uso dati base",
+      );
       return {
         success: true,
         token: finalToken,

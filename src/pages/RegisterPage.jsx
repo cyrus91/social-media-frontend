@@ -21,7 +21,7 @@ function RegisterPage() {
     e.preventDefault();
     setError("");
 
-    // ✅ VALIDAZIONE USERNAME
+    //  VALIDAZIONE USERNAME
     const trimmedUsername = username.trim();
     const usernameRegex = /^[a-zA-Z0-9_]+$/;
 
@@ -67,7 +67,7 @@ function RegisterPage() {
     const result = await register(username, email, password);
 
     if (result.success) {
-      // ✅ CORRETTO: result.user e result.token!
+      //  CORRETTO: result.user e result.token!
       authLogin(result.user, result.token);
       toast.success(`Benvenuto, ${result.user.username}!`);
       navigate("/feed");

@@ -60,7 +60,7 @@ api.interceptors.response.use(
         "/users",
         "/posts",
         "/comments",
-        "/follows", // ✅ AGGIUNTO!
+        "/follows", //  AGGIUNTO!
       ];
 
       const isPublicGetEndpoint =
@@ -85,7 +85,7 @@ api.interceptors.response.use(
           }, 100);
         }
       } else {
-        console.log("✅ 401 ignorato");
+        console.log(" 401 ignorato");
       }
     }
 

@@ -11,7 +11,7 @@ export const followUser = async (followedId) => {
       followedId: followedId,
     });
 
-    console.log("✅ Follow riuscito:", response.data);
+    console.log(" Follow riuscito:", response.data);
 
     return {
       success: true,
@@ -38,7 +38,7 @@ export const unfollowUser = async (followedId) => {
 
     const response = await api.delete(`/follows/user/${followedId}`);
 
-    console.log("✅ Unfollow riuscito");
+    console.log(" Unfollow riuscito");
 
     return {
       success: true,
@@ -65,7 +65,7 @@ export const checkIfFollowing = async (followedId) => {
 
     const response = await api.get(`/follows/is-following/${followedId}`);
 
-    console.log("✅ Following status:", response.data);
+    console.log(" Following status:", response.data);
 
     return {
       success: true,

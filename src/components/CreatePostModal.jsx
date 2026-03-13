@@ -91,33 +91,33 @@ function CreatePostModal({ isOpen, onClose, onPostCreated }) {
   };
 
   // Handle submit
-const handleSubmit = async (e) => {
-  e.preventDefault()
-  setLoading(true)
-  
-  console.log('📝 Creating post...')
-  console.log('📦 Content:', content)
-  console.log('🏷️ Content type:', typeof content)
-  console.log('🖼️ Image:', imageFile ? imageFile.name : 'None')
-  
-  // ✅ ASSICURATI CHE content SIA STRINGA
-  const contentString = String(content).trim()
-  
-  console.log('📦 Content string:', contentString)
-  
-  // Chiama service
-  const result = await createPost(contentString, imageFile)
-  
-  if (result.success) {
-    toast.success('Post creato!')
-    onPostCreated(result.data)
-    handleClose()
-  } else {
-    toast.error(result.error)
-  }
-  
-  setLoading(false)
-}
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    console.log("📝 Creating post...");
+    console.log("📦 Content:", content);
+    console.log("🏷️ Content type:", typeof content);
+    console.log("🖼️ Image:", imageFile ? imageFile.name : "None");
+
+    //  ASSICURATI CHE content SIA STRINGA
+    const contentString = String(content).trim();
+
+    console.log("📦 Content string:", contentString);
+
+    // Chiama service
+    const result = await createPost(contentString, imageFile);
+
+    if (result.success) {
+      toast.success("Post creato!");
+      onPostCreated(result.data);
+      handleClose();
+    } else {
+      toast.error(result.error);
+    }
+
+    setLoading(false);
+  };
 
   // Reset form e chiudi
   const handleClose = () => {

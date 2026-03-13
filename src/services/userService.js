@@ -9,7 +9,7 @@ export const fetchUserProfile = async (username) => {
 
     const response = await api.get(`/users/${username}`);
 
-    console.log("✅ Profilo ricevuto:", response.data);
+    console.log(" Profilo ricevuto:", response.data);
 
     return {
       success: true,
@@ -204,7 +204,7 @@ export const searchUsers = async (query) => {
       params: { q: query.trim() },
     });
 
-    console.log("✅ Risultati ricerca:", response.data.length);
+    console.log(" Risultati ricerca:", response.data.length);
 
     return {
       success: true,
@@ -229,7 +229,7 @@ export const updateBio = async (bio) => {
 
     const response = await api.put(`/users/me/bio`, { bio });
 
-    console.log("✅ Bio aggiornata:", response.data);
+    console.log(" Bio aggiornata:", response.data);
 
     return {
       success: true,
@@ -260,7 +260,7 @@ export const uploadAvatar = async (file) => {
       },
     });
 
-    console.log("✅ Avatar caricato:", response.data);
+    console.log(" Avatar caricato:", response.data);
 
     return {
       success: true,
@@ -284,7 +284,7 @@ export const deleteAvatar = async () => {
 
     const response = await api.delete(`/users/me/avatar`);
 
-    console.log("✅ Avatar rimosso:", response.data);
+    console.log(" Avatar rimosso:", response.data);
 
     return {
       success: true,
@@ -308,7 +308,7 @@ export const updateProfile = async (profileData) => {
 
     const response = await api.put(`/users/me`, profileData);
 
-    console.log("✅ Profilo aggiornato:", response.data);
+    console.log(" Profilo aggiornato:", response.data);
 
     return {
       success: true,
@@ -332,7 +332,7 @@ export const deleteAccount = async () => {
 
     await api.delete("/users/me");
 
-    console.log("✅ Account eliminato");
+    console.log(" Account eliminato");
 
     return {
       success: true,

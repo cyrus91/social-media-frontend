@@ -2,17 +2,13 @@ import { useState, useEffect, useRef, useCallback } from "react";
 
 /**
  * Hook per infinite scroll con Intersection Observer
- * 
+ *
  * @param {Function} fetchFunction - Funzione che carica i dati (deve ritornare { content, last })
  * @param {Object} options - Opzioni configurazione
  * @returns {Object} - { items, loading, hasMore, error, loadMore, reset }
  */
 function useInfiniteScroll(fetchFunction, options = {}) {
-  const {
-    pageSize = 10,
-    initialPage = 0,
-    enabled = true,
-  } = options;
+  const { pageSize = 10, initialPage = 0, enabled = true } = options;
 
   const [items, setItems] = useState([]);
   const [page, setPage] = useState(initialPage);
@@ -26,10 +22,10 @@ function useInfiniteScroll(fetchFunction, options = {}) {
   // Funzione per caricare i dati
   const loadMore = useCallback(async () => {
     if (isFetching.current || !hasMore || !enabled) {
-      console.log("⏸️ Skip loadMore:", { 
-        isFetching: isFetching.current, 
-        hasMore, 
-        enabled 
+      console.log("⏸️ Skip loadMore:", {
+        isFetching: isFetching.current,
+        hasMore,
+        enabled,
       });
       return;
     }
@@ -45,12 +41,12 @@ function useInfiniteScroll(fetchFunction, options = {}) {
 
       if (result.success) {
         const newItems = result.data.content || result.data;
-        const isLastPage = result.data.last ?? (newItems.length < pageSize);
+        const isLastPage = result.data.last ?? newItems.length < pageSize;
 
-        console.log(`✅ Caricati ${newItems.length} items`, {
+        console.log(` Caricati ${newItems.length} items`, {
           isLastPage,
           page,
-          totalItems: items.length + newItems.length
+          totalItems: items.length + newItems.length,
         });
 
         setItems((prev) => [...prev, ...newItems]);
@@ -70,7 +66,13 @@ function useInfiniteScroll(fetchFunction, options = {}) {
 
   // Carica prima pagina automaticamente (SOLO UNA VOLTA!)
   useEffect(() => {
-    if (shouldLoadInitial && enabled && items.length === 0 && !loading && !isFetching.current) {
+    if (
+      shouldLoadInitial &&
+      enabled &&
+      items.length === 0 &&
+      !loading &&
+      !isFetching.current
+    ) {
       console.log("🚀 Caricamento iniziale prima pagina");
       setShouldLoadInitial(false);
       loadMore();

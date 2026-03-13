@@ -31,7 +31,7 @@ function ProfilePage() {
     try {
       console.log("📊 Fetching post count for user:", userId);
       const response = await api.get(`/posts/author/${userId}/count`);
-      console.log("✅ Post count ricevuto:", response.data.count);
+      console.log(" Post count ricevuto:", response.data.count);
       setProfile((prev) => ({
         ...prev,
         postCount: response.data.count,
@@ -80,7 +80,7 @@ function ProfilePage() {
     async function doLoadPosts() {
       setPostsLoading(true);
 
-      // ✅ USA ENDPOINT SPECIFICO PER UTENTE!
+      //  USA ENDPOINT SPECIFICO PER UTENTE!
       try {
         const response = await api.get(`/posts/author/${profile.id}`, {
           params: { page: 0, size: 100 }, // Carica molti post (o usa infinite scroll dopo)
@@ -175,7 +175,7 @@ function ProfilePage() {
       <Navbar />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
-        {/* Profile Header - ✅ RESPONSIVE + LEGGIBILE! */}
+        {/* Profile Header -  RESPONSIVE + LEGGIBILE! */}
         <div className="bg-white rounded-lg shadow overflow-hidden mb-4 sm:mb-6">
           {/* Cover Photo */}
           <div className="h-24 sm:h-32 md:h-48 bg-gradient-to-r from-blue-500 to-purple-500"></div>
@@ -202,7 +202,7 @@ function ProfilePage() {
               <div className="flex-1 mt-4 sm:mt-0 text-center sm:text-left">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    {/* ✅ NOME E USERNAME LEGGIBILI (NERO SU BIANCO)! */}
+                    {/*  NOME E USERNAME LEGGIBILI (NERO SU BIANCO)! */}
                     <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
                       {profile.username}
                     </h1>
@@ -275,7 +275,7 @@ function ProfilePage() {
                   <span>Membro da {formatJoinDate(profile.createdAt)}</span>
                 </div>
 
-                {/* ✅ STATS - COUNTER PRESENTI! */}
+                {/*  STATS - COUNTER PRESENTI! */}
                 <div className="flex justify-center sm:justify-start space-x-4 sm:space-x-6 md:space-x-8 mt-3 sm:mt-4">
                   <div className="text-center">
                     <p className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800">
@@ -311,7 +311,7 @@ function ProfilePage() {
           </div>
         </div>
 
-        {/* Tabs - ✅ RESPONSIVE! */}
+        {/* Tabs -  RESPONSIVE! */}
         <div className="bg-white rounded-lg shadow mb-4 sm:mb-6">
           <div className="flex border-b border-gray-200">
             <button

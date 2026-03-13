@@ -8,13 +8,13 @@ import { fetchExplorePosts } from "../services/postService";
 import FollowButton from "../components/FollowButton";
 
 function ExplorePage() {
-  // ✅ FETCH FUNCTION per infinite scroll (MEMOIZZATA!)
+  //  FETCH FUNCTION per infinite scroll (MEMOIZZATA!)
   const fetchExploreData = useCallback(async (page, size) => {
     console.log(`📥 Fetching explore page ${page}`);
     return await fetchExplorePosts(page, size);
-  }, []); // ✅ NESSUNA DIPENDENZA!
+  }, []); //  NESSUNA DIPENDENZA!
 
-  // ✅ USA HOOK INFINITE SCROLL
+  //  USA HOOK INFINITE SCROLL
   const {
     items: posts,
     loading,
@@ -110,7 +110,7 @@ function ExplorePage() {
               />
             ))}
 
-            {/* ✅ INFINITE SCROLL TRIGGER */}
+            {/*  INFINITE SCROLL TRIGGER */}
             <InfiniteScrollTrigger
               onIntersect={loadMore}
               loading={loading}

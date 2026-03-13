@@ -23,7 +23,7 @@ function LoginPage() {
     const result = await login({ username, password });
 
     if (result.success) {
-      // ✅ PASSA user E token SEPARATI!
+      //  PASSA user E token SEPARATI!
       authLogin(result.user, result.token);
       toast.success(`Bentornato, ${result.user.username}!`);
       navigate("/feed");

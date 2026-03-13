@@ -1,24 +1,70 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
 import toast from "react-hot-toast";
 import api from "../services/api";
 
 function EditPostModal({ isOpen, onClose, post, onPostUpdated }) {
-  const [content, setContent] = useState(post.content || "");
-  
-  // ✅ TRACCIA IMMAGINI TRAMITE URL, NON INDICE
-  const originalImages = post.imageUrls || (post.imageUrl ? [post.imageUrl] : []);
-  const [existingImages, setExistingImages] = useState([...originalImages]);
-  const [imagesToRemove, setImagesToRemove] = useState([]); // ✅ URL delle immagini da rimuovere
-  
+  //  State iniziali
+  const [content, setContent] = useState("");
+  const [existingImages, setExistingImages] = useState([]);
+  const [imagesToRemove, setImagesToRemove] = useState([]);
   const [newImages, setNewImages] = useState([]);
   const [newImagePreviews, setNewImagePreviews] = useState([]);
   const [saving, setSaving] = useState(false);
 
   // ============================================
+  // RESET STATE QUANDO MODAL SI APRE
+  // ============================================
+  useEffect(() => {
+    if (isOpen) {
+      //  Inizializza state con i dati del post
+      const images = post.imageUrls || (post.imageUrl ? [post.imageUrl] : []);
+      setContent(post.content || "");
+      setExistingImages([...images]);
+      setImagesToRemove([]);
+      setNewImages([]);
+      setNewImagePreviews([]);
+      setSaving(false);
+
+      console.log("🔄 Modal aperto - State inizializzato:", {
+        content: post.content,
+        images: images.length,
+      });
+    }
+  }, [isOpen, post.id]);
+
+  // ============================================
+  // CLOSE HANDLER CON RESET
+  // ============================================
+  const handleClose = () => {
+    //  Reset state
+    setNewImages([]);
+    setNewImagePreviews([]);
+    setImagesToRemove([]);
+
+    console.log("❌ Modal chiuso - State pulito");
+    onClose();
+  };
+
+  // ============================================
+  // REMOVE EXISTING IMAGE
+  // ============================================
+  const handleRemoveExistingImage = (index) => {
+    if (existingImages.length === 1 && newImages.length === 0) {
+      toast.error("Devi lasciare almeno un'immagine o aggiungerne una nuova");
+      return;
+    }
+
+    const imageUrl = existingImages[index];
+    console.log(`🗑️ Rimozione immagine: ${imageUrl}`);
+
+    setImagesToRemove((prev) => [...prev, imageUrl]);
+    setExistingImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  // ============================================
   // ADD NEW IMAGES (Drag & Drop)
   // ============================================
-  // ✅ Hook must be called unconditionally (before any early return)
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: {
       "image/*": [".png", ".jpg", ".jpeg", ".webp", ".gif"],
@@ -26,8 +72,8 @@ function EditPostModal({ isOpen, onClose, post, onPostUpdated }) {
     maxFiles: 5,
     maxSize: 5 * 1024 * 1024,
     onDrop: (acceptedFiles, rejectedFiles) => {
-      // Validazione
-      const totalImages = existingImages.length + newImages.length + acceptedFiles.length;
+      const totalImages =
+        existingImages.length + newImages.length + acceptedFiles.length;
       if (totalImages > 5) {
         toast.error("Massimo 5 immagini per post");
         return;
@@ -41,10 +87,8 @@ function EditPostModal({ isOpen, onClose, post, onPostUpdated }) {
         });
       });
 
-      // Aggiungi nuove immagini
       setNewImages((prev) => [...prev, ...acceptedFiles]);
 
-      // Genera preview
       acceptedFiles.forEach((file) => {
         const reader = new FileReader();
         reader.onload = () => {
@@ -54,27 +98,6 @@ function EditPostModal({ isOpen, onClose, post, onPostUpdated }) {
       });
     },
   });
-
-  if (!isOpen) return null;
-
-  // ============================================
-  // REMOVE EXISTING IMAGE
-  // ============================================
-  const handleRemoveExistingImage = (index) => {
-    if (existingImages.length === 1 && newImages.length === 0) {
-      toast.error("Devi lasciare almeno un'immagine o aggiungerne una nuova");
-      return;
-    }
-
-    const imageUrl = existingImages[index];
-    console.log(`🗑️ Rimozione immagine: ${imageUrl}`);
-    
-    // ✅ Aggiungi URL alla lista di rimozione
-    setImagesToRemove((prev) => [...prev, imageUrl]);
-    
-    // ✅ Rimuovi dalla preview
-    setExistingImages((prev) => prev.filter((_, i) => i !== index));
-  };
 
   // ============================================
   // REMOVE NEW IMAGE
@@ -88,8 +111,11 @@ function EditPostModal({ isOpen, onClose, post, onPostUpdated }) {
   // SAVE CHANGES
   // ============================================
   const handleSave = async () => {
-    // Validazione
-    if (!content.trim() && existingImages.length === 0 && newImages.length === 0) {
+    if (
+      !content.trim() &&
+      existingImages.length === 0 &&
+      newImages.length === 0
+    ) {
       toast.error("Il post deve avere contenuto o almeno un'immagine");
       return;
     }
@@ -102,11 +128,13 @@ function EditPostModal({ isOpen, onClose, post, onPostUpdated }) {
         content: content.trim(),
       });
 
-      // STEP 2: Rimuovi immagini eliminate (usa gli indici ORIGINALI)
+      // STEP 2: Rimuovi immagini eliminate
+      const originalImages =
+        post.imageUrls || (post.imageUrl ? [post.imageUrl] : []);
+
       for (const imageUrl of imagesToRemove) {
-        // ✅ Trova l'indice nell'array ORIGINALE
         const originalIndex = originalImages.indexOf(imageUrl);
-        
+
         if (originalIndex !== -1) {
           console.log(`🗑️ DELETE /posts/${post.id}/images/${originalIndex}`);
           await api.delete(`/posts/${post.id}/images/${originalIndex}`);
@@ -131,40 +159,55 @@ function EditPostModal({ isOpen, onClose, post, onPostUpdated }) {
       // STEP 4: Fetch post aggiornato
       console.log("🔄 Fetch post aggiornato...");
       const response = await api.get(`/posts/${post.id}`);
-      console.log("✅ Post aggiornato ricevuto:", response.data);
-      
+      console.log(" Post aggiornato ricevuto:", response.data);
+
       toast.success("Post modificato con successo!");
 
-      // Notifica parent
+      //  Notifica parent con response.data
       if (onPostUpdated) {
         onPostUpdated(response.data);
       }
 
-      onClose();
+      handleClose();
     } catch (error) {
       console.error("❌ Errore salvataggio:", error);
-      toast.error(error.response?.data?.message || "Errore nel salvataggio delle modifiche");
+      toast.error(
+        error.response?.data?.message ||
+          "Errore nel salvataggio delle modifiche",
+      );
     } finally {
       setSaving(false);
     }
   };
 
+  if (!isOpen) return null;
+
   const totalImages = existingImages.length + newImages.length;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+      onClick={handleClose}>
       <div
         className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}>
-        
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 sticky top-0 bg-white z-10">
           <h2 className="text-2xl font-bold text-gray-800">Modifica Post</h2>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="text-gray-400 hover:text-gray-600 transition">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>
@@ -199,13 +242,21 @@ function EditPostModal({ isOpen, onClose, post, onPostUpdated }) {
                       alt={`Immagine ${index + 1}`}
                       className="w-full h-24 object-cover rounded-lg border-2 border-gray-200"
                     />
-                    {/* ✅ BOTTONE SEMPRE VISIBILE (non solo hover) */}
                     <button
                       type="button"
                       onClick={() => handleRemoveExistingImage(index)}
                       className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 transition shadow-lg opacity-80 hover:opacity-100 md:opacity-0 md:group-hover:opacity-100">
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      <svg
+                        className="w-3 h-3"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M6 18L18 6M6 6l12 12"
+                        />
                       </svg>
                     </button>
                   </div>
@@ -228,13 +279,21 @@ function EditPostModal({ isOpen, onClose, post, onPostUpdated }) {
                       alt={`Nuova ${index + 1}`}
                       className="w-full h-24 object-cover rounded-lg border-2 border-green-200"
                     />
-                    {/* ✅ BOTTONE SEMPRE VISIBILE */}
                     <button
                       type="button"
                       onClick={() => handleRemoveNewImage(index)}
                       className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 transition shadow-lg opacity-80 hover:opacity-100 md:opacity-0 md:group-hover:opacity-100">
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      <svg
+                        className="w-3 h-3"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M6 18L18 6M6 6l12 12"
+                        />
                       </svg>
                     </button>
                     <div className="absolute bottom-1 left-1 bg-green-500 text-white text-xs px-2 py-0.5 rounded-full font-semibold">
@@ -259,11 +318,22 @@ function EditPostModal({ isOpen, onClose, post, onPostUpdated }) {
                   ${isDragActive ? "border-blue-500 bg-blue-50" : "border-gray-300 hover:border-blue-400"}
                 `}>
                 <input {...getInputProps()} />
-                <svg className="w-10 h-10 mx-auto text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                <svg
+                  className="w-10 h-10 mx-auto text-gray-400 mb-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 4v16m8-8H4"
+                  />
                 </svg>
                 <p className="text-sm text-gray-600">
-                  {isDragActive ? "Rilascia qui..." : "Trascina immagini o clicca"}
+                  {isDragActive
+                    ? "Rilascia qui..."
+                    : "Trascina immagini o clicca"}
                 </p>
               </div>
             </div>
@@ -273,7 +343,7 @@ function EditPostModal({ isOpen, onClose, post, onPostUpdated }) {
         {/* Footer */}
         <div className="flex items-center justify-end space-x-3 p-6 border-t border-gray-200 bg-gray-50">
           <button
-            onClick={onClose}
+            onClick={handleClose}
             disabled={saving}
             className="px-6 py-2.5 text-gray-700 font-semibold hover:bg-gray-200 rounded-lg transition disabled:opacity-50">
             Annulla

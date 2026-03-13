@@ -34,7 +34,7 @@ export const fetchFeed = async (page = 0, size = 10) => {
       params: { page, size },
     });
 
-    console.log("✅ Feed ricevuto:", response.data);
+    console.log(" Feed ricevuto:", response.data);
 
     return {
       success: true,
@@ -80,7 +80,7 @@ export const fetchExplorePosts = async (page = 0, size = 10) => {
       params: { page, size },
     });
 
-    console.log("✅ Explore ricevuto:", response.data);
+    console.log(" Explore ricevuto:", response.data);
 
     return {
       success: true,
@@ -107,13 +107,13 @@ export const createPost = async (content, image) => {
 
     const formData = new FormData();
 
-    // ✅ ASSICURATI CHE content SIA STRINGA
+    //  ASSICURATI CHE content SIA STRINGA
     if (content) {
       if (typeof content === "object") {
         console.error("❌ Content è un oggetto! Converto in stringa...");
         formData.append("content", JSON.stringify(content)); // Fallback
       } else {
-        formData.append("content", String(content)); // ✅ Converti in stringa
+        formData.append("content", String(content)); //  Converti in stringa
       }
     }
 
@@ -139,7 +139,7 @@ export const createPost = async (content, image) => {
       },
     });
 
-    console.log("✅ Post creato:", response.data);
+    console.log(" Post creato:", response.data);
 
     return {
       success: true,
