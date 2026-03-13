@@ -111,7 +111,9 @@ function EditPostModal({ isOpen, onClose, post, onPostUpdated }) {
       }
 
       // STEP 4: Fetch post aggiornato
+      console.log("🔄 Fetch post aggiornato...");
       const response = await api.get(`/posts/${post.id}`);
+      console.log("✅ Post aggiornato ricevuto:", response.data);
       
       toast.success("Post modificato con successo!");
 

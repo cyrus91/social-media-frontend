@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { toggleLike, deletePost } from "../services/postService";
 import toast from "react-hot-toast";
@@ -47,6 +47,15 @@ function PostCard({ post, onLikeUpdate, onPostDeleted, onPostUpdated }) {
       month: "short",
     });
   };
+
+  // Aggiungo useEffect per tracciare cambiamenti
+  useEffect(() => {
+    console.log("🔄 LocalPost aggiornato:", {
+      id: localPost.id,
+      imageCount: localPost.imageUrls?.length || 0,
+      images: localPost.imageUrls,
+    });
+  }, [localPost]);
 
   const handleLike = async () => {
     if (isLiking) return;
@@ -108,8 +117,16 @@ function PostCard({ post, onLikeUpdate, onPostDeleted, onPostUpdated }) {
   };
 
   const handlePostUpdated = (updatedPost) => {
+    console.log("Post aggiornato ricevuto:", updatedPost);
+
+    // Aggiorna completamente localPost
     setLocalPost(updatedPost);
+
+    // Chiudi modal
     setShowEditModal(false);
+
+    // Toast di conferma
+    toast.success("Post aggiornato!");
   };
 
   // HANDLE SAVE EDIT
@@ -366,13 +383,15 @@ function PostCard({ post, onLikeUpdate, onPostDeleted, onPostUpdated }) {
       </div>
 
       {/* Images - Supporta sia imageUrls (nuovo) che imageUrl (vecchio) */}
-      {((post.imageUrls && post.imageUrls.length > 0) || post.imageUrl) && (
+      {((localPost.imageUrls && localPost.imageUrls.length > 0) ||
+        localPost.imageUrl) && (
         <>
           <ImageCarousel
+            key={`carousel-${localPost.id}-${localPost.imageUrls?.length || 0}`} // FORZA RE-RENDER
             images={
-              post.imageUrls && post.imageUrls.length > 0
-                ? post.imageUrls
-                : [post.imageUrl]
+              localPost.imageUrls && localPost.imageUrls.length > 0
+                ? localPost.imageUrls
+                : [localPost.imageUrl]
             }
             onImageClick={(index) => {
               setLightboxIndex(index);
@@ -384,9 +403,9 @@ function PostCard({ post, onLikeUpdate, onPostDeleted, onPostUpdated }) {
           {lightboxOpen && (
             <Lightbox
               images={
-                post.imageUrls && post.imageUrls.length > 0
-                  ? post.imageUrls
-                  : [post.imageUrl]
+                localPost.imageUrls && localPost.imageUrls.length > 0
+                  ? localPost.imageUrls
+                  : [localPost.imageUrl]
               }
               initialIndex={lightboxIndex}
               onClose={() => setLightboxOpen(false)}
