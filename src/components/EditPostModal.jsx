@@ -5,28 +5,20 @@ import api from "../services/api";
 
 function EditPostModal({ isOpen, onClose, post, onPostUpdated }) {
   const [content, setContent] = useState(post.content || "");
-  const [existingImages, setExistingImages] = useState(post.imageUrls || (post.imageUrl ? [post.imageUrl] : []));
+  
+  // ✅ TRACCIA IMMAGINI TRAMITE URL, NON INDICE
+  const originalImages = post.imageUrls || (post.imageUrl ? [post.imageUrl] : []);
+  const [existingImages, setExistingImages] = useState([...originalImages]);
+  const [imagesToRemove, setImagesToRemove] = useState([]); // ✅ URL delle immagini da rimuovere
+  
   const [newImages, setNewImages] = useState([]);
   const [newImagePreviews, setNewImagePreviews] = useState([]);
   const [saving, setSaving] = useState(false);
-  const [removedIndices, setRemovedIndices] = useState([]);
-
-  // ============================================
-  // REMOVE EXISTING IMAGE
-  // ============================================
-  const handleRemoveExistingImage = (index) => {
-    if (existingImages.length === 1 && newImages.length === 0) {
-      toast.error("Devi lasciare almeno un'immagine o aggiungerne una nuova");
-      return;
-    }
-
-    setRemovedIndices((prev) => [...prev, index]);
-    setExistingImages((prev) => prev.filter((_, i) => i !== index));
-  };
 
   // ============================================
   // ADD NEW IMAGES (Drag & Drop)
   // ============================================
+  // ✅ Hook must be called unconditionally (before any early return)
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: {
       "image/*": [".png", ".jpg", ".jpeg", ".webp", ".gif"],
@@ -66,6 +58,25 @@ function EditPostModal({ isOpen, onClose, post, onPostUpdated }) {
   if (!isOpen) return null;
 
   // ============================================
+  // REMOVE EXISTING IMAGE
+  // ============================================
+  const handleRemoveExistingImage = (index) => {
+    if (existingImages.length === 1 && newImages.length === 0) {
+      toast.error("Devi lasciare almeno un'immagine o aggiungerne una nuova");
+      return;
+    }
+
+    const imageUrl = existingImages[index];
+    console.log(`🗑️ Rimozione immagine: ${imageUrl}`);
+    
+    // ✅ Aggiungi URL alla lista di rimozione
+    setImagesToRemove((prev) => [...prev, imageUrl]);
+    
+    // ✅ Rimuovi dalla preview
+    setExistingImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  // ============================================
   // REMOVE NEW IMAGE
   // ============================================
   const handleRemoveNewImage = (index) => {
@@ -91,13 +102,20 @@ function EditPostModal({ isOpen, onClose, post, onPostUpdated }) {
         content: content.trim(),
       });
 
-      // STEP 2: Rimuovi immagini eliminate (in ordine inverso per mantenere indici corretti)
-      for (const index of removedIndices.sort((a, b) => b - a)) {
-        await api.delete(`/posts/${post.id}/images/${index}`);
+      // STEP 2: Rimuovi immagini eliminate (usa gli indici ORIGINALI)
+      for (const imageUrl of imagesToRemove) {
+        // ✅ Trova l'indice nell'array ORIGINALE
+        const originalIndex = originalImages.indexOf(imageUrl);
+        
+        if (originalIndex !== -1) {
+          console.log(`🗑️ DELETE /posts/${post.id}/images/${originalIndex}`);
+          await api.delete(`/posts/${post.id}/images/${originalIndex}`);
+        }
       }
 
       // STEP 3: Aggiungi nuove immagini
       if (newImages.length > 0) {
+        console.log(`📤 Upload ${newImages.length} nuove immagini`);
         const formData = new FormData();
         newImages.forEach((image) => {
           formData.append("images", image);
@@ -181,10 +199,11 @@ function EditPostModal({ isOpen, onClose, post, onPostUpdated }) {
                       alt={`Immagine ${index + 1}`}
                       className="w-full h-24 object-cover rounded-lg border-2 border-gray-200"
                     />
+                    {/* ✅ BOTTONE SEMPRE VISIBILE (non solo hover) */}
                     <button
                       type="button"
                       onClick={() => handleRemoveExistingImage(index)}
-                      className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition shadow-lg">
+                      className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 transition shadow-lg opacity-80 hover:opacity-100 md:opacity-0 md:group-hover:opacity-100">
                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                       </svg>
@@ -209,10 +228,11 @@ function EditPostModal({ isOpen, onClose, post, onPostUpdated }) {
                       alt={`Nuova ${index + 1}`}
                       className="w-full h-24 object-cover rounded-lg border-2 border-green-200"
                     />
+                    {/* ✅ BOTTONE SEMPRE VISIBILE */}
                     <button
                       type="button"
                       onClick={() => handleRemoveNewImage(index)}
-                      className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition shadow-lg">
+                      className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 transition shadow-lg opacity-80 hover:opacity-100 md:opacity-0 md:group-hover:opacity-100">
                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                       </svg>
