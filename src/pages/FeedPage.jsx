@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import Navbar from "../components/Navbar";
 import PostCard from "../components/PostCard";
-import CreatePostForm from "../components/CreatePostForm";
+import CreatePostWithImages from "../components/CreatePostWithImages";
 import LoadingSpinner from "../components/LoadingSpinner";
 import InfiniteScrollTrigger from "../components/InfiniteScrollTrigger";
 import useInfiniteScroll from "../hooks/useInfiniteScroll";
@@ -29,7 +29,7 @@ function FeedPage() {
   });
 
   // Handle post creato
-  const handlePostCreated = () => {
+  const handleNewPost = () => {
     console.log("✅ Nuovo post creato - ricarico feed");
     reset();
   };
@@ -97,7 +97,7 @@ function FeedPage() {
 
         {/* Create Post Form */}
         <div className="mb-6">
-          <CreatePostForm onPostCreated={handlePostCreated} />
+          <CreatePostWithImages onPostCreated={handleNewPost} />
         </div>
 
         {/* Posts List */}

@@ -4,10 +4,9 @@ import { toggleLike, deletePost } from "../services/postService";
 import toast from "react-hot-toast";
 import CommentSection from "./CommentSection";
 import useAuthStore from "../store/authStore";
-import Lightbox from "yet-another-react-lightbox";
-import LikesDrawer from "./LikesDrawer";
-import "yet-another-react-lightbox/styles.css";
 import ImageCarousel from "./ImageCarousel";
+import Lightbox from "./Lightbox";
+import LikesDrawer from "./LikesDrawer";
 
 function PostCard({ post, onLikeUpdate, onPostDeleted }) {
   const currentUser = useAuthStore((state) => state.user);
@@ -17,9 +16,9 @@ function PostCard({ post, onLikeUpdate, onPostDeleted }) {
   const [commentCount, setCommentCount] = useState(post.commentCount ?? 0);
   const [showMenu, setShowMenu] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [showLikesDrawer, setShowLikesDrawer] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [showLikesDrawer, setShowLikesDrawer] = useState(false);
 
   // ✅ CHECK SE È IL MIO POST
   const isMyPost = currentUser?.username === post.authorUsername;
@@ -302,24 +301,34 @@ function PostCard({ post, onLikeUpdate, onPostDeleted }) {
         </p>
       </div>
 
-      {/* Images Carousel */}
-      {post.imageUrls && post.imageUrls.length > 0 && (
-        <ImageCarousel
-          images={post.imageUrls}
-          onImageClick={(index) => {
-            setLightboxIndex(index);
-            setLightboxOpen(true);
-          }}
-        />
-      )}
+      {/* Images - Supporta sia imageUrls (nuovo) che imageUrl (vecchio) */}
+      {((post.imageUrls && post.imageUrls.length > 0) || post.imageUrl) && (
+        <>
+          <ImageCarousel
+            images={
+              post.imageUrls && post.imageUrls.length > 0
+                ? post.imageUrls
+                : [post.imageUrl]
+            }
+            onImageClick={(index) => {
+              setLightboxIndex(index);
+              setLightboxOpen(true);
+            }}
+          />
 
-      {/* Lightbox Gallery */}
-      {lightboxOpen && (
-        <Lightbox
-          images={post.imageUrls}
-          initialIndex={lightboxIndex}
-          onClose={() => setLightboxOpen(false)}
-        />
+          {/* Lightbox custom */}
+          {lightboxOpen && (
+            <Lightbox
+              images={
+                post.imageUrls && post.imageUrls.length > 0
+                  ? post.imageUrls
+                  : [post.imageUrl]
+              }
+              initialIndex={lightboxIndex}
+              onClose={() => setLightboxOpen(false)}
+            />
+          )}
+        </>
       )}
 
       {/* Actions - Like & Comment - ✅ RESPONSIVE! */}

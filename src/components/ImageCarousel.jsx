@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Navigation, Pagination } from "swiper/modules";
+import { Navigation, Pagination, Keyboard } from "swiper/modules";
 
 // Import Swiper styles
 import "swiper/css";
@@ -12,34 +12,39 @@ function ImageCarousel({ images, onImageClick }) {
 
   if (!images || images.length === 0) return null;
 
-  // Se c'è una sola immagine, mostra semplice
+  // Se c'è una sola immagine, mostra senza carousel
   if (images.length === 1) {
     return (
       <div className="relative w-full">
         <img
           src={images[0]}
           alt="Post"
-          className="w-full max-h-[600px] object-cover rounded-lg cursor-pointer"
+          className="w-full max-h-[600px] object-cover cursor-pointer transition-transform hover:scale-[1.02]"
           onClick={() => onImageClick && onImageClick(0)}
+          loading="lazy"
         />
       </div>
     );
   }
 
-  // Multiple images: usa Swiper
+  // Multiple images: usa Swiper carousel
   return (
-    <div className="relative w-full">
+    <div className="relative w-full select-none">
       <Swiper
-        modules={[Navigation, Pagination]}
+        modules={[Navigation, Pagination, Keyboard]}
         navigation
         pagination={{
           clickable: true,
           dynamicBullets: true,
         }}
+        keyboard={{
+          enabled: true,
+        }}
         onSlideChange={(swiper) => setCurrentIndex(swiper.activeIndex)}
         className="rounded-lg"
         spaceBetween={0}
-        slidesPerView={1}>
+        slidesPerView={1}
+        loop={false}>
         
         {images.map((image, index) => (
           <SwiperSlide key={index}>
@@ -48,13 +53,14 @@ function ImageCarousel({ images, onImageClick }) {
               alt={`Foto ${index + 1}`}
               className="w-full max-h-[600px] object-cover cursor-pointer"
               onClick={() => onImageClick && onImageClick(index)}
+              loading="lazy"
             />
           </SwiperSlide>
         ))}
       </Swiper>
 
-      {/* Counter */}
-      <div className="absolute top-4 right-4 bg-black bg-opacity-60 text-white px-3 py-1 rounded-full text-sm font-semibold z-10">
+      {/* Counter badge */}
+      <div className="absolute top-4 right-4 bg-black bg-opacity-70 text-white px-3 py-1.5 rounded-full text-sm font-semibold z-10 pointer-events-none">
         {currentIndex + 1} / {images.length}
       </div>
     </div>
