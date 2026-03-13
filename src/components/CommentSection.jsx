@@ -352,9 +352,9 @@ function CommentSection({
                                 showMenuId === comment.id ? null : comment.id,
                               )
                             }
-                            className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-200 transition opacity-0 group-hover:opacity-100">
+                            className="text-gray-400 hover:text-gray-600 p-1.5 rounded-full hover:bg-gray-200 transition opacity-100 sm:opacity-0 sm:group-hover:opacity-100">
                             <svg
-                              className="w-4 h-4"
+                              className="w-5 h-5"
                               fill="currentColor"
                               viewBox="0 0 20 20">
                               <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />

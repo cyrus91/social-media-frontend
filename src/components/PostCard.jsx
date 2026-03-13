@@ -7,8 +7,9 @@ import useAuthStore from "../store/authStore";
 import ImageCarousel from "./ImageCarousel";
 import Lightbox from "./Lightbox";
 import LikesDrawer from "./LikesDrawer";
+import api from "../services/api";
 
-function PostCard({ post, onLikeUpdate, onPostDeleted }) {
+function PostCard({ post, onLikeUpdate, onPostDeleted, onPostUpdated }) {
   const currentUser = useAuthStore((state) => state.user);
   const [isLiked, setIsLiked] = useState(post.liked || false);
   const [likeCount, setLikeCount] = useState(post.likeCount || 0);
@@ -19,8 +20,11 @@ function PostCard({ post, onLikeUpdate, onPostDeleted }) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [showLikesDrawer, setShowLikesDrawer] = useState(false);
+  const [localPost, setLocalPost] = useState(post);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState(post.content || "");
 
-  // ✅ CHECK SE È IL MIO POST
+  // CHECK SE È IL MIO POST
   const isMyPost = currentUser?.username === post.authorUsername;
 
   const formatDate = (dateString) => {
@@ -68,7 +72,7 @@ function PostCard({ post, onLikeUpdate, onPostDeleted }) {
     setCommentCount(newCount);
   };
 
-  // ✅ HANDLE DELETE POST
+  // HANDLE DELETE POST
   const handleDeletePost = async () => {
     const confirmed = window.confirm(
       "Sei sicuro di voler eliminare questo post? Questa azione non può essere annullata.",
@@ -95,11 +99,46 @@ function PostCard({ post, onLikeUpdate, onPostDeleted }) {
     setIsDeleting(false);
   };
 
-  // ✅ HANDLE EDIT POST (TODO - per ora mostra toast)
+  // HANDLE EDIT POST
   const handleEditPost = () => {
+    setIsEditing(true);
+    setEditContent(localPost.content || "");
     setShowMenu(false);
-    toast("Modifica post - Coming soon!", { icon: "🚧" });
-    // TODO: Aprire modal di modifica post
+  };
+
+  // ✅ HANDLE SAVE EDIT
+  const handleSaveEdit = async () => {
+    if (!editContent.trim()) {
+      toast.error("Il post non può essere vuoto");
+      return;
+    }
+
+    try {
+      await api.put(`/posts/${post.id}`, {
+        content: editContent.trim(),
+      });
+
+      toast.success("Post modificato!");
+
+      // ✅ Notifica il parent
+      if (onPostUpdated) {
+        onPostUpdated(post.id, { content: editContent.trim() });
+      }
+
+      setLocalPost({ ...localPost, content: editContent.trim() });
+      setIsEditing(false);
+    } catch (error) {
+      console.error("❌ Errore modifica post:", error);
+      toast.error(
+        error.response?.data?.message || "Errore nella modifica del post",
+      );
+    }
+  };
+
+  // ✅ HANDLE CANCEL EDIT
+  const handleCancelEdit = () => {
+    setEditContent(localPost.content || "");
+    setIsEditing(false);
   };
 
   // ✅ HANDLE REPORT POST
@@ -294,11 +333,37 @@ function PostCard({ post, onLikeUpdate, onPostDeleted }) {
         </div>
       </div>
 
-      {/* Body - Content - ✅ RESPONSIVE! */}
+      {/* Body - Content */}
       <div className="p-3 sm:p-4">
-        <p className="text-gray-800 whitespace-pre-wrap break-words text-sm sm:text-base">
-          {post.content}
-        </p>
+        {isEditing ? (
+          // ✅ MODALITÀ EDIT
+          <div className="space-y-3">
+            <textarea
+              value={editContent}
+              onChange={(e) => setEditContent(e.target.value)}
+              rows="4"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none"
+              autoFocus
+            />
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={handleSaveEdit}
+                className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-semibold rounded-lg transition">
+                Salva
+              </button>
+              <button
+                onClick={handleCancelEdit}
+                className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm font-semibold rounded-lg transition">
+                Annulla
+              </button>
+            </div>
+          </div>
+        ) : (
+          // ✅ VISUALIZZAZIONE NORMALE
+          <p className="text-gray-800 whitespace-pre-wrap break-words text-sm sm:text-base">
+            {localPost.content}
+          </p>
+        )}
       </div>
 
       {/* Images - Supporta sia imageUrls (nuovo) che imageUrl (vecchio) */}
