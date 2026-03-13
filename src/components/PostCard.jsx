@@ -8,6 +8,7 @@ import ImageCarousel from "./ImageCarousel";
 import Lightbox from "./Lightbox";
 import LikesDrawer from "./LikesDrawer";
 import api from "../services/api";
+import EditPostModal from "./EditPostModal";
 
 function PostCard({ post, onLikeUpdate, onPostDeleted, onPostUpdated }) {
   const currentUser = useAuthStore((state) => state.user);
@@ -23,6 +24,7 @@ function PostCard({ post, onLikeUpdate, onPostDeleted, onPostUpdated }) {
   const [localPost, setLocalPost] = useState(post);
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(post.content || "");
+  const [showEditModal, setShowEditModal] = useState(false);
 
   // CHECK SE È IL MIO POST
   const isMyPost = currentUser?.username === post.authorUsername;
@@ -101,12 +103,16 @@ function PostCard({ post, onLikeUpdate, onPostDeleted, onPostUpdated }) {
 
   // HANDLE EDIT POST
   const handleEditPost = () => {
-    setIsEditing(true);
-    setEditContent(localPost.content || "");
+    setShowEditModal(true);
     setShowMenu(false);
   };
 
-  // ✅ HANDLE SAVE EDIT
+  const handlePostUpdated = (updatedPost) => {
+    setLocalPost(updatedPost);
+    setShowEditModal(false);
+  };
+
+  // HANDLE SAVE EDIT
   const handleSaveEdit = async () => {
     if (!editContent.trim()) {
       toast.error("Il post non può essere vuoto");
@@ -338,13 +344,6 @@ function PostCard({ post, onLikeUpdate, onPostDeleted, onPostUpdated }) {
         {isEditing ? (
           // ✅ MODALITÀ EDIT
           <div className="space-y-3">
-            <textarea
-              value={editContent}
-              onChange={(e) => setEditContent(e.target.value)}
-              rows="4"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none"
-              autoFocus
-            />
             <div className="flex items-center space-x-2">
               <button
                 onClick={handleSaveEdit}
@@ -473,12 +472,20 @@ function PostCard({ post, onLikeUpdate, onPostDeleted, onPostUpdated }) {
         initialCommentCount={commentCount}
         onCommentCountChange={handleCommentCountChange}
       />
+
       {/* Likes Drawer */}
       <LikesDrawer
         isOpen={showLikesDrawer}
         onClose={() => setShowLikesDrawer(false)}
         postId={post.id}
         post={post}
+      />
+      {/* Edit Post Modal */}
+      <EditPostModal
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        post={localPost}
+        onPostUpdated={handlePostUpdated}
       />
     </div>
   );
