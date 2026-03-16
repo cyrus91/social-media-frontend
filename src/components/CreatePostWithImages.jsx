@@ -3,10 +3,11 @@ import { useDropzone } from "react-dropzone";
 import toast from "react-hot-toast";
 import useAuthStore from "../store/authStore";
 import api from "../services/api";
+import AICaptionGenerator from "./AICaptionGenerator";
 
 function CreatePostWithImages({ onPostCreated }) {
   const currentUser = useAuthStore((state) => state.user);
-  
+
   const [content, setContent] = useState("");
   const [images, setImages] = useState([]);
   const [previews, setPreviews] = useState([]);
@@ -65,6 +66,14 @@ function CreatePostWithImages({ onPostCreated }) {
   };
 
   // ============================================
+  // HANDLE AI CAPTION GENERATED
+  // ============================================
+  const handleAICaptionGenerated = (caption) => {
+    setContent(caption);
+    toast.success("Caption inserita!");
+  };
+
+  // ============================================
   // SUBMIT
   // ============================================
   const handleSubmit = async (e) => {
@@ -97,7 +106,7 @@ function CreatePostWithImages({ onPostCreated }) {
       });
 
       toast.success("Post pubblicato con successo!");
-      
+
       // Reset form
       setContent("");
       setImages([]);
@@ -108,7 +117,9 @@ function CreatePostWithImages({ onPostCreated }) {
       }
     } catch (error) {
       console.error("❌ Errore pubblicazione:", error);
-      toast.error(error.response?.data?.message || "Errore nella pubblicazione del post");
+      toast.error(
+        error.response?.data?.message || "Errore nella pubblicazione del post",
+      );
     } finally {
       setUploading(false);
     }
@@ -131,10 +142,19 @@ function CreatePostWithImages({ onPostCreated }) {
             </div>
           )}
           <div>
-            <p className="font-semibold text-gray-800">{currentUser?.username}</p>
+            <p className="font-semibold text-gray-800">
+              {currentUser?.username}
+            </p>
             <p className="text-xs text-gray-500">Crea un nuovo post</p>
           </div>
         </div>
+
+        {previews.length > 0 && (
+          <AICaptionGenerator
+            onCaptionGenerated={handleAICaptionGenerated}
+            imageUrls={previews}
+          />
+        )}
 
         {/* Textarea */}
         <textarea
@@ -156,13 +176,24 @@ function CreatePostWithImages({ onPostCreated }) {
               ${uploading ? "opacity-50 cursor-not-allowed" : ""}
             `}>
             <input {...getInputProps()} disabled={uploading} />
-            
-            <svg className="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+
+            <svg
+              className="w-12 h-12 mx-auto text-gray-400 mb-3"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+              />
             </svg>
 
             {isDragActive ? (
-              <p className="text-blue-600 font-semibold">Rilascia le immagini qui...</p>
+              <p className="text-blue-600 font-semibold">
+                Rilascia le immagini qui...
+              </p>
             ) : (
               <div>
                 <p className="text-gray-600 font-semibold mb-1">
@@ -181,7 +212,8 @@ function CreatePostWithImages({ onPostCreated }) {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <p className="text-sm font-semibold text-gray-700">
-                {previews.length} {previews.length === 1 ? "immagine" : "immagini"} selezionate
+                {previews.length}{" "}
+                {previews.length === 1 ? "immagine" : "immagini"} selezionate
               </p>
               {previews.length < 5 && (
                 <p className="text-xs text-gray-500">
@@ -205,8 +237,17 @@ function CreatePostWithImages({ onPostCreated }) {
                     onClick={() => removeImage(index)}
                     disabled={uploading}
                     className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition disabled:opacity-50 shadow-lg">
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    <svg
+                      className="w-3 h-3"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
                     </svg>
                   </button>
 
@@ -233,8 +274,17 @@ function CreatePostWithImages({ onPostCreated }) {
               </>
             ) : (
               <>
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+                  />
                 </svg>
                 <span>Pubblica</span>
               </>
