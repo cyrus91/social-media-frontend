@@ -50,11 +50,6 @@ function EditPostModal({ isOpen, onClose, post, onPostUpdated }) {
   // REMOVE EXISTING IMAGE
   // ============================================
   const handleRemoveExistingImage = (index) => {
-    if (existingImages.length === 1 && newImages.length === 0) {
-      toast.error("Devi lasciare almeno un'immagine o aggiungerne una nuova");
-      return;
-    }
-
     const imageUrl = existingImages[index];
     console.log(`🗑️ Rimozione immagine: ${imageUrl}`);
 
