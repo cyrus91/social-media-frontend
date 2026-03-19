@@ -1,10 +1,11 @@
 import axios from "axios";
 import useAuthStore from "../store/authStore";
 
-const API_BASE_URL = "https://social-media-backend-1hw4.onrender.com/api";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
 
 const api = axios.create({
   baseURL: API_BASE_URL,
+  withCredentials: true,
 });
 
 // ============================================
