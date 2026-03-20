@@ -1,27 +1,22 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { register } from "../services/authService";
-import useAuthStore from "../store/authStore";
+import { resendVerification } from "../services/authService";
 import toast from "react-hot-toast";
 
 function RegisterPage() {
-  const navigate = useNavigate();
-  const authLogin = useAuthStore((state) => state.login);
-
-  // State
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [pendingVerification, setPendingVerification] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState("");
+  const [resendLoading, setResendLoading] = useState(false);
 
-  // Handle submit
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
 
-    //  VALIDAZIONE USERNAME
     const trimmedUsername = username.trim();
     const usernameRegex = /^[a-zA-Z0-9_]+$/;
 
@@ -29,166 +24,148 @@ function RegisterPage() {
       toast.error("Lo username deve essere almeno 3 caratteri");
       return;
     }
-
     if (trimmedUsername.length > 20) {
       toast.error("Lo username deve essere massimo 20 caratteri");
       return;
     }
-
     if (!usernameRegex.test(trimmedUsername)) {
-      toast.error(
-        "Lo username può contenere solo lettere, numeri e underscore",
-      );
+      toast.error("Lo username può contenere solo lettere, numeri e underscore");
       return;
     }
-
-    //  VALIDAZIONE EMAIL
-    const trimmedEmail = email.trim().toLowerCase();
-    if (!trimmedEmail.includes("@")) {
+    if (!email.includes("@")) {
       toast.error("Email non valida");
       return;
     }
-
-    //  VALIDAZIONE PASSWORD
     if (password.length < 6) {
       toast.error("La password deve essere almeno 6 caratteri");
       return;
     }
-
-    // Validazione
     if (password !== confirmPassword) {
-      setError("Le password non coincidono");
-      setLoading(false);
+      toast.error("Le password non coincidono");
       return;
     }
 
     setLoading(true);
+    const result = await register(trimmedUsername, email.trim().toLowerCase(), password);
+    setLoading(false);
 
-    const result = await register(username, email, password);
-
-    if (result.success) {
-      //  CORRETTO: result.user e result.token!
-      authLogin(result.user, result.token);
-      toast.success(`Benvenuto, ${result.user.username}!`);
-      navigate("/feed");
-    } else {
-      setError(result.error);
+    if (result.success && result.pendingVerification) {
+      setRegisteredEmail(email.trim().toLowerCase());
+      setPendingVerification(true);
+    } else if (!result.success) {
       toast.error(result.error);
     }
-
-    setLoading(false);
   };
 
+  const handleResend = async () => {
+    setResendLoading(true);
+    const result = await resendVerification(registeredEmail);
+    setResendLoading(false);
+    if (result.success) {
+      toast.success("Email di verifica reinviata!");
+    } else {
+      toast.error(result.error);
+    }
+  };
+
+  // Schermata di attesa verifica email
+  if (pendingVerification) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-500 to-purple-600 p-4">
+        <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md text-center">
+          <div className="text-6xl mb-4">📬</div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-3">
+            Controlla la tua email!
+          </h2>
+          <p className="text-gray-600 mb-2">
+            Abbiamo inviato un link di verifica a:
+          </p>
+          <p className="font-semibold text-indigo-600 mb-6">{registeredEmail}</p>
+          <p className="text-sm text-gray-500 mb-6">
+            Clicca sul link nell'email per attivare il tuo account. Il link scade tra 24 ore.
+          </p>
+          <button
+            onClick={handleResend}
+            disabled={resendLoading}
+            className="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-3 rounded-lg transition disabled:opacity-50 mb-4">
+            {resendLoading ? "Invio in corso..." : "📧 Reinvia email"}
+          </button>
+          <Link to="/login" className="text-sm text-gray-500 hover:text-gray-700">
+            Torna al login
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-500 to-pink-600 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-500 to-purple-600 p-4">
       <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">
-            Crea Account 🎉
-          </h1>
-          <p className="text-gray-600">Unisciti alla community!</p>
+          <h1 className="text-4xl font-bold text-gray-800 mb-2">Crea Account 🚀</h1>
+          <p className="text-gray-600">Unisciti alla community</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Error message */}
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
-              {error}
-            </div>
-          )}
-
-          {/* Username */}
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label
-              htmlFor="username"
-              className="block text-sm font-semibold text-gray-700 mb-2">
-              Username
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
             <input
               type="text"
-              id="username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="Il tuo username"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+              placeholder="il_tuo_username"
               required
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition"
             />
           </div>
-
-          {/* Email */}
           <div>
-            <label
-              htmlFor="email"
-              className="block text-sm font-semibold text-gray-700 mb-2">
-              Email
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
             <input
               type="email"
-              id="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="La tua email"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+              placeholder="tua@email.com"
               required
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition"
             />
           </div>
-
-          {/* Password */}
           <div>
-            <label
-              htmlFor="password"
-              className="block text-sm font-semibold text-gray-700 mb-2">
-              Password
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
             <input
               type="password"
-              id="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="La tua password"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+              placeholder="Almeno 6 caratteri"
               required
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition"
             />
           </div>
-
-          {/* Confirm Password */}
           <div>
-            <label
-              htmlFor="confirmPassword"
-              className="block text-sm font-semibold text-gray-700 mb-2">
-              Conferma Password
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Conferma Password</label>
             <input
               type="password"
-              id="confirmPassword"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Conferma password"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+              placeholder="Ripeti la password"
               required
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition"
             />
           </div>
 
-          {/* Submit button */}
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 rounded-lg transition shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed">
-            {loading ? "Registrazione in corso..." : "Registrati"}
+            className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold py-3 rounded-lg transition duration-300 disabled:opacity-50">
+            {loading ? "Registrazione in corso..." : "Crea Account"}
           </button>
         </form>
 
-        {/* Login link */}
-        <div className="mt-6 text-center">
-          <p className="text-gray-600">
-            Hai già un account?{" "}
-            <Link
-              to="/login"
-              className="text-purple-500 hover:text-purple-600 font-semibold">
-              Accedi
-            </Link>
-          </p>
-        </div>
+        <p className="text-center text-gray-600 mt-6">
+          Hai già un account?{" "}
+          <Link to="/login" className="text-blue-500 hover:text-blue-600 font-semibold">
+            Accedi
+          </Link>
+        </p>
       </div>
     </div>
   );

@@ -7,6 +7,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import ExplorePage from "./pages/ExplorePage";
 import PostPage from "./pages/PostPage";
 import { Toaster } from "react-hot-toast";
+import VerifyEmailPage from "./pages/VerifyEmailPage";
 
 function App() {
   return (
@@ -18,7 +19,7 @@ function App() {
         {/* Public routes */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
-
+        <Route path="/verify-email" element={<VerifyEmailPage />} />
         {/* Protected routes */}
         <Route
           path="/feed"
