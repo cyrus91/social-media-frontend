@@ -11,7 +11,7 @@ import {
 import useAuthStore from "../store/authStore";
 import toast from "react-hot-toast";
 
-const WS_URL = import.meta.env.VITE_API_BASE_URL?.replace("/api", "") || "https://social-media-backend-production-1d40.up.railway.app";
+const WS_URL = import.meta.env.VITE_API_BASE_URL?.replace("/api", "") || "https://zany-karlotte-hobby-app-f20c3361.koyeb.app";
 
 function NotificationBell(props) {
   const [unreadCount, setUnreadCount] = useState(0);
