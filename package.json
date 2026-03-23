@@ -12,6 +12,7 @@
   "dependencies": {
     "@stomp/stompjs": "^7.3.0",
     "axios": "^1.13.5",
+    "emoji-picker-react": "^4.18.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-dropzone": "^15.0.0",

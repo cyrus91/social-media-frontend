@@ -3,6 +3,7 @@ import { useDropzone } from "react-dropzone";
 import toast from "react-hot-toast";
 import useAuthStore from "../store/authStore";
 import api from "../services/api";
+import EmojiPickerButton from "./EmojiPickerButton";
 import AICaptionGenerator from "./AICaptionGenerator";
 
 function CreatePostWithImages({ onPostCreated }) {
@@ -156,15 +157,22 @@ function CreatePostWithImages({ onPostCreated }) {
           />
         )}
 
-        {/* Textarea */}
-        <textarea
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          placeholder="Cosa stai pensando?"
-          rows="4"
-          disabled={uploading}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none disabled:opacity-50 transition"
-        />
+        {/* Textarea + Emoji */}
+        <div className="relative">
+          <textarea
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            placeholder="Cosa stai pensando?"
+            rows="4"
+            disabled={uploading}
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none disabled:opacity-50 transition"
+          />
+          <div className="absolute bottom-2 right-2">
+            <EmojiPickerButton
+              onEmojiSelect={(emoji) => setContent((prev) => prev + emoji)}
+            />
+          </div>
+        </div>
 
         {/* Drag & Drop Zone */}
         {images.length < 5 && (

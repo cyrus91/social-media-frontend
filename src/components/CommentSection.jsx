@@ -1,4 +1,7 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import EmojiPickerButton from "./EmojiPickerButton";
+import AvatarZoom from "./AvatarZoom";
 import {
   fetchCommentsByPost,
   createComment,
@@ -299,34 +302,24 @@ function CommentSection({
                 <div
                   key={comment.id}
                   className="flex space-x-3 bg-gray-50 rounded-lg p-3 relative group">
-                  {/* Avatar */}
-                  {comment.authorAvatarUrl ? (
-                    <img
+                  {/* Avatar con zoom */}
+                  <Link to={`/profile/${comment.authorUsername}`}>
+                    <AvatarZoom
                       src={comment.authorAvatarUrl}
-                      alt={comment.authorUsername}
-                      className="w-8 h-8 rounded-full object-cover flex-shrink-0 border-2 border-transparent hover:border-green-500 transition"
-                      onError={(e) => {
-                        e.target.style.display = "none";
-                        e.target.nextElementSibling.style.display = "flex";
-                      }}
+                      username={comment.authorUsername}
+                      size="sm"
                     />
-                  ) : null}
-
-                  <div
-                    className="w-8 h-8 bg-gradient-to-br from-green-500 to-teal-500 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
-                    style={{
-                      display: comment.authorAvatarUrl ? "none" : "flex",
-                    }}>
-                    {comment.authorUsername?.charAt(0).toUpperCase()}
-                  </div>
+                  </Link>
 
                   {/* Content */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
-                        <p className="font-semibold text-gray-800 text-sm">
+                        <Link
+                          to={`/profile/${comment.authorUsername}`}
+                          className="font-semibold text-gray-800 text-sm hover:text-blue-500 transition">
                           {comment.authorUsername}
-                        </p>
+                        </Link>
                         <span className="text-xs text-gray-500">
                           {formatDate(comment.createdAt)}
                         </span>
@@ -470,7 +463,10 @@ function CommentSection({
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none text-sm"
               />
 
-              <div className="flex justify-end mt-2">
+              <div className="flex items-center justify-between mt-2">
+                <EmojiPickerButton
+                  onEmojiSelect={(emoji) => setCommentText((prev) => prev + emoji)}
+                />
                 <button
                   type="submit"
                   disabled={submitting || !commentText.trim()}

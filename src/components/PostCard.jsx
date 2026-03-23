@@ -9,6 +9,7 @@ import Lightbox from "./Lightbox";
 import LikesDrawer from "./LikesDrawer";
 import api from "../services/api";
 import EditPostModal from "./EditPostModal";
+import AvatarZoom from "./AvatarZoom";
 
 function PostCard({ post, onLikeUpdate, onPostDeleted, onPostUpdated }) {
   const currentUser = useAuthStore((state) => state.user);
@@ -178,27 +179,11 @@ function PostCard({ post, onLikeUpdate, onPostDeleted, onPostUpdated }) {
         <Link
           to={`/profile/${post.authorUsername}`}
           className="flex items-center space-x-2 sm:space-x-3 hover:opacity-80 transition">
-          {post.authorAvatarUrl ? (
-            <img
-              src={post.authorAvatarUrl}
-              alt={`${post.authorUsername} avatar`}
-              className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover border-2 border-transparent hover:border-blue-500 transition"
-              onError={(e) => {
-                console.error(
-                  "❌ Errore caricamento avatar:",
-                  post.authorAvatarUrl,
-                );
-                e.target.style.display = "none";
-                e.target.nextElementSibling.style.display = "flex";
-              }}
-            />
-          ) : null}
-
-          <div
-            className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-sm sm:text-base"
-            style={{ display: post.authorAvatarUrl ? "none" : "flex" }}>
-            {post.authorUsername?.charAt(0).toUpperCase() || "U"}
-          </div>
+          <AvatarZoom
+            src={post.authorAvatarUrl}
+            username={post.authorUsername}
+            size="md"
+          />
 
           <div>
             <p className="font-semibold text-gray-800 text-sm sm:text-base">
