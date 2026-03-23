@@ -467,7 +467,7 @@ function ProfilePage() {
                   post.imageUrls.map((url, imgIndex) => (
                     <div
                       key={`${post.id}-${imgIndex}`}
-                      className="relative cursor-pointer group overflow-hidden bg-gray-100"
+                      className="relative cursor-pointer group overflow-hidden"
                       style={{ paddingBottom: "100%" }}
                       onClick={() => navigate(`/post/${post.id}`)}>
                       <img
@@ -477,7 +477,7 @@ function ProfilePage() {
                       />
                       {/* Overlay hover */}
                       <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-300 flex items-center justify-center">
-                        <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center space-x-3 text-white">
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center space-x-3 text-white" style={{ textShadow: "0 1px 4px rgba(0,0,0,0.8)" }}>
                           <span className="flex items-center space-x-1 font-semibold">
                             <span>❤️</span>
                             <span>{post.likeCount || 0}</span>
