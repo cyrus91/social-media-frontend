@@ -4,6 +4,7 @@ import EmojiPicker from "emoji-picker-react";
 function EmojiPickerButton({ onEmojiSelect, theme = "light" }) {
   const [open, setOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 640);
+  const [openLeft, setOpenLeft] = useState(false);
   const wrapperRef = useRef(null);
 
   useEffect(() => {
@@ -24,18 +25,27 @@ function EmojiPickerButton({ onEmojiSelect, theme = "light" }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [open, isMobile]);
 
+  const handleToggle = () => {
+    if (!open && wrapperRef.current) {
+      // Calcola se c'è spazio a destra o bisogna aprire a sinistra
+      const rect = wrapperRef.current.getBoundingClientRect();
+      const pickerWidth = 300;
+      const spaceRight = window.innerWidth - rect.left;
+      setOpenLeft(spaceRight < pickerWidth + 16);
+    }
+    setOpen(!open);
+  };
+
   const handleSelect = (emojiData) => {
     onEmojiSelect(emojiData.emoji);
     setOpen(false);
   };
 
   return (
-    // ⚠️ Questo div con position:relative è fondamentale —
-    // serve da ancora per il picker in position:absolute su desktop
     <div ref={wrapperRef} style={{ position: "relative", display: "inline-flex" }}>
       <button
         type="button"
-        onClick={() => setOpen(!open)}
+        onClick={handleToggle}
         className="text-gray-400 hover:text-yellow-500 transition p-1 rounded-full hover:bg-gray-100 text-base leading-none"
         title="Aggiungi emoji">
         😊
@@ -45,12 +55,10 @@ function EmojiPickerButton({ onEmojiSelect, theme = "light" }) {
         <>
           {isMobile ? (
             <>
-              {/* Overlay mobile */}
               <div
                 style={{ position: "fixed", inset: 0, zIndex: 9998, background: "rgba(0,0,0,0.3)" }}
                 onClick={() => setOpen(false)}
               />
-              {/* Bottom sheet */}
               <div style={{
                 position: "fixed", bottom: 0, left: 0, right: 0,
                 zIndex: 9999, background: "white",
@@ -73,11 +81,11 @@ function EmojiPickerButton({ onEmojiSelect, theme = "light" }) {
               </div>
             </>
           ) : (
-            /* Desktop: position:absolute agganciato al wrapper div */
             <div style={{
               position: "absolute",
               bottom: "calc(100% + 8px)",
-              right: 0,
+              // Apri a destra se c'è spazio, altrimenti a sinistra
+              ...(openLeft ? { right: 0 } : { left: 0 }),
               zIndex: 9999,
               boxShadow: "0 4px 24px rgba(0,0,0,0.15)",
               borderRadius: 12,
