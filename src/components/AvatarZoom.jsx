@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 
 function AvatarZoom({ src, username, size = "md", className = "" }) {
   const [zoomed, setZoomed] = useState(false);
@@ -12,24 +13,19 @@ function AvatarZoom({ src, username, size = "md", className = "" }) {
 
   const initial = username?.charAt(0).toUpperCase() || "?";
 
-  const handleAvatarClick = (e) => {
+  const handleClick = (e) => {
     if (!src) return;
-    e.preventDefault();      // blocca navigazione Link padre
-    e.stopPropagation();     // blocca bubble
-    setZoomed(true);
-  };
-
-  const handleClose = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    setZoomed(false);
+    setZoomed(true);
   };
 
   return (
     <>
+      {/* Avatar */}
       <div
         className={`${sizeClasses[size]} rounded-full flex-shrink-0 ${src ? "cursor-zoom-in" : ""} ${className}`}
-        onClick={handleAvatarClick}>
+        onClick={handleClick}>
         {src ? (
           <img
             src={src}
@@ -43,26 +39,30 @@ function AvatarZoom({ src, username, size = "md", className = "" }) {
         )}
       </div>
 
-      {/* Overlay zoom — solo quando zoomed è true */}
-      {zoomed && (
+      {/* Portal — renderizzato direttamente su document.body, fuori da qualsiasi stacking context */}
+      {zoomed && createPortal(
         <div
-          className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-[9999]"
-          onClick={handleClose}>
-          <div className="relative" onClick={(e) => e.stopPropagation()}>
+          style={{ position: "fixed", inset: 0, zIndex: 999999, backgroundColor: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center" }}
+          onClick={() => setZoomed(false)}>
+          <div
+            style={{ position: "relative" }}
+            onClick={(e) => e.stopPropagation()}>
             <img
               src={src}
               alt={username}
-              className="w-64 h-64 rounded-full object-cover shadow-2xl border-4 border-white"
+              style={{ width: 256, height: 256, borderRadius: "50%", objectFit: "cover", border: "4px solid white", boxShadow: "0 25px 50px rgba(0,0,0,0.5)" }}
             />
             <button
-              type="button"
-              onClick={handleClose}
-              className="absolute -top-3 -right-3 bg-white text-gray-800 rounded-full w-8 h-8 flex items-center justify-center shadow-lg hover:bg-gray-100 transition font-bold">
+              onClick={() => setZoomed(false)}
+              style={{ position: "absolute", top: -12, right: -12, background: "white", border: "none", borderRadius: "50%", width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 16, fontWeight: "bold", boxShadow: "0 2px 8px rgba(0,0,0,0.3)" }}>
               ✕
             </button>
-            <p className="text-white text-center mt-3 font-semibold">@{username}</p>
+            <p style={{ color: "white", textAlign: "center", marginTop: 12, fontWeight: 600 }}>
+              @{username}
+            </p>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
