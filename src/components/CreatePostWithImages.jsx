@@ -38,11 +38,15 @@ function CreatePostWithImages({ onPostCreated }) {
 
   const handleTextareaChange = (e) => {
     setContent(e.target.value);
-    // Auto-resize
     const ta = textareaRef.current;
     if (ta) {
-      ta.style.height = "auto";
-      ta.style.height = Math.min(ta.scrollHeight, 200) + "px";
+      if (!e.target.value) {
+        // Reset altezza quando il contenuto è vuoto
+        ta.style.height = "auto";
+      } else {
+        ta.style.height = "auto";
+        ta.style.height = Math.min(ta.scrollHeight, 200) + "px";
+      }
     }
   };
 
