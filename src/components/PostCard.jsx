@@ -26,6 +26,7 @@ function PostCard({ post, onLikeUpdate, onPostDeleted, onPostUpdated }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(post.content || "");
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showComments, setShowComments] = useState(false);
 
   // CHECK SE È IL MIO POST
   const isMyPost = currentUser?.username === post.authorUsername;
@@ -434,10 +435,13 @@ function PostCard({ post, onLikeUpdate, onPostDeleted, onPostUpdated }) {
           </button>
 
           {/* Comment icon */}
-          <div className="flex items-center space-x-1 sm:space-x-2 text-gray-600">
+          {/* Comment icon — click per aprire/chiudere */}
+          <button
+            onClick={() => setShowComments(!showComments)}
+            className={`flex items-center space-x-1 sm:space-x-2 transition ${showComments ? 'text-blue-500' : 'text-gray-600 hover:text-blue-500'}`}>
             <svg
               className="w-5 h-5 sm:w-6 sm:h-6"
-              fill="none"
+              fill={showComments ? "currentColor" : "none"}
               stroke="currentColor"
               viewBox="0 0 24 24">
               <path
@@ -450,11 +454,19 @@ function PostCard({ post, onLikeUpdate, onPostDeleted, onPostUpdated }) {
             <span className="font-semibold text-sm sm:text-base">
               {commentCount}
             </span>
-          </div>
+          </button>
         </div>
 
-        {/* Share button */}
-        <button className="text-gray-500 hover:text-green-500 transition p-1">
+        {/* Share button — copia link negli appunti */}
+        <button
+          onClick={() => {
+            const url = `${window.location.origin}/post/${post.id}`;
+            navigator.clipboard.writeText(url)
+              .then(() => toast.success("Link copiato negli appunti! 🔗"))
+              .catch(() => toast.error("Impossibile copiare il link"));
+          }}
+          className="text-gray-500 hover:text-green-500 transition p-1"
+          title="Condividi post">
           <svg
             className="w-5 h-5 sm:w-6 sm:h-6"
             fill="none"
@@ -470,7 +482,8 @@ function PostCard({ post, onLikeUpdate, onPostDeleted, onPostUpdated }) {
         </button>
       </div>
 
-      {/* Comment Section */}
+      {/* Comment Section — visibile solo se showComments è true */}
+      {showComments && (
       <div className="px-3 sm:px-4 pb-3 sm:pb-4">
         <CommentSection
           postId={post.id}
@@ -478,6 +491,7 @@ function PostCard({ post, onLikeUpdate, onPostDeleted, onPostUpdated }) {
           onCommentCountChange={handleCommentCountChange}
         />
       </div>
+      )}
 
       {/* Likes Drawer */}
       <LikesDrawer
