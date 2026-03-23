@@ -27,10 +27,10 @@ function AvatarZoom({ src, username, size = "md", className = "" }) {
           <img
             src={src}
             alt={username}
-            className={`${sizeClasses[size]} rounded-full object-cover border-2 border-transparent hover:border-blue-400 transition`}
+            className={`${sizeClasses[size]} rounded-full object-cover ring-2 ring-transparent hover:ring-blue-400 transition-shadow cursor-pointer`}
           />
         ) : (
-          <div className={`${sizeClasses[size]} bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold`}>
+          <div className={`${sizeClasses[size]} bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold cursor-pointer`}>
             {initial}
           </div>
         )}
