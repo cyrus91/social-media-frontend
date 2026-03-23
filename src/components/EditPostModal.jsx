@@ -6,7 +6,9 @@ import api from "../services/api";
 function EditPostModal({ isOpen, onClose, post, onPostUpdated }) {
   //  State iniziali
   const [content, setContent] = useState("");
+  // existingImages = array di oggetti { id, imageUrl, displayOrder }
   const [existingImages, setExistingImages] = useState([]);
+  // imagesToRemove = array di oggetti { id, imageUrl } da eliminare al salvataggio
   const [imagesToRemove, setImagesToRemove] = useState([]);
   const [newImages, setNewImages] = useState([]);
   const [newImagePreviews, setNewImagePreviews] = useState([]);
@@ -17,18 +19,35 @@ function EditPostModal({ isOpen, onClose, post, onPostUpdated }) {
   // ============================================
   useEffect(() => {
     if (isOpen) {
-      //  Inizializza state con i dati del post
-      const images = post.imageUrls || (post.imageUrl ? [post.imageUrl] : []);
+      //  Usa post.images (con ID stabile) se disponibile,
+      //  altrimenti fallback a imageUrls per retrocompatibilità
+      let images = [];
+      if (post.images && post.images.length > 0) {
+        // Formato nuovo: [{ id, imageUrl, displayOrder }]
+        images = [...post.images];
+      } else if (post.imageUrls && post.imageUrls.length > 0) {
+        // Fallback: converti URL in oggetti (id=null)
+        images = post.imageUrls.map((url, i) => ({
+          id: null,
+          imageUrl: url,
+          displayOrder: i,
+        }));
+      } else if (post.imageUrl) {
+        images = [{ id: null, imageUrl: post.imageUrl, displayOrder: 0 }];
+      }
+
       setContent(post.content || "");
-      setExistingImages([...images]);
+      setExistingImages(images);
       setImagesToRemove([]);
       setNewImages([]);
       setNewImagePreviews([]);
       setSaving(false);
 
-      console.log("🔄 Modal aperto - State inizializzato:", {
+      console.log("📂 Modal aperto - State inizializzato:", {
         content: post.content,
         images: images.length,
+        hasImageIds:
+          images.length > 0 && images.every((img) => img.id !== null),
       });
     }
   }, [isOpen, post.id]);
@@ -37,11 +56,9 @@ function EditPostModal({ isOpen, onClose, post, onPostUpdated }) {
   // CLOSE HANDLER CON RESET
   // ============================================
   const handleClose = () => {
-    //  Reset state
     setNewImages([]);
     setNewImagePreviews([]);
     setImagesToRemove([]);
-
     console.log("❌ Modal chiuso - State pulito");
     onClose();
   };
@@ -50,10 +67,14 @@ function EditPostModal({ isOpen, onClose, post, onPostUpdated }) {
   // REMOVE EXISTING IMAGE
   // ============================================
   const handleRemoveExistingImage = (index) => {
-    const imageUrl = existingImages[index];
-    console.log(`🗑️ Rimozione immagine: ${imageUrl}`);
+    const image = existingImages[index];
+    console.log(
+      `🗑️ Segnata per rimozione - ID: ${image.id}, URL: ${image.imageUrl}`,
+    );
 
-    setImagesToRemove((prev) => [...prev, imageUrl]);
+    // Aggiungi alla lista di immagini da rimuovere (tracciamo l'oggetto, non l'indice)
+    setImagesToRemove((prev) => [...prev, image]);
+    // Rimuovi dalla visualizzazione
     setExistingImages((prev) => prev.filter((_, i) => i !== index));
   };
 
@@ -119,48 +140,42 @@ function EditPostModal({ isOpen, onClose, post, onPostUpdated }) {
 
     try {
       // STEP 1: Aggiorna contenuto
-      await api.put(`/posts/${post.id}`, {
-        content: content.trim(),
-      });
+      await api.put(`/posts/${post.id}`, { content: content.trim() });
+      console.log("✅ Contenuto aggiornato");
 
-      // STEP 2: Rimuovi immagini eliminate (dall'indice più alto al più basso per evitare shift)
-      const originalImages =
-        post.imageUrls || (post.imageUrl ? [post.imageUrl] : []);
-
-      // Raccogli gli indici originali e ordinali in senso decrescente
-      const indicesToRemove = imagesToRemove
-        .map((imageUrl) => originalImages.indexOf(imageUrl))
-        .filter((index) => index !== -1)
-        .sort((a, b) => b - a); // decrescente
-
-      for (const originalIndex of indicesToRemove) {
-        console.log(`🗑️ DELETE /posts/${post.id}/images/${originalIndex}`);
-        await api.delete(`/posts/${post.id}/images/${originalIndex}`);
+      // STEP 2: Rimuovi immagini eliminate usando l'ID stabile (non l'indice posizionale)
+      for (const image of imagesToRemove) {
+        if (image.id != null) {
+          console.log(`🗑️ DELETE /posts/${post.id}/images/${image.id}`);
+          await api.delete(`/posts/${post.id}/images/${image.id}`);
+          console.log(`✅ Immagine ID ${image.id} eliminata`);
+        } else {
+          console.warn(
+            "⚠️ Immagine senza ID, salto la rimozione:",
+            image.imageUrl,
+          );
+        }
       }
 
       // STEP 3: Aggiungi nuove immagini
       if (newImages.length > 0) {
         console.log(`📤 Upload ${newImages.length} nuove immagini`);
         const formData = new FormData();
-        newImages.forEach((image) => {
-          formData.append("images", image);
-        });
+        newImages.forEach((image) => formData.append("images", image));
 
         await api.post(`/posts/${post.id}/images`, formData, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
+          headers: { "Content-Type": "multipart/form-data" },
         });
+        console.log("✅ Nuove immagini caricate");
       }
 
-      // STEP 4: Fetch post aggiornato
-      console.log("🔄 Fetch post aggiornato...");
+      // STEP 4: Fetch post aggiornato (con il nuovo campo images che ha gli ID)
+      console.log("📂 Fetch post aggiornato...");
       const response = await api.get(`/posts/${post.id}`);
-      console.log(" Post aggiornato ricevuto:", response.data);
+      console.log("✅ Post aggiornato ricevuto:", response.data);
 
       toast.success("Post modificato con successo!");
 
-      //  Notifica parent con response.data
       if (onPostUpdated) {
         onPostUpdated(response.data);
       }
@@ -169,8 +184,7 @@ function EditPostModal({ isOpen, onClose, post, onPostUpdated }) {
     } catch (error) {
       console.error("❌ Errore salvataggio:", error);
       toast.error(
-        error.response?.data?.message ||
-          "Errore nel salvataggio delle modifiche",
+        error.response?.data?.message || "Errore nel salvataggio delle modifiche",
       );
     } finally {
       setSaving(false);
@@ -233,9 +247,9 @@ function EditPostModal({ isOpen, onClose, post, onPostUpdated }) {
               </label>
               <div className="grid grid-cols-5 gap-3">
                 {existingImages.map((img, index) => (
-                  <div key={index} className="relative group">
+                  <div key={img.id ?? `existing-${index}`} className="relative group">
                     <img
-                      src={img}
+                      src={img.imageUrl}
                       alt={`Immagine ${index + 1}`}
                       className="w-full h-24 object-cover rounded-lg border-2 border-gray-200"
                     />
@@ -270,7 +284,7 @@ function EditPostModal({ isOpen, onClose, post, onPostUpdated }) {
               </label>
               <div className="grid grid-cols-5 gap-3">
                 {newImagePreviews.map((preview, index) => (
-                  <div key={index} className="relative group">
+                  <div key={`new-${index}`} className="relative group">
                     <img
                       src={preview}
                       alt={`Nuova ${index + 1}`}
@@ -310,27 +324,19 @@ function EditPostModal({ isOpen, onClose, post, onPostUpdated }) {
               </label>
               <div
                 {...getRootProps()}
-                className={`
-                  border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition
-                  ${isDragActive ? "border-blue-500 bg-blue-50" : "border-gray-300 hover:border-blue-400"}
-                `}>
+                className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition ${
+                  isDragActive ? "border-blue-500 bg-blue-50" : "border-gray-300 hover:border-blue-400"
+                }`}>
                 <input {...getInputProps()} />
                 <svg
                   className="w-10 h-10 mx-auto text-gray-400 mb-2"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 4v16m8-8H4"
-                  />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
                 <p className="text-sm text-gray-600">
-                  {isDragActive
-                    ? "Rilascia qui..."
-                    : "Trascina immagini o clicca"}
+                  {isDragActive ? "Rilascia qui..." : "Trascina immagini o clicca"}
                 </p>
               </div>
             </div>
@@ -365,3 +371,4 @@ function EditPostModal({ isOpen, onClose, post, onPostUpdated }) {
 }
 
 export default EditPostModal;
+

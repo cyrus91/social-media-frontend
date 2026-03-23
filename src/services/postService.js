@@ -212,6 +212,44 @@ export const toggleLike = async (postId) => {
 };
 
 // ============================================
+// DELETE - Rimuovi immagine da un post (usa imageId, non indice posizionale)
+// ============================================
+export const removeImageFromPost = async (postId, imageId) => {
+  try {
+    await api.delete(`/posts/${postId}/images/${imageId}`);
+    return { success: true };
+  } catch (error) {
+    console.error("❌ Errore rimozione immagine:", error);
+    return {
+      success: false,
+      error: error.response?.data?.message || "Errore nella rimozione dell'immagine",
+    };
+  }
+};
+
+// ============================================
+// POST - Aggiungi immagini a un post esistente
+// ============================================
+export const addImagesToPost = async (postId, images) => {
+  try {
+    const formData = new FormData();
+    images.forEach((image) => formData.append("images", image));
+
+    const response = await api.post(`/posts/${postId}/images`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+
+    return { success: true, data: response.data };
+  } catch (error) {
+    console.error("❌ Errore aggiunta immagini:", error);
+    return {
+      success: false,
+      error: error.response?.data?.message || "Errore nell'aggiunta delle immagini",
+    };
+  }
+};
+
+// ============================================
 // POST - Crea post con immagini multiple
 // ============================================
 export const createPostWithImages = async (content, images) => {
