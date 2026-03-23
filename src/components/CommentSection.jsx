@@ -460,7 +460,7 @@ function CommentSection({
                 <div className="flex items-center px-3 py-2 space-x-2">
                   {/* Emoji visibile solo quando NON c'è testo */}
                   {!commentText && (
-                    <div className="flex-shrink-0" style={{ marginBottom: "4px" }}>
+                    <div className="flex-shrink-0" style={{ marginBottom: "6px" }}>
                       <EmojiPickerButton
                         onEmojiSelect={(emoji) => setCommentText((prev) => prev + emoji)}
                       />
