@@ -455,35 +455,50 @@ function CommentSection({
 
               {/* Box commento */}
               <div className={`flex-1 border rounded-2xl bg-white transition-all duration-200 ${commentText ? 'border-blue-400' : 'border-gray-300'}`}>
-                {/* Textarea */}
-                <textarea
-                  value={commentText}
-                  onChange={(e) => setCommentText(e.target.value)}
-                  placeholder="Scrivi un commento..."
-                  rows={1}
-                  style={{ resize: "none" }}
-                  className="w-full px-4 pt-2 pb-1 rounded-2xl outline-none text-sm bg-transparent"
-                  onInput={(e) => {
-                    // Auto-resize
-                    e.target.style.height = "auto";
-                    e.target.style.height = e.target.scrollHeight + "px";
-                  }}
-                />
 
-                {/* Barra inferiore: emoji a sinistra, Commenta a destra */}
-                <div className="flex items-center justify-between px-2 pb-2">
-                  <EmojiPickerButton
-                    onEmojiSelect={(emoji) => setCommentText((prev) => prev + emoji)}
-                  />
-                  {commentText.trim() && (
-                    <button
-                      type="submit"
-                      disabled={submitting}
-                      className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-1 rounded-full font-semibold text-sm transition disabled:opacity-50">
-                      {submitting ? "Invio..." : "Commenta"}
-                    </button>
-                  )}
-                </div>
+                {commentText ? (
+                  /* CON TESTO: textarea sopra, barra emoji+commenta sotto */
+                  <>
+                    <textarea
+                      value={commentText}
+                      onChange={(e) => setCommentText(e.target.value)}
+                      placeholder="Scrivi un commento..."
+                      rows={2}
+                      style={{ resize: "none" }}
+                      className="w-full px-4 pt-2 pb-1 rounded-t-2xl outline-none text-sm bg-transparent"
+                      onInput={(e) => {
+                        e.target.style.height = "auto";
+                        e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px";
+                      }}
+                    />
+                    <div className="flex items-center justify-between px-2 pb-2 border-t border-gray-100">
+                      <EmojiPickerButton
+                        onEmojiSelect={(emoji) => setCommentText((prev) => prev + emoji)}
+                      />
+                      <button
+                        type="submit"
+                        disabled={submitting}
+                        className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-1 rounded-full font-semibold text-sm transition disabled:opacity-50">
+                        {submitting ? "Invio..." : "Commenta"}
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  /* SENZA TESTO: emoji e placeholder sulla stessa riga */
+                  <div className="flex items-center px-3 py-2 space-x-2">
+                    <EmojiPickerButton
+                      onEmojiSelect={(emoji) => setCommentText((prev) => prev + emoji)}
+                    />
+                    <textarea
+                      value={commentText}
+                      onChange={(e) => setCommentText(e.target.value)}
+                      placeholder="Scrivi un commento..."
+                      rows={1}
+                      style={{ resize: "none" }}
+                      className="flex-1 outline-none text-sm bg-transparent py-0.5"
+                    />
+                  </div>
+                )}
               </div>
             </form>
           </div>
