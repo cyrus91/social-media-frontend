@@ -3,14 +3,13 @@ import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import PostCard from "../components/PostCard";
 import LoadingSpinner from "../components/LoadingSpinner";
+import AvatarZoom from "../components/AvatarZoom";
 import { fetchUserProfile } from "../services/userService";
-import { fetchPosts } from "../services/postService";
 import useAuthStore from "../store/authStore";
 import toast from "react-hot-toast";
 import FollowButton from "../components/FollowButton";
 import api from "../services/api";
 import EditProfileModal from "../components/EditProfileModal";
-import { deleteAccount } from "../services/userService";
 
 function ProfilePage() {
   const { username } = useParams();
@@ -183,19 +182,13 @@ function ProfilePage() {
           {/* Profile Info */}
           <div className="px-4 sm:px-6 pb-4 sm:pb-6">
             <div className="flex flex-col sm:flex-row sm:items-end sm:space-x-5 -mt-12 sm:-mt-16">
-              {/* Avatar */}
+              {/* Avatar con zoom */}
               <div className="flex justify-center sm:justify-start">
-                {profile.avatarUrl ? (
-                  <img
-                    src={profile.avatarUrl}
-                    alt={profile.username}
-                    className="w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32 rounded-full object-cover border-4 border-white shadow-lg"
-                  />
-                ) : (
-                  <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-3xl sm:text-4xl md:text-5xl font-bold border-4 border-white shadow-lg">
-                    {profile.username?.charAt(0).toUpperCase()}
-                  </div>
-                )}
+                <AvatarZoom
+                  src={profile.avatarUrl}
+                  username={profile.username}
+                  size="profile"
+                />
               </div>
 
               {/* Name & Actions */}
@@ -239,7 +232,7 @@ function ProfilePage() {
                         <FollowButton
                           userId={profile.id}
                           username={profile.username}
-                          onFollowChange={async (isFollowing) => {
+                          onFollowChange={async () => {
                             console.log(
                               "🔄 Follow cambiato - ricarico profilo...",
                             );
