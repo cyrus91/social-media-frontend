@@ -439,42 +439,46 @@ function CommentSection({
           )}
 
           {/* Add comment form */}
-          <form onSubmit={handleSubmit} className="flex space-x-3">
-            {/* Avatar */}
-            {user?.avatarUrl ? (
-              <img
-                src={user.avatarUrl}
-                alt={user.username}
-                className="w-8 h-8 rounded-full object-cover flex-shrink-0 border-2 border-blue-500"
-              />
-            ) : (
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-                {user?.username?.charAt(0).toUpperCase()}
-              </div>
-            )}
+          <form onSubmit={handleSubmit} className="flex items-end space-x-2">
+            {/* Avatar — nascosto su mobile per risparmiare spazio */}
+            <div className="hidden sm:block flex-shrink-0">
+              {user?.avatarUrl ? (
+                <img
+                  src={user.avatarUrl}
+                  alt={user.username}
+                  className="w-8 h-8 rounded-full object-cover border-2 border-blue-500"
+                />
+              ) : (
+                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                  {user?.username?.charAt(0).toUpperCase()}
+                </div>
+              )}
+            </div>
 
-            {/* Input */}
-            <div className="flex-1">
+            {/* Input con emoji dentro */}
+            <div className="flex-1 relative">
               <textarea
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
                 placeholder="Scrivi un commento..."
                 rows="2"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none text-sm"
+                className="w-full px-3 py-2 pr-9 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none text-sm"
               />
-
-              <div className="flex items-center justify-between mt-2">
+              {/* Emoji button dentro la textarea in basso a destra */}
+              <div className="absolute bottom-2 right-2">
                 <EmojiPickerButton
                   onEmojiSelect={(emoji) => setCommentText((prev) => prev + emoji)}
                 />
-                <button
-                  type="submit"
-                  disabled={submitting || !commentText.trim()}
-                  className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold text-sm transition disabled:opacity-50 disabled:cursor-not-allowed">
-                  {submitting ? "Invio..." : "Commenta"}
-                </button>
               </div>
             </div>
+
+            {/* Bottone commenta a fianco */}
+            <button
+              type="submit"
+              disabled={submitting || !commentText.trim()}
+              className="flex-shrink-0 bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-xl font-semibold text-sm transition disabled:opacity-50 disabled:cursor-not-allowed h-[68px] flex items-center">
+              {submitting ? "..." : "Commenta"}
+            </button>
           </form>
         </div>
       )}
