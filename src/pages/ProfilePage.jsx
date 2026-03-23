@@ -467,12 +467,13 @@ function ProfilePage() {
                   post.imageUrls.map((url, imgIndex) => (
                     <div
                       key={`${post.id}-${imgIndex}`}
-                      className="relative aspect-square cursor-pointer group overflow-hidden"
+                      className="relative cursor-pointer group overflow-hidden bg-gray-100"
+                      style={{ paddingBottom: "100%" }}
                       onClick={() => navigate(`/post/${post.id}`)}>
                       <img
                         src={url}
                         alt={`Media ${post.id}`}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
                       {/* Overlay hover */}
                       <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-300 flex items-center justify-center">
