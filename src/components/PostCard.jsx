@@ -489,6 +489,7 @@ function PostCard({ post, onLikeUpdate, onPostDeleted, onPostUpdated }) {
           postId={post.id}
           initialCommentCount={commentCount}
           onCommentCountChange={handleCommentCountChange}
+          defaultExpanded={true}
         />
       </div>
       )}

@@ -15,14 +15,11 @@ function CommentSection({
   postId,
   initialCommentCount = 0,
   onCommentCountChange,
+  defaultExpanded = false,
 }) {
   const user = useAuthStore((state) => state.user);
-
-  // ============================================
-  // STATE
-  // ============================================
+  const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const [comments, setComments] = useState([]);
-  const [isExpanded, setIsExpanded] = useState(false);
   const [loading, setLoading] = useState(false);
   const [commentText, setCommentText] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -460,7 +457,7 @@ function CommentSection({
                 <div className="flex items-center px-3 py-2 space-x-2">
                   {/* Emoji visibile solo quando NON c'è testo */}
                   {!commentText && (
-                    <div className="flex-shrink-0" style={{ marginBottom: "6px" }}>
+                    <div className="flex-shrink-0" style={{ marginBottom: "4px" }}>
                       <EmojiPickerButton
                         onEmojiSelect={(emoji) => setCommentText((prev) => prev + emoji)}
                       />
