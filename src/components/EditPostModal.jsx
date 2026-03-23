@@ -123,17 +123,19 @@ function EditPostModal({ isOpen, onClose, post, onPostUpdated }) {
         content: content.trim(),
       });
 
-      // STEP 2: Rimuovi immagini eliminate
+      // STEP 2: Rimuovi immagini eliminate (dall'indice più alto al più basso per evitare shift)
       const originalImages =
         post.imageUrls || (post.imageUrl ? [post.imageUrl] : []);
 
-      for (const imageUrl of imagesToRemove) {
-        const originalIndex = originalImages.indexOf(imageUrl);
+      // Raccogli gli indici originali e ordinali in senso decrescente
+      const indicesToRemove = imagesToRemove
+        .map((imageUrl) => originalImages.indexOf(imageUrl))
+        .filter((index) => index !== -1)
+        .sort((a, b) => b - a); // decrescente
 
-        if (originalIndex !== -1) {
-          console.log(`🗑️ DELETE /posts/${post.id}/images/${originalIndex}`);
-          await api.delete(`/posts/${post.id}/images/${originalIndex}`);
-        }
+      for (const originalIndex of indicesToRemove) {
+        console.log(`🗑️ DELETE /posts/${post.id}/images/${originalIndex}`);
+        await api.delete(`/posts/${post.id}/images/${originalIndex}`);
       }
 
       // STEP 3: Aggiungi nuove immagini
