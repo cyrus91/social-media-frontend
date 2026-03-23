@@ -1,10 +1,5 @@
 import { useState } from "react";
 
-/**
- * Componente riusabile per avatar con zoom al click
- * Usalo così:
- * <AvatarZoom src={avatarUrl} username={username} size="md" />
- */
 function AvatarZoom({ src, username, size = "md", className = "" }) {
   const [zoomed, setZoomed] = useState(false);
 
@@ -17,30 +12,42 @@ function AvatarZoom({ src, username, size = "md", className = "" }) {
 
   const initial = username?.charAt(0).toUpperCase() || "?";
 
+  const handleAvatarClick = (e) => {
+    if (!src) return;
+    e.preventDefault();      // blocca navigazione Link padre
+    e.stopPropagation();     // blocca bubble
+    setZoomed(true);
+  };
+
+  const handleClose = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setZoomed(false);
+  };
+
   return (
     <>
-      {/* Avatar */}
       <div
-        className={`${sizeClasses[size]} rounded-full flex-shrink-0 cursor-pointer ${className}`}
-        onClick={() => src && setZoomed(true)}>
+        className={`${sizeClasses[size]} rounded-full flex-shrink-0 ${src ? "cursor-zoom-in" : ""} ${className}`}
+        onClick={handleAvatarClick}>
         {src ? (
           <img
             src={src}
             alt={username}
-            className={`${sizeClasses[size]} rounded-full object-cover ring-2 ring-transparent hover:ring-blue-400 transition-shadow cursor-pointer`}
+            className={`${sizeClasses[size]} rounded-full object-cover ring-2 ring-transparent hover:ring-blue-400 transition-shadow`}
           />
         ) : (
-          <div className={`${sizeClasses[size]} bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold cursor-pointer`}>
+          <div className={`${sizeClasses[size]} bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold`}>
             {initial}
           </div>
         )}
       </div>
 
-      {/* Overlay zoom */}
+      {/* Overlay zoom — solo quando zoomed è true */}
       {zoomed && (
         <div
           className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-[9999]"
-          onClick={() => setZoomed(false)}>
+          onClick={handleClose}>
           <div className="relative" onClick={(e) => e.stopPropagation()}>
             <img
               src={src}
@@ -48,7 +55,8 @@ function AvatarZoom({ src, username, size = "md", className = "" }) {
               className="w-64 h-64 rounded-full object-cover shadow-2xl border-4 border-white"
             />
             <button
-              onClick={() => setZoomed(false)}
+              type="button"
+              onClick={handleClose}
               className="absolute -top-3 -right-3 bg-white text-gray-800 rounded-full w-8 h-8 flex items-center justify-center shadow-lg hover:bg-gray-100 transition font-bold">
               ✕
             </button>
