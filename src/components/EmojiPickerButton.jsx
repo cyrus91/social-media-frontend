@@ -4,7 +4,7 @@ import EmojiPicker from "emoji-picker-react";
 function EmojiPickerButton({ onEmojiSelect, theme = "light" }) {
   const [open, setOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 640);
-  const [openLeft, setOpenLeft] = useState(false);
+  const [pickerStyle, setPickerStyle] = useState({});
   const wrapperRef = useRef(null);
 
   useEffect(() => {
@@ -13,7 +13,6 @@ function EmojiPickerButton({ onEmojiSelect, theme = "light" }) {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Chiudi cliccando fuori su desktop
   useEffect(() => {
     if (!open || isMobile) return;
     const handleClickOutside = (e) => {
@@ -26,12 +25,33 @@ function EmojiPickerButton({ onEmojiSelect, theme = "light" }) {
   }, [open, isMobile]);
 
   const handleToggle = () => {
-    if (!open && wrapperRef.current) {
-      // Calcola se c'è spazio a destra o bisogna aprire a sinistra
+    if (!open && wrapperRef.current && !isMobile) {
       const rect = wrapperRef.current.getBoundingClientRect();
       const pickerWidth = 300;
+      const pickerHeight = 350;
+
+      // Spazio sopra e sotto
+      const spaceAbove = rect.top;
+      // Spazio a destra e sinistra
       const spaceRight = window.innerWidth - rect.left;
-      setOpenLeft(spaceRight < pickerWidth + 16);
+
+      const style = {};
+
+      // Verticale: apri sotto se non c'è spazio sopra
+      if (spaceAbove >= pickerHeight + 16) {
+        style.bottom = "calc(100% + 8px)";
+      } else {
+        style.top = "calc(100% + 8px)";
+      }
+
+      // Orizzontale: apri a destra se c'è spazio, altrimenti a sinistra
+      if (spaceRight >= pickerWidth + 16) {
+        style.left = 0;
+      } else {
+        style.right = 0;
+      }
+
+      setPickerStyle(style);
     }
     setOpen(!open);
   };
@@ -83,13 +103,11 @@ function EmojiPickerButton({ onEmojiSelect, theme = "light" }) {
           ) : (
             <div style={{
               position: "absolute",
-              bottom: "calc(100% + 8px)",
-              // Apri a destra se c'è spazio, altrimenti a sinistra
-              ...(openLeft ? { right: 0 } : { left: 0 }),
               zIndex: 9999,
               boxShadow: "0 4px 24px rgba(0,0,0,0.15)",
               borderRadius: 12,
-              overflow: "hidden"
+              overflow: "hidden",
+              ...pickerStyle
             }}>
               <EmojiPicker
                 onEmojiClick={handleSelect}
