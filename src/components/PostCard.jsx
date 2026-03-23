@@ -471,11 +471,13 @@ function PostCard({ post, onLikeUpdate, onPostDeleted, onPostUpdated }) {
       </div>
 
       {/* Comment Section */}
-      <CommentSection
-        postId={post.id}
-        initialCommentCount={commentCount}
-        onCommentCountChange={handleCommentCountChange}
-      />
+      <div className="px-3 sm:px-4 pb-3 sm:pb-4">
+        <CommentSection
+          postId={post.id}
+          initialCommentCount={commentCount}
+          onCommentCountChange={handleCommentCountChange}
+        />
+      </div>
 
       {/* Likes Drawer */}
       <LikesDrawer

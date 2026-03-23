@@ -439,7 +439,7 @@ function CommentSection({
           )}
 
           {/* Add comment form — stile LinkedIn */}
-          <div className="mt-3 pt-3 border-t border-gray-100">
+          <div className="mt-4 pt-4 border-t border-gray-200">
             <form onSubmit={handleSubmit} className="flex items-start space-x-2">
               {/* Avatar */}
               <div className="flex-shrink-0">
