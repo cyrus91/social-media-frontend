@@ -440,7 +440,7 @@ function CommentSection({
 
           {/* Add comment form */}
           <form onSubmit={handleSubmit} className="flex items-end space-x-2">
-            {/* Avatar — nascosto su mobile per risparmiare spazio */}
+            {/* Avatar — nascosto su mobile */}
             <div className="hidden sm:block flex-shrink-0">
               {user?.avatarUrl ? (
                 <img
@@ -455,7 +455,7 @@ function CommentSection({
               )}
             </div>
 
-            {/* Input con emoji dentro */}
+            {/* Input */}
             <div className="flex-1 relative">
               <textarea
                 value={commentText}
@@ -464,7 +464,7 @@ function CommentSection({
                 rows="2"
                 className="w-full px-3 py-2 pr-9 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none text-sm"
               />
-              {/* Emoji button dentro la textarea in basso a destra */}
+              {/* Emoji button in basso a destra dentro la textarea */}
               <div className="absolute bottom-2 right-2">
                 <EmojiPickerButton
                   onEmojiSelect={(emoji) => setCommentText((prev) => prev + emoji)}
@@ -472,11 +472,11 @@ function CommentSection({
               </div>
             </div>
 
-            {/* Bottone commenta a fianco */}
+            {/* Bottone commenta — stesso height della textarea */}
             <button
               type="submit"
               disabled={submitting || !commentText.trim()}
-              className="flex-shrink-0 bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-xl font-semibold text-sm transition disabled:opacity-50 disabled:cursor-not-allowed h-[68px] flex items-center">
+              className="flex-shrink-0 bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-xl font-semibold text-sm transition disabled:opacity-50 disabled:cursor-not-allowed self-end">
               {submitting ? "..." : "Commenta"}
             </button>
           </form>

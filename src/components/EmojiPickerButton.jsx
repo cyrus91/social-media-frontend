@@ -1,93 +1,81 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import EmojiPicker from "emoji-picker-react";
 
 function EmojiPickerButton({ onEmojiSelect, theme = "light" }) {
   const [open, setOpen] = useState(false);
-  const [position, setPosition] = useState({ bottom: true, left: true });
-  const buttonRef = useRef(null);
-  const ref = useRef(null);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 640);
 
-  // Calcola la posizione ottimale in base allo spazio disponibile
-  const calculatePosition = () => {
-    if (!buttonRef.current) return;
-    const rect = buttonRef.current.getBoundingClientRect();
-    const windowWidth = window.innerWidth;
-    const windowHeight = window.innerHeight;
-    const pickerWidth = Math.min(300, windowWidth - 16);
-    const pickerHeight = 380;
-
-    // Apri a sinistra se non c'è spazio a destra
-    const openLeft = rect.left + pickerWidth > windowWidth - 8;
-    // Apri in alto se non c'è spazio in basso
-    const openTop = rect.bottom + pickerHeight > windowHeight - 8;
-
-    setPosition({ bottom: openTop, left: !openLeft });
-  };
-
-  // Chiudi cliccando fuori
   useEffect(() => {
-    function handleClickOutside(e) {
-      if (ref.current && !ref.current.contains(e.target)) {
-        setOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    const handleResize = () => setIsMobile(window.innerWidth < 640);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
-
-  const handleOpen = () => {
-    calculatePosition();
-    setOpen(!open);
-  };
 
   const handleSelect = (emojiData) => {
     onEmojiSelect(emojiData.emoji);
     setOpen(false);
   };
 
-  const isMobile = window.innerWidth < 640;
-  const pickerWidth = isMobile ? Math.min(280, window.innerWidth - 32) : 300;
-
-  // Classi di posizionamento dinamiche
-  const positionClasses = [
-    position.bottom ? "bottom-10" : "top-10",
-    position.left ? "left-0" : "right-0",
-  ].join(" ");
-
   return (
-    <div className="relative" ref={ref}>
+    <>
       <button
-        ref={buttonRef}
         type="button"
-        onClick={handleOpen}
-        className="text-gray-400 hover:text-yellow-500 transition p-1 rounded-full hover:bg-gray-100 text-lg"
+        onClick={() => setOpen(!open)}
+        className="text-gray-400 hover:text-yellow-500 transition p-1 rounded-full hover:bg-gray-100 text-base leading-none"
         title="Aggiungi emoji">
         😊
       </button>
 
       {open && (
         <>
-          {/* Overlay su mobile per chiudere toccando fuori */}
-          {isMobile && (
-            <div
-              className="fixed inset-0 z-40"
-              onClick={() => setOpen(false)}
-            />
-          )}
+          {/* Overlay — chiude cliccando fuori */}
+          <div
+            className="fixed inset-0 z-[9998]"
+            onClick={() => setOpen(false)}
+          />
 
-          <div className={`absolute ${positionClasses} z-50 shadow-xl rounded-xl overflow-hidden`}>
-            <EmojiPicker
-              onEmojiClick={handleSelect}
-              theme={theme}
-              width={pickerWidth}
-              height={isMobile ? 320 : 380}
-              searchPlaceholder="Cerca emoji..."
-              previewConfig={{ showPreview: false }}
-            />
-          </div>
+          {isMobile ? (
+            /* MOBILE: bottom sheet */
+            <div
+              style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 9999, background: "white", borderRadius: "16px 16px 0 0", boxShadow: "0 -4px 20px rgba(0,0,0,0.15)" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", borderBottom: "1px solid #e5e7eb" }}>
+                <span style={{ fontWeight: 600, color: "#374151" }}>Scegli emoji</span>
+                <button onClick={() => setOpen(false)}
+                  style={{ background: "none", border: "none", fontSize: 18, cursor: "pointer", color: "#9ca3af" }}>✕</button>
+              </div>
+              <EmojiPicker
+                onEmojiClick={handleSelect}
+                theme={theme}
+                width="100%"
+                height={300}
+                searchPlaceholder="Cerca emoji..."
+                previewConfig={{ showPreview: false }}
+              />
+            </div>
+          ) : (
+            /* DESKTOP: apre in alto a sinistra rispetto al bottone */
+            <div style={{
+              position: "absolute",
+              bottom: "calc(100% + 8px)",
+              right: 0,
+              zIndex: 9999,
+              boxShadow: "0 4px 24px rgba(0,0,0,0.15)",
+              borderRadius: 12,
+              overflow: "hidden"
+            }}>
+              <EmojiPicker
+                onEmojiClick={handleSelect}
+                theme={theme}
+                width={300}
+                height={350}
+                searchPlaceholder="Cerca emoji..."
+                previewConfig={{ showPreview: false }}
+              />
+            </div>
+          )}
         </>
       )}
-    </div>
+    </>
   );
 }
 
