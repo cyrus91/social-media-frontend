@@ -456,10 +456,28 @@ function CommentSection({
               {/* Box commento */}
               <div className={`flex-1 border rounded-2xl bg-white transition-all duration-200 ${commentText ? 'border-blue-400' : 'border-gray-300'}`}>
 
-                {commentText ? (
-                  /* CON TESTO: textarea sopra, barra emoji+commenta sotto */
+                {/* Senza testo: emoji + placeholder sulla stessa riga */}
+                {!commentText && (
+                  <div className="flex items-center px-3 py-2 space-x-2">
+                    <EmojiPickerButton
+                      onEmojiSelect={(emoji) => setCommentText((prev) => prev + emoji)}
+                    />
+                    <textarea
+                      value={commentText}
+                      onChange={(e) => setCommentText(e.target.value)}
+                      placeholder="Scrivi un commento..."
+                      rows={1}
+                      style={{ resize: "none" }}
+                      className="flex-1 outline-none text-sm bg-transparent py-0.5"
+                    />
+                  </div>
+                )}
+
+                {/* Con testo: textarea sopra + barra emoji+commenta sotto */}
+                {commentText && (
                   <>
                     <textarea
+                      autoFocus
                       value={commentText}
                       onChange={(e) => setCommentText(e.target.value)}
                       placeholder="Scrivi un commento..."
@@ -483,21 +501,6 @@ function CommentSection({
                       </button>
                     </div>
                   </>
-                ) : (
-                  /* SENZA TESTO: emoji e placeholder sulla stessa riga */
-                  <div className="flex items-center px-3 py-2 space-x-2">
-                    <EmojiPickerButton
-                      onEmojiSelect={(emoji) => setCommentText((prev) => prev + emoji)}
-                    />
-                    <textarea
-                      value={commentText}
-                      onChange={(e) => setCommentText(e.target.value)}
-                      placeholder="Scrivi un commento..."
-                      rows={1}
-                      style={{ resize: "none" }}
-                      className="flex-1 outline-none text-sm bg-transparent py-0.5"
-                    />
-                  </div>
                 )}
               </div>
             </form>
