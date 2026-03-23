@@ -457,7 +457,7 @@ function CommentSection({
               <div className={`flex-1 border rounded-2xl bg-white transition-all duration-200 ${commentText ? 'border-blue-400' : 'border-gray-300'}`}>
 
                 {/* Riga superiore: emoji (solo senza testo) + textarea */}
-                <div className="flex items-center px-3 pt-2 space-x-2">
+                <div className="flex items-center px-3 py-2 space-x-2">
                   {/* Emoji visibile solo quando NON c'è testo */}
                   {!commentText && (
                     <div className="flex-shrink-0 flex items-center">
