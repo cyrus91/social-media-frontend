@@ -453,54 +453,46 @@ function CommentSection({
                 )}
               </div>
 
-              {/* Box commento */}
+              {/* Box commento — un solo textarea sempre montato */}
               <div className={`flex-1 border rounded-2xl bg-white transition-all duration-200 ${commentText ? 'border-blue-400' : 'border-gray-300'}`}>
 
-                {/* Senza testo: emoji + placeholder sulla stessa riga */}
-                {!commentText && (
-                  <div className="flex items-center px-3 py-2 space-x-2">
-                    <EmojiPickerButton
-                      onEmojiSelect={(emoji) => setCommentText((prev) => prev + emoji)}
-                    />
-                    <textarea
-                      value={commentText}
-                      onChange={(e) => setCommentText(e.target.value)}
-                      placeholder="Scrivi un commento..."
-                      rows={1}
-                      style={{ resize: "none" }}
-                      className="flex-1 outline-none text-sm bg-transparent py-0.5"
-                    />
-                  </div>
-                )}
-
-                {/* Con testo: textarea sopra + barra emoji+commenta sotto */}
-                {commentText && (
-                  <>
-                    <textarea
-                      autoFocus
-                      value={commentText}
-                      onChange={(e) => setCommentText(e.target.value)}
-                      placeholder="Scrivi un commento..."
-                      rows={2}
-                      style={{ resize: "none" }}
-                      className="w-full px-4 pt-2 pb-1 rounded-t-2xl outline-none text-sm bg-transparent"
-                      onInput={(e) => {
-                        e.target.style.height = "auto";
-                        e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px";
-                      }}
-                    />
-                    <div className="flex items-center justify-between px-2 pb-2 border-t border-gray-100">
+                {/* Riga superiore: emoji (solo senza testo) + textarea */}
+                <div className="flex items-center px-3 pt-2 space-x-2">
+                  {/* Emoji visibile solo quando NON c'è testo */}
+                  {!commentText && (
+                    <div className="flex-shrink-0">
                       <EmojiPickerButton
                         onEmojiSelect={(emoji) => setCommentText((prev) => prev + emoji)}
                       />
-                      <button
-                        type="submit"
-                        disabled={submitting}
-                        className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-1 rounded-full font-semibold text-sm transition disabled:opacity-50">
-                        {submitting ? "Invio..." : "Commenta"}
-                      </button>
                     </div>
-                  </>
+                  )}
+                  <textarea
+                    value={commentText}
+                    onChange={(e) => setCommentText(e.target.value)}
+                    placeholder="Scrivi un commento..."
+                    rows={1}
+                    style={{ resize: "none" }}
+                    className="flex-1 outline-none text-sm bg-transparent py-0.5 pb-2"
+                    onInput={(e) => {
+                      e.target.style.height = "auto";
+                      e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px";
+                    }}
+                  />
+                </div>
+
+                {/* Barra inferiore: emoji a sinistra + commenta a destra — solo con testo */}
+                {commentText && (
+                  <div className="flex items-center justify-between px-2 pb-2 border-t border-gray-100 mt-1">
+                    <EmojiPickerButton
+                      onEmojiSelect={(emoji) => setCommentText((prev) => prev + emoji)}
+                    />
+                    <button
+                      type="submit"
+                      disabled={submitting}
+                      className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-1 rounded-full font-semibold text-sm transition disabled:opacity-50">
+                      {submitting ? "Invio..." : "Commenta"}
+                    </button>
+                  </div>
                 )}
               </div>
             </form>
