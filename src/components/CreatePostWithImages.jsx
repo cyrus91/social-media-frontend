@@ -102,11 +102,11 @@ function CreatePostWithImages({ onPostCreated }) {
         {/* Box principale — unico sempre montato */}
         <div className={`border rounded-2xl transition-all duration-200 ${hasContent ? 'border-blue-400' : 'border-gray-300'}`}>
 
-          {/* Riga con emoji (visibile solo senza contenuto) + textarea SEMPRE montata */}
-          <div className={`flex items-center px-3 space-x-2 ${hasContent ? 'pt-3' : 'py-2'}`}>
-            {/* Emoji visibile solo senza contenuto */}
+          {/* Textarea SEMPRE nel DOM — niente rimount */}
+          <div className={`flex items-center px-3 space-x-2 ${hasContent ? 'pt-3 pb-1' : 'py-2'}`}>
+            {/* Emoji visibile solo senza contenuto, allineata alla textarea */}
             {!hasContent && (
-              <div className="flex-shrink-0 flex items-center self-center">
+              <div className="flex-shrink-0" style={{ marginBottom: "4px" }}>
                 <EmojiPickerButton
                   onEmojiSelect={(emoji) => {
                     setContent((prev) => prev + emoji);
@@ -115,8 +115,6 @@ function CreatePostWithImages({ onPostCreated }) {
                 />
               </div>
             )}
-
-            {/* Textarea SEMPRE nel DOM — niente rimount */}
             <textarea
               ref={textareaRef}
               value={content}
