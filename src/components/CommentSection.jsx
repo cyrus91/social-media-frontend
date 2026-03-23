@@ -438,15 +438,15 @@ function CommentSection({
             </p>
           )}
 
-          {/* Add comment form */}
-          <form onSubmit={handleSubmit} className="flex items-end space-x-2">
-            {/* Avatar — nascosto su mobile */}
-            <div className="hidden sm:block flex-shrink-0">
+          {/* Add comment form — stile LinkedIn */}
+          <form onSubmit={handleSubmit} className="flex items-start space-x-2 pt-1">
+            {/* Avatar allineato in alto */}
+            <div className="flex-shrink-0 mt-1">
               {user?.avatarUrl ? (
                 <img
                   src={user.avatarUrl}
                   alt={user.username}
-                  className="w-8 h-8 rounded-full object-cover border-2 border-blue-500"
+                  className="w-8 h-8 rounded-full object-cover"
                 />
               ) : (
                 <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
@@ -455,30 +455,37 @@ function CommentSection({
               )}
             </div>
 
-            {/* Input */}
-            <div className="flex-1 relative">
-              <textarea
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
-                placeholder="Scrivi un commento..."
-                rows="2"
-                className="w-full px-3 py-2 pr-9 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none text-sm"
-              />
-              {/* Emoji button in basso a destra dentro la textarea */}
-              <div className="absolute bottom-2 right-2">
-                <EmojiPickerButton
-                  onEmojiSelect={(emoji) => setCommentText((prev) => prev + emoji)}
+            {/* Input area */}
+            <div className="flex-1">
+              <div className={`border rounded-2xl transition-all duration-200 ${commentText ? 'border-blue-400 shadow-sm' : 'border-gray-300'} bg-white`}>
+                <textarea
+                  value={commentText}
+                  onChange={(e) => setCommentText(e.target.value)}
+                  placeholder="Scrivi un commento..."
+                  rows={commentText ? 2 : 1}
+                  className="w-full px-4 py-2 rounded-2xl outline-none resize-none text-sm bg-transparent"
                 />
-              </div>
-            </div>
 
-            {/* Bottone commenta — stesso height della textarea */}
-            <button
-              type="submit"
-              disabled={submitting || !commentText.trim()}
-              className="flex-shrink-0 bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-xl font-semibold text-sm transition disabled:opacity-50 disabled:cursor-not-allowed self-end">
-              {submitting ? "..." : "Commenta"}
-            </button>
+                {/* Toolbar con emoji — visibile sempre */}
+                <div className="flex items-center px-3 pb-2">
+                  <EmojiPickerButton
+                    onEmojiSelect={(emoji) => setCommentText((prev) => prev + emoji)}
+                  />
+                </div>
+              </div>
+
+              {/* Bottone Commenta — appare solo quando si scrive */}
+              {commentText.trim() && (
+                <div className="flex justify-end mt-2">
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-1.5 rounded-full font-semibold text-sm transition disabled:opacity-50 disabled:cursor-not-allowed">
+                    {submitting ? "Invio..." : "Commenta"}
+                  </button>
+                </div>
+              )}
+            </div>
           </form>
         </div>
       )}
