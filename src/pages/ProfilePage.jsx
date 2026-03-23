@@ -3,7 +3,6 @@ import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import PostCard from "../components/PostCard";
 import LoadingSpinner from "../components/LoadingSpinner";
-import AvatarZoom from "../components/AvatarZoom";
 import { fetchUserProfile } from "../services/userService";
 import useAuthStore from "../store/authStore";
 import toast from "react-hot-toast";
@@ -23,6 +22,8 @@ function ProfilePage() {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("posts");
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [likedPosts, setLikedPosts] = useState([]);
+  const [likedLoading, setLikedLoading] = useState(false);
 
   const isMyProfile = currentUser?.username === username;
 
@@ -104,6 +105,30 @@ function ProfilePage() {
     };
   }, [profile, activeTab, profile?.id, username]);
 
+  // Carica i post piaciuti quando la tab è "likes"
+  useEffect(() => {
+    if (!profile || activeTab !== "likes") return;
+    let ignore = false;
+
+    async function doLoadLikedPosts() {
+      setLikedLoading(true);
+      try {
+        const response = await api.get(`/likes/user/${profile.id}`, {
+          params: { page: 0, size: 100 },
+        });
+        if (!ignore) setLikedPosts(response.data.content || []);
+      } catch (error) {
+        console.error("❌ Errore caricamento post piaciuti:", error);
+        if (!ignore) setLikedPosts([]);
+      } finally {
+        if (!ignore) setLikedLoading(false);
+      }
+    }
+
+    doLoadLikedPosts();
+    return () => { ignore = true; };
+  }, [profile, activeTab]);
+
   const handleLikeUpdate = (postId, isLiked) => {
     setPosts((prevPosts) =>
       prevPosts.map((post) =>
@@ -124,6 +149,14 @@ function ProfilePage() {
     if (profile?.id) {
       fetchPostCount(profile.id);
     }
+  };
+
+  const handlePostUpdated = (postId, updatedData) => {
+    setPosts((prevPosts) =>
+      prevPosts.map((post) =>
+        post.id === postId ? { ...post, ...updatedData } : post
+      )
+    );
   };
 
   const formatJoinDate = (dateString) => {
@@ -182,13 +215,19 @@ function ProfilePage() {
           {/* Profile Info */}
           <div className="px-4 sm:px-6 pb-4 sm:pb-6">
             <div className="flex flex-col sm:flex-row sm:items-end sm:space-x-5 -mt-12 sm:-mt-16">
-              {/* Avatar con zoom */}
+              {/* Avatar */}
               <div className="flex justify-center sm:justify-start">
-                <AvatarZoom
-                  src={profile.avatarUrl}
-                  username={profile.username}
-                  size="profile"
-                />
+                {profile.avatarUrl ? (
+                  <img
+                    src={profile.avatarUrl}
+                    alt={profile.username}
+                    className="w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32 rounded-full object-cover border-4 border-white shadow-lg"
+                  />
+                ) : (
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-3xl sm:text-4xl md:text-5xl font-bold border-4 border-white shadow-lg">
+                    {profile.username?.charAt(0).toUpperCase()}
+                  </div>
+                )}
               </div>
 
               {/* Name & Actions */}
@@ -379,29 +418,90 @@ function ProfilePage() {
 
         {/* Likes section */}
         {activeTab === "likes" && (
-          <div className="bg-white rounded-lg shadow p-8 sm:p-12 text-center">
-            <div className="text-5xl sm:text-6xl mb-4">❤️</div>
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2">
-              Coming soon!
-            </h2>
-            <p className="text-sm sm:text-base text-gray-600">
-              Post piaciuti sarà disponibile a breve
-            </p>
+          <div>
+            {likedLoading ? (
+              <div className="flex justify-center py-12"><LoadingSpinner /></div>
+            ) : likedPosts.length === 0 ? (
+              <div className="bg-white rounded-lg shadow p-8 sm:p-12 text-center">
+                <div className="text-5xl sm:text-6xl mb-4">❤️</div>
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2">
+                  Nessun post piaciuto
+                </h2>
+                <p className="text-sm sm:text-base text-gray-600">
+                  {isMyProfile ? "Non hai ancora messo like a nessun post" : "Questo utente non ha ancora messo like a nessun post"}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {likedPosts.map((post) => (
+                  <PostCard
+                    key={post.id}
+                    post={post}
+                    onLikeUpdate={handleLikeUpdate}
+                    onPostDeleted={handlePostDeleted}
+                    onPostUpdated={handlePostUpdated}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         )}
 
         {/* Media section */}
-        {activeTab === "media" && (
-          <div className="bg-white rounded-lg shadow p-8 sm:p-12 text-center">
-            <div className="text-5xl sm:text-6xl mb-4">🖼️</div>
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2">
-              Coming soon!
-            </h2>
-            <p className="text-sm sm:text-base text-gray-600">
-              Galleria media sarà disponibile a breve
-            </p>
-          </div>
-        )}
+        {activeTab === "media" && (() => {
+          const mediaPosts = posts.filter(p => p.imageUrls && p.imageUrls.length > 0);
+          return mediaPosts.length === 0 ? (
+            <div className="bg-white rounded-lg shadow p-8 sm:p-12 text-center">
+              <div className="text-5xl sm:text-6xl mb-4">🖼️</div>
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2">
+                Nessun media
+              </h2>
+              <p className="text-sm sm:text-base text-gray-600">
+                {isMyProfile ? "Non hai ancora pubblicato post con immagini" : "Questo utente non ha ancora pubblicato immagini"}
+              </p>
+            </div>
+          ) : (
+            <div className="bg-white rounded-lg shadow overflow-hidden">
+              <div className="grid grid-cols-3 gap-0.5">
+                {mediaPosts.flatMap((post) =>
+                  post.imageUrls.map((url, imgIndex) => (
+                    <div
+                      key={`${post.id}-${imgIndex}`}
+                      className="relative aspect-square cursor-pointer group overflow-hidden"
+                      onClick={() => navigate(`/post/${post.id}`)}>
+                      <img
+                        src={url}
+                        alt={`Media ${post.id}`}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                      {/* Overlay hover */}
+                      <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-300 flex items-center justify-center">
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center space-x-3 text-white">
+                          <span className="flex items-center space-x-1 font-semibold">
+                            <span>❤️</span>
+                            <span>{post.likeCount || 0}</span>
+                          </span>
+                          <span className="flex items-center space-x-1 font-semibold">
+                            <span>💬</span>
+                            <span>{post.commentCount || 0}</span>
+                          </span>
+                        </div>
+                      </div>
+                      {/* Badge se ha più immagini */}
+                      {post.imageUrls.length > 1 && imgIndex === 0 && (
+                        <div className="absolute top-2 right-2">
+                          <svg className="w-5 h-5 text-white drop-shadow" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M2 6a2 2 0 012-2h12a2 2 0 012 2v12a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM4 6v12h12V6H4zm14-2a2 2 0 012 2v12a2 2 0 01-2 2v-2h2V8h-2V4z"/>
+                          </svg>
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          );
+        })()}
       </div>
 
       {/* Edit Profile Modal */}
