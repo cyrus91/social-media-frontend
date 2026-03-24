@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
+import { renderTextWithHashtags } from "../utils/hashtagUtils";
 import { toggleLike, deletePost } from "../services/postService";
 import toast from "react-hot-toast";
 import CommentSection from "./CommentSection";
@@ -13,6 +14,7 @@ import AvatarZoom from "./AvatarZoom";
 
 function PostCard({ post, onLikeUpdate, onPostDeleted, onPostUpdated }) {
   const currentUser = useAuthStore((state) => state.user);
+  const navigate = useNavigate();
   const [isLiked, setIsLiked] = useState(post.liked || false);
   const [likeCount, setLikeCount] = useState(post.likeCount || 0);
   const [isLiking, setIsLiking] = useState(false);
@@ -363,7 +365,7 @@ function PostCard({ post, onLikeUpdate, onPostDeleted, onPostUpdated }) {
         ) : (
           //  VISUALIZZAZIONE NORMALE
           <p className="text-gray-800 whitespace-pre-wrap break-words text-sm sm:text-base">
-            {localPost.content}
+            {renderTextWithHashtags(localPost.content, navigate)}
           </p>
         )}
       </div>
