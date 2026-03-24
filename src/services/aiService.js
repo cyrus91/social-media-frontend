@@ -1,9 +1,6 @@
 import api from './api';
 
 export const aiService = {
-  /**
-   * Genera caption per post con immagini
-   */
   generateCaption: async (partialText = '', imageUrls = [], tone = 'friendly') => {
     const response = await api.post('/ai/generate-caption',
       { imageUrls },
@@ -12,9 +9,6 @@ export const aiService = {
     return response.data;
   },
 
-  /**
-   * Migliora testo esistente
-   */
   improveText: async (text, context = 'social media post') => {
     const response = await api.post('/ai/improve-text', null, {
       params: { text, context }
@@ -22,9 +16,6 @@ export const aiService = {
     return response.data;
   },
 
-  /**
-   * Suggerisci risposta a commento
-   */
   suggestReply: async (comment, postContext = '') => {
     const response = await api.post('/ai/suggest-reply', null, {
       params: { comment, postContext }
@@ -32,13 +23,12 @@ export const aiService = {
     return response.data;
   },
 
-  /**
-   * Genera hashtags rilevanti
-   */
+  // Il backend restituisce List<String> direttamente
   suggestHashtags: async (content) => {
     const response = await api.post('/ai/suggest-hashtags', null, {
       params: { content }
     });
-    return response.data;
+    // response.data è già un array di stringhe
+    return Array.isArray(response.data) ? response.data : [];
   }
 };

@@ -3,6 +3,7 @@ import toast from "react-hot-toast";
 import useAuthStore from "../store/authStore";
 import api from "../services/api";
 import EmojiPickerButton from "./EmojiPickerButton";
+import AIHashtagSuggester from "./AIHashtagSuggester";
 import AICaptionGenerator from "./AICaptionGenerator";
 
 function CreatePostWithImages({ onPostCreated }) {
@@ -173,6 +174,10 @@ function CreatePostWithImages({ onPostCreated }) {
                     </svg>
                   </button>
                 )}
+                <AIHashtagSuggester
+                  content={content}
+                  onHashtagsInsert={(tags) => setContent((prev) => prev + tags)}
+                />
               </div>
               <button type="submit" disabled={uploading || !hasContent}
                 className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-1 rounded-full font-semibold text-sm transition disabled:opacity-50 flex items-center space-x-1">

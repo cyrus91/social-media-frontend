@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useAI } from "../hooks/useAI";
 import { Link } from "react-router-dom";
 import EmojiPickerButton from "./EmojiPickerButton";
 import AvatarZoom from "./AvatarZoom";
@@ -18,6 +19,7 @@ function CommentSection({
   defaultExpanded = false,
 }) {
   const user = useAuthStore((state) => state.user);
+  const { loading: aiLoading, suggestReply } = useAI();
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -480,9 +482,31 @@ function CommentSection({
                 {/* Barra inferiore: emoji a sinistra + commenta a destra — solo con testo */}
                 {commentText && (
                   <div className="flex items-center justify-between px-2 pb-2 border-t border-gray-100 mt-1">
-                    <EmojiPickerButton
-                      onEmojiSelect={(emoji) => setCommentText((prev) => prev + emoji)}
-                    />
+                    <div className="flex items-center space-x-1">
+                      <EmojiPickerButton
+                        onEmojiSelect={(emoji) => setCommentText((prev) => prev + emoji)}
+                      />
+                      {/* AI reply suggester */}
+                      <button
+                        type="button"
+                        disabled={aiLoading}
+                        onClick={async () => {
+                          const lastComment = comments[comments.length - 1]?.content || "";
+                          const suggestion = await suggestReply(commentText, lastComment);
+                          if (suggestion) setCommentText(suggestion);
+                        }}
+                        className="text-gray-400 hover:text-purple-500 transition p-1 rounded-full hover:bg-gray-100 disabled:opacity-40"
+                        title="Migliora con AI">
+                        {aiLoading ? (
+                          <div className="w-4 h-4 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                              d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                          </svg>
+                        )}
+                      </button>
+                    </div>
                     <button
                       type="submit"
                       disabled={submitting}
