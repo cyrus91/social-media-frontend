@@ -101,6 +101,14 @@ function Navbar() {
                     className="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition">
                     Il mio profilo
                   </Link>
+                  {user?.role === "ADMIN" && (
+                    <Link
+                      to="/admin"
+                      onClick={() => setShowDropdown(false)}
+                      className="block px-4 py-2 text-purple-600 hover:bg-gray-100 transition font-semibold">
+                      🛡️ Pannello Admin
+                    </Link>
+                  )}
                   <button
                     onClick={handleLogout}
                     className="w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100 transition">
@@ -200,6 +208,14 @@ function Navbar() {
                 className="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition">
                 👤 Il mio profilo
               </Link>
+              {user?.role === "ADMIN" && (
+                <Link
+                  to="/admin"
+                  onClick={() => setShowMobileMenu(false)}
+                  className="block px-4 py-2 text-purple-600 hover:bg-gray-100 rounded-lg transition font-semibold">
+                  🛡️ Pannello Admin
+                </Link>
+              )}
               <button
                 onClick={handleLogout}
                 className="text-left px-4 py-2 text-red-600 hover:bg-gray-100 rounded-lg transition">

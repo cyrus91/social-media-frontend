@@ -9,6 +9,7 @@ import PostPage from "./pages/PostPage";
 import { Toaster } from "react-hot-toast";
 import VerifyEmailPage from "./pages/VerifyEmailPage";
 import HashtagPage from "./pages/HashtagPage";
+import AdminPage from "./pages/AdminPage";
 
 function App() {
   return (
@@ -48,6 +49,14 @@ function App() {
         />
         <Route path="/post/:postId" element={<PostPage />} />
         <Route path="/hashtag/:tag" element={<HashtagPage />} />
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute>
+              <AdminPage />
+            </ProtectedRoute>
+          }
+        />
         {/* 404 - Not found */}
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
