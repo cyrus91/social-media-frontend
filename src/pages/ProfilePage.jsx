@@ -9,7 +9,7 @@ import toast from "react-hot-toast";
 import FollowButton from "../components/FollowButton";
 import api from "../services/api";
 import EditProfileModal from "../components/EditProfileModal";
-import FollowListModal from "../components/FollowListModal";
+import { messagingService } from "../services/messagingService";
 
 function ProfilePage() {
   const { username } = useParams();
@@ -23,7 +23,6 @@ function ProfilePage() {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("posts");
   const [editModalOpen, setEditModalOpen] = useState(false);
-  const [followModal, setFollowModal] = useState({ open: false, type: "followers" });
   const [likedPosts, setLikedPosts] = useState([]);
   const [likedLoading, setLikedLoading] = useState(false);
 
@@ -270,16 +269,35 @@ function ProfilePage() {
                       </button>
                     ) : (
                       profile.id && (
-                        <FollowButton
-                          userId={profile.id}
-                          username={profile.username}
-                          onFollowChange={async () => {
-                            console.log(
-                              "🔄 Follow cambiato - ricarico profilo...",
-                            );
-                            await loadProfile();
-                          }}
-                        />
+                        <div className="flex items-center space-x-2">
+                          <FollowButton
+                            userId={profile.id}
+                            username={profile.username}
+                            onFollowChange={async () => {
+                              console.log(
+                                "🔄 Follow cambiato - ricarico profilo...",
+                              );
+                              await loadProfile();
+                            }}
+                          />
+                          <button
+                            onClick={async () => {
+                              try {
+                                const conv = await messagingService.getOrCreateConversation(profile.id);
+                                navigate(`/messages/${conv.id}`);
+                              } catch (error) {
+                                console.error("Errore nell'apertura della chat:", error);
+                                toast.error("Errore nell'apertura della chat");
+                              }
+                            }}
+                            className="flex items-center space-x-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold px-4 py-2 rounded-lg transition text-sm">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                d="M8 10h.01M12 10h.01M16 10h.01M21 16V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2h3l3 3 3-3h3a2 2 0 002-2z" />
+                            </svg>
+                            <span className="hidden sm:inline">Messaggio</span>
+                          </button>
+                        </div>
                       )
                     )}
                   </div>
@@ -319,7 +337,7 @@ function ProfilePage() {
                   </div>
 
                   <button
-                    onClick={() => setFollowModal({ open: true, type: "followers" })}
+                    onClick={() => toast("Followers list - Coming soon!")}
                     className="text-center hover:opacity-80 transition">
                     <p className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800">
                       {profile.followerCount || 0}
@@ -330,7 +348,7 @@ function ProfilePage() {
                   </button>
 
                   <button
-                    onClick={() => setFollowModal({ open: true, type: "following" })}
+                    onClick={() => toast("Following list - Coming soon!")}
                     className="text-center hover:opacity-80 transition">
                     <p className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800">
                       {profile.followingCount || 0}
@@ -505,14 +523,6 @@ function ProfilePage() {
           );
         })()}
       </div>
-
-      {/* Follow List Modal */}
-      <FollowListModal
-        isOpen={followModal.open}
-        onClose={() => setFollowModal({ open: false, type: followModal.type })}
-        userId={profile?.id}
-        type={followModal.type}
-      />
 
       {/* Edit Profile Modal */}
       {isMyProfile && (
