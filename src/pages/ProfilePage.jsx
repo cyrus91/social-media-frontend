@@ -9,6 +9,7 @@ import toast from "react-hot-toast";
 import FollowButton from "../components/FollowButton";
 import api from "../services/api";
 import EditProfileModal from "../components/EditProfileModal";
+import FollowListModal from "../components/FollowListModal";
 
 function ProfilePage() {
   const { username } = useParams();
