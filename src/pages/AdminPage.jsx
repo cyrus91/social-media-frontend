@@ -1,12 +1,10 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import api from "../services/api";
 import toast from "react-hot-toast";
 import useAuthStore from "../store/authStore";
 
 function AdminPage() {
-  const navigate = useNavigate();
   const currentUser = useAuthStore((state) => state.user);
   const [activeTab, setActiveTab] = useState("stats");
   const [stats, setStats] = useState(null);
@@ -16,10 +14,6 @@ function AdminPage() {
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    if (currentUser?.role !== "ADMIN") {
-      navigate("/feed");
-      return;
-    }
     fetchStats();
   }, []);
 

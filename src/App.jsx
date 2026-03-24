@@ -10,6 +10,7 @@ import { Toaster } from "react-hot-toast";
 import VerifyEmailPage from "./pages/VerifyEmailPage";
 import HashtagPage from "./pages/HashtagPage";
 import AdminPage from "./pages/AdminPage";
+import AdminRoute from "./components/AdminRoute";
 
 function App() {
   return (
@@ -52,9 +53,9 @@ function App() {
         <Route
           path="/admin"
           element={
-            <ProtectedRoute>
+            <AdminRoute>
               <AdminPage />
-            </ProtectedRoute>
+            </AdminRoute>
           }
         />
         {/* 404 - Not found */}
