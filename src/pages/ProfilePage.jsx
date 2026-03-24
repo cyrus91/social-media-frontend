@@ -22,6 +22,7 @@ function ProfilePage() {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("posts");
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [followModal, setFollowModal] = useState({ open: false, type: "followers" });
   const [likedPosts, setLikedPosts] = useState([]);
   const [likedLoading, setLikedLoading] = useState(false);
 
@@ -317,7 +318,7 @@ function ProfilePage() {
                   </div>
 
                   <button
-                    onClick={() => toast("Followers list - Coming soon!")}
+                    onClick={() => setFollowModal({ open: true, type: "followers" })}
                     className="text-center hover:opacity-80 transition">
                     <p className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800">
                       {profile.followerCount || 0}
@@ -328,7 +329,7 @@ function ProfilePage() {
                   </button>
 
                   <button
-                    onClick={() => toast("Following list - Coming soon!")}
+                    onClick={() => setFollowModal({ open: true, type: "following" })}
                     className="text-center hover:opacity-80 transition">
                     <p className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800">
                       {profile.followingCount || 0}
@@ -503,6 +504,14 @@ function ProfilePage() {
           );
         })()}
       </div>
+
+      {/* Follow List Modal */}
+      <FollowListModal
+        isOpen={followModal.open}
+        onClose={() => setFollowModal({ open: false, type: followModal.type })}
+        userId={profile?.id}
+        type={followModal.type}
+      />
 
       {/* Edit Profile Modal */}
       {isMyProfile && (
