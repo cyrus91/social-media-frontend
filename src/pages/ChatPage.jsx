@@ -4,7 +4,8 @@ import { messagingService } from "../services/messagingService";
 import useAuthStore from "../store/authStore";
 import useMessagingStore from "../store/messagingStore";
 import { useMessagingEvents, notifyMessageSent,
-         setIncomingMessageHandler, clearIncomingMessageHandler } from "../hooks/useMessagingWebSocket";
+         setIncomingMessageHandler, clearIncomingMessageHandler,
+         playLightSound } from "../hooks/useMessagingWebSocket";
 import AvatarZoom from "../components/AvatarZoom";
 import EmojiPickerButton from "../components/EmojiPickerButton";
 import toast from "react-hot-toast";
@@ -26,6 +27,11 @@ function ChatPage() {
 
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
+  // Tiene traccia degli id messaggi già mostrati come ✓✓ grigia
+  // Una volta "consegnato" non torna mai a spunta singola anche se l'utente va offline
+  const deliveredIds = useRef(new Set());
+  // Tiene traccia se è già stato suonato il suono per i messaggi nuovi in questa sessione di chat
+  const lastSoundMsgId = useRef(null);
 
   // Ricava info conversazione dallo store globale
   const conversation = conversations.find(c => c.id === parseInt(conversationId));
@@ -75,6 +81,13 @@ function ChatPage() {
         setMessages((prev) => [...prev, msg]);
         messagingService.markAsRead(conversationId);
         markConversationRead(parseInt(conversationId));
+
+        // Suono leggero solo al primo messaggio nuovo ricevuto nella chat
+        // (non suona per i messaggi successivi nella stessa sessione — come WhatsApp)
+        if (lastSoundMsgId.current !== msg.id) {
+          lastSoundMsgId.current = msg.id;
+          playLightSound();
+        }
       }
     });
     return () => clearIncomingMessageHandler();
@@ -177,17 +190,21 @@ function ChatPage() {
                   {isMyMessage(msg) && (() => {
                     if (msg.isRead) {
                       // Letto → ✓✓ blu
+                      if (msg.id) deliveredIds.current.add(msg.id);
                       return <span className="ml-1 font-bold text-blue-500">✓✓</span>;
                     }
                     if (!msg.id) {
-                      // In invio (ottimistico, non ancora salvato) → ⏳
+                      // In invio → ⏳
                       return <span className="ml-1 text-gray-400">⏳</span>;
                     }
-                    if (otherOnline) {
-                      // Salvato + destinatario online ma non letto → ✓✓ grigia
+                    // Una volta che l'utente era online, salva l'id come "consegnato"
+                    // deliveredIds persiste per tutta la sessione nella chat
+                    if (otherOnline) deliveredIds.current.add(msg.id);
+                    if (deliveredIds.current.has(msg.id)) {
+                      // Consegnato (destinatario era online) → ✓✓ grigia, non torna indietro
                       return <span className="ml-1 font-bold text-gray-400">✓✓</span>;
                     }
-                    // Salvato + destinatario offline → ✓ grigia
+                    // Salvato ma destinatario mai stato online → ✓ grigia
                     return <span className="ml-1 font-bold text-gray-400">✓</span>;
                   })()}
                 </p>

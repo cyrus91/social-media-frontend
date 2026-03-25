@@ -32,6 +32,23 @@ function playNotificationSound() {
   }
 }
 
+// Suono leggero per messaggi ricevuti mentre si è nella chat
+export function playLightSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+    oscillator.connect(gainNode);
+    gainNode.connect(ctx.destination);
+    oscillator.type = "sine";
+    oscillator.frequency.setValueAtTime(1200, ctx.currentTime);
+    gainNode.gain.setValueAtTime(0.08, ctx.currentTime); // volume molto basso
+    gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+    oscillator.start(ctx.currentTime);
+    oscillator.stop(ctx.currentTime + 0.15);
+  } catch { /* fallback */ }
+}
+
 // ============================================
 // VIBRAZIONE (solo quando pagina in foreground)
 // ============================================
