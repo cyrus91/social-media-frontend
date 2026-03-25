@@ -41,7 +41,7 @@ function MessagesPage() {
     const timeout = setTimeout(async () => {
       setSearching(true);
       try {
-        const res = await api.get("/users/search", { params: { query: search } });
+        const res = await api.get("/users/search", { params: { q: search } });
         // Escludi te stesso
         setSearchResults((res.data || []).filter(u => u.id !== currentUser?.id));
         setShowResults(true);

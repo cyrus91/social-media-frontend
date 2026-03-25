@@ -5,6 +5,7 @@ import SockJS from "sockjs-client";
 import { messagingService } from "../services/messagingService";
 import useAuthStore from "../store/authStore";
 import AvatarZoom from "../components/AvatarZoom";
+import EmojiPickerButton from "../components/EmojiPickerButton";
 import toast from "react-hot-toast";
 
 const WS_URL = import.meta.env.VITE_API_BASE_URL?.replace("/api", "") || "https://zany-karlotte-hobby-app-f20c3361.koyeb.app";
@@ -113,8 +114,7 @@ function ChatPage() {
       setImageFile(null);
       setImagePreview(null);
     } catch (e) {
-      console.error("Errore invio messaggio:", e);
-      toast.error("Errore nell'invio del messaggio");
+      toast.error("Errore nell'invio del messaggio", e);
     } finally {
       setSending(false);
     }
@@ -200,10 +200,12 @@ function ChatPage() {
                   </div>
                 )}
                 {/* Timestamp */}
-                <p className={`text-xs text-gray-400 px-1 ${isMyMessage(msg) ? "text-right" : "text-left"}`}>
+                <p className={`text-xs px-1 ${isMyMessage(msg) ? "text-right" : "text-left"} text-gray-400`}>
                   {formatTime(msg.createdAt)}
                   {isMyMessage(msg) && (
-                    <span className="ml-1">{msg.isRead ? "✓✓" : "✓"}</span>
+                    <span className={`ml-1 font-bold ${msg.isRead ? "text-blue-500" : "text-gray-400"}`}>
+                      {msg.isRead ? "✓✓" : "✓"}
+                    </span>
                   )}
                 </p>
               </div>
@@ -240,8 +242,8 @@ function ChatPage() {
           </button>
           <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
 
-          {/* Textarea */}
-          <div className="flex-1 border border-gray-300 rounded-2xl px-4 py-2 focus-within:border-blue-400 transition bg-white">
+          {/* Textarea con emoji dentro */}
+          <div className="flex-1 border border-gray-300 rounded-2xl focus-within:border-blue-400 transition bg-white">
             <textarea
               value={text}
               onChange={(e) => setText(e.target.value)}
@@ -249,12 +251,17 @@ function ChatPage() {
               placeholder="Scrivi un messaggio..."
               rows={1}
               style={{ resize: "none" }}
-              className="w-full outline-none text-sm bg-transparent"
+              className="w-full outline-none text-sm bg-transparent px-4 pt-2 pb-1"
               onInput={(e) => {
                 e.target.style.height = "auto";
                 e.target.style.height = Math.min(e.target.scrollHeight, 100) + "px";
               }}
             />
+            <div className="px-2 pb-2">
+              <EmojiPickerButton
+                onEmojiSelect={(emoji) => setText((prev) => prev + emoji)}
+              />
+            </div>
           </div>
 
           {/* Bottone invia */}
