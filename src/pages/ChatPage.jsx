@@ -141,7 +141,7 @@ function ChatPage() {
                 className="font-semibold text-gray-800 text-sm hover:text-blue-500 transition">
                 @{conversation.otherUsername}
               </button>
-              <p className={`text-xs ${otherOnline ? "text-green-500" : "text-gray-400"}`}>{otherOnline ? "● Online" : "Offline"}</p>
+              <p className="text-xs text-gray-400">{otherOnline ? "● Online" : "Offline"}</p>
             </div>
           </>
         )}
@@ -179,11 +179,12 @@ function ChatPage() {
                       // Letto → ✓✓ blu
                       return <span className="ml-1 font-bold text-blue-500">✓✓</span>;
                     }
-                    if (msg.id && otherOnline === true) {
-                      // Persistito + destinatario online → ✓✓ grigia
+                    if (msg.id) {
+                      // Consegnato al server (ha id) → ✓✓ grigia
+                      // Non dipende dallo stato online — una volta salvato non torna indietro
                       return <span className="ml-1 font-bold text-gray-400">✓✓</span>;
                     }
-                    // Offline o messaggio non ancora confermato → ✓ grigia
+                    // Messaggio ottimistico non ancora confermato dal server → ✓ grigia
                     return <span className="ml-1 font-bold text-gray-400">✓</span>;
                   })()}
                 </p>
