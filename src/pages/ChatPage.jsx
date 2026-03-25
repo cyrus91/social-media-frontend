@@ -200,13 +200,21 @@ function ChatPage() {
                   </div>
                 )}
                 {/* Timestamp */}
+                {/* Timestamp + spunte */}
                 <p className={`text-xs px-1 ${isMyMessage(msg) ? "text-right" : "text-left"} text-gray-400`}>
                   {formatTime(msg.createdAt)}
-                  {isMyMessage(msg) && (
-                    <span className={`ml-1 font-bold ${msg.isRead ? "text-blue-500" : "text-gray-400"}`}>
-                      {msg.isRead ? "✓✓" : "✓"}
-                    </span>
-                  )}
+                  {isMyMessage(msg) && (() => {
+                    if (msg.isRead) {
+                      // ✓✓ blu = letto
+                      return <span className="ml-1 font-bold text-blue-500">✓✓</span>;
+                    } else if (otherOnline) {
+                      // ✓✓ grigia = online ma non ancora letto
+                      return <span className="ml-1 font-bold text-gray-400">✓✓</span>;
+                    } else {
+                      // ✓ grigia = inviato
+                      return <span className="ml-1 font-bold text-gray-400">✓</span>;
+                    }
+                  })()}
                 </p>
               </div>
             </div>
