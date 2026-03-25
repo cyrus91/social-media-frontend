@@ -1,51 +1,21 @@
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import useAuthStore from "../store/authStore";
 import toast from "react-hot-toast";
 import SearchBar from "./SearchBar";
 import NotificationBell from "./NotificationBell";
-import { messagingService } from "../services/messagingService";
-import { Client } from "@stomp/stompjs";
-import SockJS from "sockjs-client";
-
-const WS_URL = import.meta.env.VITE_API_BASE_URL?.replace("/api", "") || "https://zany-karlotte-hobby-app-f20c3361.koyeb.app";
+import useMessagingStore from "../store/messagingStore";
+import { useMessagingWebSocket } from "../hooks/useMessagingWebSocket";
 
 function Navbar() {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
   const [showDropdown, setShowDropdown] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
-  const [unreadMessages, setUnreadMessages] = useState(0);
-  const stompMsgRef = useRef(null);
-  const token = useAuthStore((state) => state.token);
+  const unreadMessages = useMessagingStore((state) => state.unreadCount);
 
-  // Carica conteggio iniziale
-  useEffect(() => {
-    if (!user) return;
-    messagingService.getUnreadCount().then(setUnreadMessages).catch(() => {});
-  }, [user]);
-
-  // WebSocket per aggiornamento badge in tempo reale
-  useEffect(() => {
-    if (!user || !token) return;
-
-    const client = new Client({
-      webSocketFactory: () => new SockJS(`${WS_URL}/ws`),
-      connectHeaders: { Authorization: `Bearer ${token}` },
-      reconnectDelay: 5000,
-      onConnect: () => {
-        // Ascolta nuovi messaggi in arrivo
-        client.subscribe(`/queue/messages/${user.id}`, () => {
-          // Aggiorna il conteggio non letti
-          messagingService.getUnreadCount().then(setUnreadMessages).catch(() => {});
-        });
-      },
-    });
-
-    client.activate();
-    stompMsgRef.current = client;
-    return () => client.deactivate();
-  }, [user, token]);
+  // Inizializza WebSocket messaggistica (singleton per tutta l'app)
+  useMessagingWebSocket();
 
   const handleLogout = () => {
     toast.promise(
