@@ -5,7 +5,6 @@ import toast from "react-hot-toast";
 import SearchBar from "./SearchBar";
 import NotificationBell from "./NotificationBell";
 import useMessagingStore from "../store/messagingStore";
-import { useMessagingWebSocket } from "../hooks/useMessagingWebSocket";
 
 function Navbar() {
   const { user, logout } = useAuthStore();
@@ -13,9 +12,6 @@ function Navbar() {
   const [showDropdown, setShowDropdown] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const unreadMessages = useMessagingStore((state) => state.unreadCount);
-
-  // Inizializza WebSocket messaggistica (singleton per tutta l'app)
-  useMessagingWebSocket();
 
   const handleLogout = () => {
     toast.promise(
