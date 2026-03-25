@@ -540,6 +540,7 @@ function ProfilePage() {
 
       {showFollowModal && profile && (
         <FollowListModal
+          isOpen={true}
           userId={profile.id}
           username={profile.username}
           type={showFollowModal}
