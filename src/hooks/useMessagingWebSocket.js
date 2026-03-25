@@ -10,6 +10,76 @@ const WS_URL = import.meta.env.VITE_API_BASE_URL?.replace("/api", "") || "https:
 const subscribers = new Set();
 let incomingMessageHandler = null;
 
+// ============================================
+// NOTIFICHE SONORE E TAB TITLE
+// ============================================
+
+// Genera un suono di notifica con Web Audio API — nessun file esterno necessario
+function playNotificationSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+
+    oscillator.connect(gainNode);
+    gainNode.connect(ctx.destination);
+
+    oscillator.type = "sine";
+    oscillator.frequency.setValueAtTime(880, ctx.currentTime);        // La5 — prima nota
+    oscillator.frequency.setValueAtTime(1100, ctx.currentTime + 0.1); // Do#6 — seconda nota più acuta
+
+    gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+
+    oscillator.start(ctx.currentTime);
+    oscillator.stop(ctx.currentTime + 0.4);
+  } catch {
+    // Browser senza Web Audio API — ignora silenziosamente
+  }
+}
+
+// Titolo originale della tab
+const originalTitle = document.title;
+let blinkInterval = null;
+let blinkCount = 0;
+
+function startTabBlink(senderUsername) {
+  // Se sta già lampeggiando, resetta solo il contatore
+  if (blinkInterval) {
+    blinkCount = 0;
+    return;
+  }
+  blinkCount = 0;
+  const newMsg = `💬 Nuovo messaggio da @${senderUsername}`;
+  blinkInterval = setInterval(() => {
+    document.title = document.title === originalTitle ? newMsg : originalTitle;
+    blinkCount++;
+    // Dopo 10 lampeggi (5 cicli) si ferma ma lascia il titolo col messaggio
+    if (blinkCount >= 10) {
+      clearInterval(blinkInterval);
+      blinkInterval = null;
+      document.title = newMsg;
+    }
+  }, 800);
+}
+
+function stopTabBlink() {
+  if (blinkInterval) {
+    clearInterval(blinkInterval);
+    blinkInterval = null;
+  }
+  document.title = originalTitle;
+}
+
+// Ferma il lampeggio quando l'utente torna sulla tab
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) stopTabBlink();
+});
+
+// ============================================
+// EXPORTS HANDLER
+// ============================================
+
 export function setIncomingMessageHandler(handler) {
   incomingMessageHandler = handler;
 }
@@ -17,20 +87,21 @@ export function clearIncomingMessageHandler() {
   incomingMessageHandler = null;
 }
 
+// ============================================
+// HOOK PRINCIPALE
+// ============================================
+
 export function useMessagingWebSocket() {
   const user = useAuthStore((state) => state.user);
   const token = useAuthStore((state) => state.token);
   const { setConversations, updateConversationPreview, updateOnlineStatus } = useMessagingStore();
-  // Teniamo riferimento al client per questa istanza — non globale
   const clientRef = useRef(null);
 
   useEffect(() => {
     if (!user || !token) return;
 
-    // Carica conversazioni iniziali
     messagingService.getConversations().then(setConversations).catch(() => {});
 
-    // Se c'è già un client attivo per questo utente, non ne crea uno nuovo
     if (clientRef.current?.active) return;
 
     const client = new Client({
@@ -43,6 +114,13 @@ export function useMessagingWebSocket() {
           const msg = JSON.parse(frame.body);
           const preview = msg.imageUrl ? "📷 Foto" : msg.content;
           updateConversationPreview(msg.conversationId, preview, msg.createdAt, true);
+
+          // Notifiche solo se la tab non è in primo piano
+          if (document.hidden) {
+            playNotificationSound();
+            startTabBlink(msg.senderUsername || "qualcuno");
+          }
+
           if (incomingMessageHandler) incomingMessageHandler(msg);
         });
 
@@ -67,6 +145,7 @@ export function useMessagingWebSocket() {
     return () => {
       client.deactivate();
       clientRef.current = null;
+      stopTabBlink();
     };
   }, [user?.id, token]);
 }
