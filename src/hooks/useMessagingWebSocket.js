@@ -33,6 +33,17 @@ function playNotificationSound() {
 }
 
 // ============================================
+// VIBRAZIONE (solo quando pagina in foreground)
+// ============================================
+function vibrate() {
+  try {
+    if ("vibrate" in navigator) {
+      navigator.vibrate([100, 50, 100]);
+    }
+  } catch { /* non supportato */ }
+}
+
+// ============================================
 // TAB TITLE LAMPEGGIANTE
 // ============================================
 const originalTitle = document.title;
@@ -64,10 +75,8 @@ document.addEventListener("visibilitychange", () => {
 });
 
 // ============================================
-// NOTIFICHE BROWSER NATIVE (desktop + Android)
+// NOTIFICHE BROWSER NATIVE
 // ============================================
-
-// Richiede il permesso una volta sola — va chiamato su interazione utente
 export async function requestNotificationPermission() {
   if (!("Notification" in window)) return false;
   if (Notification.permission === "granted") return true;
@@ -87,7 +96,6 @@ function showBrowserNotification(senderUsername, content) {
     tag: `msg-${senderUsername}`,
     renotify: true,
     silent: false,
-    vibrate: [100, 50, 100], // vibrazione via OS — funziona anche a schermo bloccato
   });
 
   notification.onclick = () => {
@@ -101,7 +109,6 @@ function showBrowserNotification(senderUsername, content) {
 // ============================================
 // EXPORTS HANDLER
 // ============================================
-
 export function setIncomingMessageHandler(handler) {
   incomingMessageHandler = handler;
 }
@@ -112,7 +119,6 @@ export function clearIncomingMessageHandler() {
 // ============================================
 // HOOK PRINCIPALE
 // ============================================
-
 export function useMessagingWebSocket() {
   const user = useAuthStore((state) => state.user);
   const token = useAuthStore((state) => state.token);
@@ -137,17 +143,23 @@ export function useMessagingWebSocket() {
           const preview = msg.imageUrl ? "📷 Foto" : msg.content;
           updateConversationPreview(msg.conversationId, preview, msg.createdAt, true);
 
+          // Passa alla ChatPage se è aperta
           if (incomingMessageHandler) incomingMessageHandler(msg);
 
-          // Notifiche solo se l'utente non è attivo sulla tab
           if (document.hidden) {
+            // Tab in background → suono + tab blink + notifica nativa
             playNotificationSound();
             startTabBlink(msg.senderUsername || "qualcuno");
             showBrowserNotification(
               msg.senderUsername || "qualcuno",
               msg.imageUrl ? "📷 Ha inviato una foto" : msg.content
             );
+          } else if (!incomingMessageHandler) {
+            // Tab visibile ma NON nella chat → suono + vibrazione
+            playNotificationSound();
+            vibrate();
           }
+          // Se siamo nella chat (incomingMessageHandler attivo) → nessun suono
         });
 
         // 2. Read receipts
