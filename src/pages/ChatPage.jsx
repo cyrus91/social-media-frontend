@@ -173,9 +173,16 @@ function ChatPage() {
                 <p className={`text-xs px-1 text-gray-400 ${isMyMessage(msg) ? "text-right" : "text-left"}`}>
                   {formatTime(msg.createdAt)}
                   {isMyMessage(msg) && (() => {
-                    if (msg.isRead) return <span className="ml-1 font-bold text-blue-500">✓✓</span>;
-                    // Una volta che ha un id (persistito nel DB) non torna più a spunta singola
-                    if (msg.id) return <span className="ml-1 font-bold text-gray-400">✓✓</span>;
+                    if (msg.isRead) {
+                      // Letto → ✓✓ blu
+                      return <span className="ml-1 font-bold text-blue-500">✓✓</span>;
+                    }
+                    if (msg.id) {
+                      // Messaggio persistito nel DB → ✓✓ grigia (consegnato al server)
+                      // Non torna mai a ✓ singola una volta salvato
+                      return <span className="ml-1 font-bold text-gray-400">✓✓</span>;
+                    }
+                    // Messaggio ottimistico non ancora confermato dal server → ✓ grigia
                     return <span className="ml-1 font-bold text-gray-400">✓</span>;
                   })()}
                 </p>
