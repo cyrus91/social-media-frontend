@@ -140,7 +140,7 @@ function ChatPage() {
                 className="font-semibold text-gray-800 text-sm hover:text-blue-500 transition">
                 @{conversation.otherUsername}
               </button>
-              <p className="text-xs text-gray-400">{otherOnline ? "● Online" : "Offline"}</p>
+              <p className={`text-xs ${otherOnline ? "text-green-500" : "text-gray-400"}`}>{otherOnline ? "● Online" : "Offline"}</p>
             </div>
           </>
         )}
