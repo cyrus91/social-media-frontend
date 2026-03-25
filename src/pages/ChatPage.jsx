@@ -40,7 +40,7 @@ function ChatPage() {
       setLoading(true);
       try {
         const data = await messagingService.getMessages(conversationId);
-        setMessages(data.content || []);
+        setMessages(Array.isArray(data) ? data : []);
         // Segna come letti nello store locale
         markConversationRead(parseInt(conversationId));
       } catch (e) {

@@ -12,11 +12,9 @@ export const messagingService = {
     return res.data;
   },
 
-  getMessages: async (conversationId, page = 0, size = 30) => {
-    const res = await api.get(`/messages/conversations/${conversationId}/messages`, {
-      params: { page, size }
-    });
-    return res.data;
+  getMessages: async (conversationId) => {
+    const res = await api.get(`/messages/conversations/${conversationId}/messages`);
+    return res.data; // array diretto, non più Page { content: [...] }
   },
 
   sendMessage: async (conversationId, content) => {
