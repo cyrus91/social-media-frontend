@@ -62,10 +62,20 @@ function Navbar() {
             <NotificationBell />
 
             {/* Messages icon desktop */}
-            <Link to="/messages" className="relative text-gray-600 hover:text-blue-500 transition p-1">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M8 10h.01M12 10h.01M16 10h.01M21 16V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2h3l3 3 3-3h3a2 2 0 002-2z" />
+            <Link
+              to="/messages"
+              className="relative text-gray-600 hover:text-blue-500 transition p-1">
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8 10h.01M12 10h.01M16 10h.01M21 16V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2h3l3 3 3-3h3a2 2 0 002-2z"
+                />
               </svg>
               {unreadMessages > 0 && (
                 <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold">
@@ -116,6 +126,14 @@ function Navbar() {
                     className="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition">
                     Il mio profilo
                   </Link>
+                  {user?.role === "ADMIN" && (
+                    <Link
+                      to="/admin"
+                      onClick={() => setShowDropdown(false)}
+                      className="block px-4 py-2 text-purple-600 hover:bg-gray-100 transition font-semibold">
+                      🛡️ Pannello Admin
+                    </Link>
+                  )}
                   <button
                     onClick={handleLogout}
                     className="w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100 transition">
@@ -227,6 +245,14 @@ function Navbar() {
                 className="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition">
                 👤 Il mio profilo
               </Link>
+              {user?.role === "ADMIN" && (
+                <Link
+                  to="/admin"
+                  onClick={() => setShowMobileMenu(false)}
+                  className="block px-4 py-2 text-purple-600 hover:bg-gray-100 rounded-lg transition font-semibold">
+                  🛡️ Pannello Admin
+                </Link>
+              )}
               <button
                 onClick={handleLogout}
                 className="text-left px-4 py-2 text-red-600 hover:bg-gray-100 rounded-lg transition">
