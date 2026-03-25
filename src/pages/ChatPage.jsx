@@ -57,7 +57,8 @@ function ChatPage() {
   // Ascolta read receipts dal WebSocket singleton
   const handleEvent = useCallback((type, payload) => {
     if (type === "READ_RECEIPT") {
-      if (parseInt(payload.conversationId) === parseInt(conversationId)) {
+      // conversationId da useParams è stringa, payload.conversationId è numero
+      if (String(payload.conversationId) === String(conversationId)) {
         setMessages((prev) =>
           prev.map((m) => m.senderId === currentUser?.id ? { ...m, isRead: true } : m)
         );
