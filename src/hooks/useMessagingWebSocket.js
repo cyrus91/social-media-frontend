@@ -9,12 +9,12 @@ const WS_URL = import.meta.env.VITE_API_BASE_URL?.replace("/api", "") || "https:
 
 let globalConnected = false;
 const subscribers = new Set();
-// Handler per messaggi in arrivo nella ChatPage aperta
 let incomingMessageHandler = null;
 
 export function setIncomingMessageHandler(handler) {
   incomingMessageHandler = handler;
 }
+
 export function clearIncomingMessageHandler() {
   incomingMessageHandler = null;
 }
@@ -22,15 +22,12 @@ export function clearIncomingMessageHandler() {
 export function useMessagingWebSocket() {
   const user = useAuthStore((state) => state.user);
   const token = useAuthStore((state) => state.token);
-  const { setConversations, updateConversationPreview,
-          updateOnlineStatus } = useMessagingStore();
+  const { setConversations, updateConversationPreview, updateOnlineStatus } = useMessagingStore();
 
   useEffect(() => {
     if (!user || !token) return;
 
-    messagingService.getConversations()
-      .then(setConversations)
-      .catch(() => {});
+    messagingService.getConversations().then(setConversations).catch(() => {});
 
     if (globalConnected) return;
 
@@ -41,25 +38,19 @@ export function useMessagingWebSocket() {
       onConnect: () => {
         globalConnected = true;
 
-        // 1. Nuovi messaggi in arrivo
         client.subscribe(`/queue/messages/${user.id}`, (frame) => {
           const msg = JSON.parse(frame.body);
           const preview = msg.imageUrl ? "📷 Foto" : msg.content;
-          // Aggiorna preview nello store
           updateConversationPreview(msg.conversationId, preview, msg.createdAt, true);
-          // Se la ChatPage di quella conversazione è aperta, passa il messaggio
-          if (incomingMessageHandler) {
-            incomingMessageHandler(msg);
-          }
+          // incomingMessageHandler è una variabile di modulo — sempre aggiornata
+          if (incomingMessageHandler) incomingMessageHandler(msg);
         });
 
-        // 2. Read receipts — i miei messaggi sono stati letti
         client.subscribe(`/queue/read-receipt/${user.id}`, (frame) => {
           const receipt = JSON.parse(frame.body);
           subscribers.forEach(fn => fn("READ_RECEIPT", receipt));
         });
 
-        // 3. Online status
         client.subscribe("/topic/online-status", (frame) => {
           const status = JSON.parse(frame.body);
           updateOnlineStatus(status.userId, status.online);
