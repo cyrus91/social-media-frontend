@@ -33,20 +33,6 @@ function playNotificationSound() {
 }
 
 // ============================================
-// VIBRAZIONE (Android Chrome, non iOS)
-// ============================================
-function vibrate() {
-  try {
-    if ("vibrate" in navigator) {
-      // Pattern: vibra 100ms, pausa 50ms, vibra 100ms
-      navigator.vibrate([100, 50, 100]);
-    }
-  } catch {
-    // non supportato
-  }
-}
-
-// ============================================
 // TAB TITLE LAMPEGGIANTE
 // ============================================
 const originalTitle = document.title;
@@ -92,25 +78,23 @@ export async function requestNotificationPermission() {
 
 function showBrowserNotification(senderUsername, content) {
   if (!("Notification" in window) || Notification.permission !== "granted") return;
-  // Non mostrare se la tab è già in primo piano
   if (!document.hidden) return;
 
   const notification = new Notification(`💬 @${senderUsername}`, {
     body: content || "Ti ha inviato un messaggio",
-    icon: "/favicon.ico",         // icona dell'app
-    badge: "/favicon.ico",        // icona piccola su Android
-    tag: `msg-${senderUsername}`, // raggruppa notifiche dello stesso mittente
-    renotify: true,               // vibra/suona anche se sostituisce una notifica esistente
+    icon: "/favicon.ico",
+    badge: "/favicon.ico",
+    tag: `msg-${senderUsername}`,
+    renotify: true,
     silent: false,
+    vibrate: [100, 50, 100], // vibrazione via OS — funziona anche a schermo bloccato
   });
 
-  // Click sulla notifica → porta in primo piano la tab
   notification.onclick = () => {
     window.focus();
     notification.close();
   };
 
-  // Auto-chiudi dopo 5 secondi
   setTimeout(() => notification.close(), 5000);
 }
 
@@ -158,7 +142,6 @@ export function useMessagingWebSocket() {
           // Notifiche solo se l'utente non è attivo sulla tab
           if (document.hidden) {
             playNotificationSound();
-            vibrate();
             startTabBlink(msg.senderUsername || "qualcuno");
             showBrowserNotification(
               msg.senderUsername || "qualcuno",
