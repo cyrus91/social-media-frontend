@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
@@ -13,12 +14,27 @@ import AdminPage from "./pages/AdminPage";
 import AdminRoute from "./components/AdminRoute";
 import MessagesPage from "./pages/MessagesPage";
 import ChatPage from "./pages/ChatPage";
-import { useMessagingWebSocket } from "./hooks/useMessagingWebSocket";
+import { useMessagingWebSocket, requestNotificationPermission } from "./hooks/useMessagingWebSocket";
+import useAuthStore from "./store/authStore";
 
 // Componente interno che inizializza il WebSocket messaggistica globale
 // Deve stare dentro BrowserRouter
 function AppInner() {
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+
   useMessagingWebSocket();
+
+  // Richiedi permesso notifiche browser al primo click dopo il login
+  // I browser richiedono che la richiesta avvenga su un'interazione utente
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const ask = () => {
+      requestNotificationPermission();
+      document.removeEventListener("click", ask);
+    };
+    document.addEventListener("click", ask, { once: true });
+    return () => document.removeEventListener("click", ask);
+  }, [isAuthenticated]);
   return (
     <Routes>
       <Route path="/" element={<Navigate to="/login" replace />} />

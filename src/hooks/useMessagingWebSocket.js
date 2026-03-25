@@ -11,50 +11,55 @@ const subscribers = new Set();
 let incomingMessageHandler = null;
 
 // ============================================
-// NOTIFICHE SONORE E TAB TITLE
+// NOTIFICA SONORA (Web Audio API)
 // ============================================
-
-// Genera un suono di notifica con Web Audio API — nessun file esterno necessario
 function playNotificationSound() {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
     const oscillator = ctx.createOscillator();
     const gainNode = ctx.createGain();
-
     oscillator.connect(gainNode);
     gainNode.connect(ctx.destination);
-
     oscillator.type = "sine";
-    oscillator.frequency.setValueAtTime(880, ctx.currentTime);        // La5 — prima nota
-    oscillator.frequency.setValueAtTime(1100, ctx.currentTime + 0.1); // Do#6 — seconda nota più acuta
-
+    oscillator.frequency.setValueAtTime(880, ctx.currentTime);
+    oscillator.frequency.setValueAtTime(1100, ctx.currentTime + 0.1);
     gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
     gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
-
     oscillator.start(ctx.currentTime);
     oscillator.stop(ctx.currentTime + 0.4);
   } catch {
-    // Browser senza Web Audio API — ignora silenziosamente
+    // fallback silenzioso
   }
 }
 
-// Titolo originale della tab
+// ============================================
+// VIBRAZIONE (Android Chrome, non iOS)
+// ============================================
+function vibrate() {
+  try {
+    if ("vibrate" in navigator) {
+      // Pattern: vibra 100ms, pausa 50ms, vibra 100ms
+      navigator.vibrate([100, 50, 100]);
+    }
+  } catch {
+    // non supportato
+  }
+}
+
+// ============================================
+// TAB TITLE LAMPEGGIANTE
+// ============================================
 const originalTitle = document.title;
 let blinkInterval = null;
 let blinkCount = 0;
 
 function startTabBlink(senderUsername) {
-  // Se sta già lampeggiando, resetta solo il contatore
-  if (blinkInterval) {
-    blinkCount = 0;
-    return;
-  }
+  if (blinkInterval) { blinkCount = 0; return; }
   blinkCount = 0;
   const newMsg = `💬 Nuovo messaggio da @${senderUsername}`;
   blinkInterval = setInterval(() => {
     document.title = document.title === originalTitle ? newMsg : originalTitle;
     blinkCount++;
-    // Dopo 10 lampeggi (5 cicli) si ferma ma lascia il titolo col messaggio
     if (blinkCount >= 10) {
       clearInterval(blinkInterval);
       blinkInterval = null;
@@ -64,17 +69,50 @@ function startTabBlink(senderUsername) {
 }
 
 function stopTabBlink() {
-  if (blinkInterval) {
-    clearInterval(blinkInterval);
-    blinkInterval = null;
-  }
+  if (blinkInterval) { clearInterval(blinkInterval); blinkInterval = null; }
   document.title = originalTitle;
 }
 
-// Ferma il lampeggio quando l'utente torna sulla tab
 document.addEventListener("visibilitychange", () => {
   if (!document.hidden) stopTabBlink();
 });
+
+// ============================================
+// NOTIFICHE BROWSER NATIVE (desktop + Android)
+// ============================================
+
+// Richiede il permesso una volta sola — va chiamato su interazione utente
+export async function requestNotificationPermission() {
+  if (!("Notification" in window)) return false;
+  if (Notification.permission === "granted") return true;
+  if (Notification.permission === "denied") return false;
+  const permission = await Notification.requestPermission();
+  return permission === "granted";
+}
+
+function showBrowserNotification(senderUsername, content) {
+  if (!("Notification" in window) || Notification.permission !== "granted") return;
+  // Non mostrare se la tab è già in primo piano
+  if (!document.hidden) return;
+
+  const notification = new Notification(`💬 @${senderUsername}`, {
+    body: content || "Ti ha inviato un messaggio",
+    icon: "/favicon.ico",         // icona dell'app
+    badge: "/favicon.ico",        // icona piccola su Android
+    tag: `msg-${senderUsername}`, // raggruppa notifiche dello stesso mittente
+    renotify: true,               // vibra/suona anche se sostituisce una notifica esistente
+    silent: false,
+  });
+
+  // Click sulla notifica → porta in primo piano la tab
+  notification.onclick = () => {
+    window.focus();
+    notification.close();
+  };
+
+  // Auto-chiudi dopo 5 secondi
+  setTimeout(() => notification.close(), 5000);
+}
 
 // ============================================
 // EXPORTS HANDLER
@@ -115,13 +153,18 @@ export function useMessagingWebSocket() {
           const preview = msg.imageUrl ? "📷 Foto" : msg.content;
           updateConversationPreview(msg.conversationId, preview, msg.createdAt, true);
 
-          // Notifiche solo se la tab non è in primo piano
+          if (incomingMessageHandler) incomingMessageHandler(msg);
+
+          // Notifiche solo se l'utente non è attivo sulla tab
           if (document.hidden) {
             playNotificationSound();
+            vibrate();
             startTabBlink(msg.senderUsername || "qualcuno");
+            showBrowserNotification(
+              msg.senderUsername || "qualcuno",
+              msg.imageUrl ? "📷 Ha inviato una foto" : msg.content
+            );
           }
-
-          if (incomingMessageHandler) incomingMessageHandler(msg);
         });
 
         // 2. Read receipts
