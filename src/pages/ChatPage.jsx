@@ -29,7 +29,8 @@ function ChatPage() {
 
   // Ricava info conversazione dallo store globale
   const conversation = conversations.find(c => c.id === parseInt(conversationId));
-  const otherOnline = conversation?.otherOnline || false;
+  // otherOnline dallo store globale — aggiornato in tempo reale dal WebSocket
+  const otherOnline = conversation?.otherOnline === true;
 
   const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
 
@@ -177,12 +178,11 @@ function ChatPage() {
                       // Letto → ✓✓ blu
                       return <span className="ml-1 font-bold text-blue-500">✓✓</span>;
                     }
-                    if (msg.id) {
-                      // Messaggio persistito nel DB → ✓✓ grigia (consegnato al server)
-                      // Non torna mai a ✓ singola una volta salvato
+                    if (msg.id && otherOnline === true) {
+                      // Persistito + destinatario online → ✓✓ grigia
                       return <span className="ml-1 font-bold text-gray-400">✓✓</span>;
                     }
-                    // Messaggio ottimistico non ancora confermato dal server → ✓ grigia
+                    // Offline o messaggio non ancora confermato → ✓ grigia
                     return <span className="ml-1 font-bold text-gray-400">✓</span>;
                   })()}
                 </p>
