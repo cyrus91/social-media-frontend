@@ -14,22 +14,33 @@ export const messagingService = {
 
   getMessages: async (conversationId) => {
     const res = await api.get(`/messages/conversations/${conversationId}/messages`);
-    return res.data; // array diretto, non più Page { content: [...] }
-  },
-
-  sendMessage: async (conversationId, content) => {
-    const res = await api.post(`/messages/conversations/${conversationId}/messages`, { content });
     return res.data;
   },
 
-  sendMessageWithImage: async (conversationId, content, imageFile) => {
+  sendMessage: async (conversationId, content, replyToId = null) => {
+    const res = await api.post(`/messages/conversations/${conversationId}/messages`,
+      { content, replyToId });
+    return res.data;
+  },
+
+  sendMessageWithImage: async (conversationId, content, imageFile, replyToId = null) => {
     const formData = new FormData();
     if (content) formData.append('content', content);
     formData.append('image', imageFile);
+    if (replyToId) formData.append('replyToId', replyToId);
     const res = await api.post(
       `/messages/conversations/${conversationId}/messages/image`,
-      formData,
-      { headers: { 'Content-Type': 'multipart/form-data' } }
+      formData, { headers: { 'Content-Type': 'multipart/form-data' } }
+    );
+    return res.data;
+  },
+
+  sendVoiceMessage: async (conversationId, audioBlob) => {
+    const formData = new FormData();
+    formData.append('audio', audioBlob, 'voice.webm');
+    const res = await api.post(
+      `/messages/conversations/${conversationId}/messages/voice`,
+      formData, { headers: { 'Content-Type': 'multipart/form-data' } }
     );
     return res.data;
   },
@@ -41,5 +52,18 @@ export const messagingService = {
   getUnreadCount: async () => {
     const res = await api.get('/messages/unread-count');
     return res.data.count;
-  }
+  },
+
+  deleteMessage: async (messageId) => {
+    await api.delete(`/messages/messages/${messageId}`);
+  },
+
+  toggleReaction: async (messageId, emoji) => {
+    const res = await api.post(`/messages/messages/${messageId}/reactions`, { emoji });
+    return res.data;
+  },
+
+  setDisappearing: async (conversationId, hours) => {
+    await api.put(`/messages/conversations/${conversationId}/disappearing`, { hours });
+  },
 };

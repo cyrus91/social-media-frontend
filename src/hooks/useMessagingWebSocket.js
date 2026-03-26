@@ -11,53 +11,36 @@ const subscribers = new Set();
 let incomingMessageHandler = null;
 
 // ============================================
-// NOTIFICA SONORA (Web Audio API)
+// SUONO NOTIFICA (forte — tab in background)
 // ============================================
 function playNotificationSound() {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const oscillator = ctx.createOscillator();
-    const gainNode = ctx.createGain();
-    oscillator.connect(gainNode);
-    gainNode.connect(ctx.destination);
-    oscillator.type = "sine";
-    oscillator.frequency.setValueAtTime(880, ctx.currentTime);
-    oscillator.frequency.setValueAtTime(1100, ctx.currentTime + 0.1);
-    gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
-    oscillator.start(ctx.currentTime);
-    oscillator.stop(ctx.currentTime + 0.4);
-  } catch {
-    // fallback silenzioso
-  }
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(880, ctx.currentTime);
+    osc.frequency.setValueAtTime(1100, ctx.currentTime + 0.1);
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+    osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.4);
+  } catch { /* silenzioso */ }
 }
 
-// Suono leggero per messaggi ricevuti mentre si è nella chat
+// SUONO LEGGERO (in chat)
 export function playLightSound() {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const oscillator = ctx.createOscillator();
-    const gainNode = ctx.createGain();
-    oscillator.connect(gainNode);
-    gainNode.connect(ctx.destination);
-    oscillator.type = "sine";
-    oscillator.frequency.setValueAtTime(1200, ctx.currentTime);
-    gainNode.gain.setValueAtTime(0.08, ctx.currentTime); // volume molto basso
-    gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
-    oscillator.start(ctx.currentTime);
-    oscillator.stop(ctx.currentTime + 0.15);
-  } catch { /* fallback */ }
-}
-
-// ============================================
-// VIBRAZIONE (solo quando pagina in foreground)
-// ============================================
-function vibrate() {
-  try {
-    if ("vibrate" in navigator) {
-      navigator.vibrate([100, 50, 100]);
-    }
-  } catch { /* non supportato */ }
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(1200, ctx.currentTime);
+    gain.gain.setValueAtTime(0.08, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+    osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.15);
+  } catch { /* silenzioso */ }
 }
 
 // ============================================
@@ -70,14 +53,12 @@ let blinkCount = 0;
 function startTabBlink(senderUsername) {
   if (blinkInterval) { blinkCount = 0; return; }
   blinkCount = 0;
-  const newMsg = `💬 Nuovo messaggio da @${senderUsername}`;
+  const msg = `💬 Nuovo messaggio da @${senderUsername}`;
   blinkInterval = setInterval(() => {
-    document.title = document.title === originalTitle ? newMsg : originalTitle;
-    blinkCount++;
-    if (blinkCount >= 10) {
-      clearInterval(blinkInterval);
-      blinkInterval = null;
-      document.title = newMsg;
+    document.title = document.title === originalTitle ? msg : originalTitle;
+    if (++blinkCount >= 10) {
+      clearInterval(blinkInterval); blinkInterval = null;
+      document.title = msg;
     }
   }, 800);
 }
@@ -87,9 +68,7 @@ function stopTabBlink() {
   document.title = originalTitle;
 }
 
-document.addEventListener("visibilitychange", () => {
-  if (!document.hidden) stopTabBlink();
-});
+document.addEventListener("visibilitychange", () => { if (!document.hidden) stopTabBlink(); });
 
 // ============================================
 // NOTIFICHE BROWSER NATIVE
@@ -98,39 +77,36 @@ export async function requestNotificationPermission() {
   if (!("Notification" in window)) return false;
   if (Notification.permission === "granted") return true;
   if (Notification.permission === "denied") return false;
-  const permission = await Notification.requestPermission();
-  return permission === "granted";
+  return (await Notification.requestPermission()) === "granted";
 }
 
 function showBrowserNotification(senderUsername, content) {
   if (!("Notification" in window) || Notification.permission !== "granted") return;
   if (!document.hidden) return;
-
-  const notification = new Notification(`💬 @${senderUsername}`, {
+  const n = new Notification(`💬 @${senderUsername}`, {
     body: content || "Ti ha inviato un messaggio",
-    icon: "/favicon.ico",
-    badge: "/favicon.ico",
-    tag: `msg-${senderUsername}`,
-    renotify: true,
-    silent: false,
+    icon: "/favicon.ico", badge: "/favicon.ico",
+    tag: `msg-${senderUsername}`, renotify: true, silent: false,
   });
-
-  notification.onclick = () => {
-    window.focus();
-    notification.close();
-  };
-
-  setTimeout(() => notification.close(), 5000);
+  n.onclick = () => { window.focus(); n.close(); };
+  setTimeout(() => n.close(), 5000);
 }
 
 // ============================================
-// EXPORTS HANDLER
+// HANDLER EXPORTS
 // ============================================
-export function setIncomingMessageHandler(handler) {
-  incomingMessageHandler = handler;
-}
-export function clearIncomingMessageHandler() {
-  incomingMessageHandler = null;
+export function setIncomingMessageHandler(handler) { incomingMessageHandler = handler; }
+export function clearIncomingMessageHandler() { incomingMessageHandler = null; }
+
+// Riferimento al client STOMP per inviare typing da ChatPage
+let globalStompClient = null;
+export function sendTypingEvent(conversationId, isTyping) {
+  if (globalStompClient?.active) {
+    globalStompClient.publish({
+      destination: "/app/typing",
+      body: JSON.stringify({ conversationId, isTyping }),
+    });
+  }
 }
 
 // ============================================
@@ -154,44 +130,70 @@ export function useMessagingWebSocket() {
       connectHeaders: { Authorization: `Bearer ${token}` },
       reconnectDelay: 5000,
       onConnect: () => {
+        globalStompClient = client;
+
         // 1. Messaggi in arrivo
         client.subscribe(`/queue/messages/${user.id}`, (frame) => {
           const msg = JSON.parse(frame.body);
-          const preview = msg.imageUrl ? "📷 Foto" : msg.content;
+          const preview = msg.audioUrl ? "🎤 Vocale"
+                        : msg.imageUrl ? "📷 Foto"
+                        : msg.deletedForAll ? "Messaggio eliminato"
+                        : msg.content;
           updateConversationPreview(msg.conversationId, preview, msg.createdAt, true);
-
-          // Passa alla ChatPage se è aperta
-          if (incomingMessageHandler) incomingMessageHandler(msg);
-
+          if (incomingMessageHandler) incomingMessageHandler({ type: "NEW_MESSAGE", payload: msg });
           if (document.hidden) {
-            // Tab in background → suono + tab blink + notifica nativa
             playNotificationSound();
             startTabBlink(msg.senderUsername || "qualcuno");
-            showBrowserNotification(
-              msg.senderUsername || "qualcuno",
-              msg.imageUrl ? "📷 Ha inviato una foto" : msg.content
-            );
+            showBrowserNotification(msg.senderUsername || "qualcuno",
+              msg.audioUrl ? "🎤 Ha inviato un vocale"
+              : msg.imageUrl ? "📷 Ha inviato una foto"
+              : msg.content);
           } else if (!incomingMessageHandler) {
-            // Tab visibile ma NON nella chat → suono + vibrazione
             playNotificationSound();
-            vibrate();
           }
-          // Se siamo nella chat (incomingMessageHandler attivo) → nessun suono
         });
 
         // 2. Read receipts
         client.subscribe(`/queue/read-receipt/${user.id}`, (frame) => {
           const receipt = JSON.parse(frame.body);
           subscribers.forEach(fn => fn("READ_RECEIPT", receipt));
+          if (incomingMessageHandler) incomingMessageHandler({ type: "READ_RECEIPT", payload: receipt });
         });
 
         // 3. Online status
         client.subscribe("/topic/online-status", (frame) => {
           const status = JSON.parse(frame.body);
           updateOnlineStatus(status.userId, status.online);
-          subscribers.forEach(fn => fn("ONLINE_STATUS", status));
+          if (incomingMessageHandler) incomingMessageHandler({ type: "ONLINE_STATUS", payload: status });
+        });
+
+        // 4. Typing
+        client.subscribe(`/queue/typing/${user.id}`, (frame) => {
+          const typing = JSON.parse(frame.body);
+          if (incomingMessageHandler) incomingMessageHandler({ type: "TYPING", payload: typing });
+        });
+
+        // 5. Messaggio eliminato
+        client.subscribe(`/queue/message-deleted/${user.id}`, (frame) => {
+          const data = JSON.parse(frame.body);
+          if (incomingMessageHandler) incomingMessageHandler({ type: "MESSAGE_DELETED", payload: data });
+          // Aggiorna preview conversazione
+          messagingService.getConversations().then(setConversations).catch(() => {});
+        });
+
+        // 6. Reazioni
+        client.subscribe(`/queue/reaction/${user.id}`, (frame) => {
+          const updatedMsg = JSON.parse(frame.body);
+          if (incomingMessageHandler) incomingMessageHandler({ type: "REACTION", payload: updatedMsg });
+        });
+
+        // 7. Disappearing messages
+        client.subscribe(`/queue/disappearing/${user.id}`, (frame) => {
+          const data = JSON.parse(frame.body);
+          if (incomingMessageHandler) incomingMessageHandler({ type: "DISAPPEARING", payload: data });
         });
       },
+      onDisconnect: () => { globalStompClient = null; },
     });
 
     client.activate();
@@ -200,6 +202,7 @@ export function useMessagingWebSocket() {
     return () => {
       client.deactivate();
       clientRef.current = null;
+      globalStompClient = null;
       stopTabBlink();
     };
   }, [user?.id, token]);
@@ -213,8 +216,6 @@ export function useMessagingEvents(callback) {
 }
 
 export function notifyMessageSent(msg) {
-  const preview = msg.imageUrl ? "📷 Foto" : msg.content;
-  useMessagingStore.getState().updateConversationPreview(
-    msg.conversationId, preview, msg.createdAt, false
-  );
+  const preview = msg.audioUrl ? "🎤 Vocale" : msg.imageUrl ? "📷 Foto" : msg.content;
+  useMessagingStore.getState().updateConversationPreview(msg.conversationId, preview, msg.createdAt, false);
 }
