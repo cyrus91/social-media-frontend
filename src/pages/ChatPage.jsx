@@ -77,8 +77,7 @@ function ChatPage() {
     if (!deliveredIds.current.has(id)) {
       deliveredIds.current.add(id);
       try { localStorage.setItem(`delivered_${conversationId}`, JSON.stringify([...deliveredIds.current])); }
-      // eslint-disable-next-line no-empty
-      catch { }
+      catch { /* empty */ }
     }
   };
   const lastSoundMsgId = useRef(null);
@@ -263,45 +262,39 @@ function ChatPage() {
     } catch { toast.error("Errore eliminazione"); }
   };
 
-  // Reaction con optimistic update — aggiorna UI immediatamente
+  // Reaction — optimistic update solo su myReaction (istantaneo)
+  // I contatori reali arrivano dal server, evitando race conditions e problemi Unicode
   const handleReaction = async (messageId, emoji) => {
     setReactionTarget(null);
 
-    // Optimistic update: aggiorna subito lo state locale
-    setMessages(prev => prev.map(m => {
-      if (Number(m.id) !== Number(messageId)) return m;
-      const reactions = { ...(m.reactions || {}) };
-      const myReaction = m.myReaction;
+    const currentMsg = messages.find(m => Number(m.id) === Number(messageId));
+    if (!currentMsg) return;
 
-      if (myReaction === emoji) {
-        // Toggle off — rimuovi
-        if (reactions[emoji]) {
-          reactions[emoji] = reactions[emoji] - 1;
-          if (reactions[emoji] <= 0) delete reactions[emoji];
-        }
-        return { ...m, reactions, myReaction: null };
-      } else {
-        // Rimuovi la vecchia reaction se presente
-        if (myReaction && reactions[myReaction]) {
-          reactions[myReaction] = reactions[myReaction] - 1;
-          if (reactions[myReaction] <= 0) delete reactions[myReaction];
-        }
-        // Aggiungi nuova
-        reactions[emoji] = (reactions[emoji] || 0) + 1;
-        return { ...m, reactions, myReaction: emoji };
-      }
-    }));
+    // Normalizza emoji per evitare problemi Unicode (es. ❤ vs ❤️)
+    const normalize = (e) => e?.replace(/\uFE0F/g, "").trim() ?? null;
+    const isSame = normalize(currentMsg.myReaction) === normalize(emoji);
+
+    // Optimistic: aggiorna solo myReaction subito (istantaneo)
+    setMessages(prev => prev.map(m =>
+      Number(m.id) === Number(messageId)
+        ? { ...m, myReaction: isSame ? null : emoji }
+        : m
+    ));
 
     try {
       const updated = await messagingService.toggleReaction(messageId, emoji);
-      // Sincronizza con il dato reale dal server
-      setMessages(prev => prev.map(m => Number(m.id) === Number(messageId) ? updated : m));
+      // Sincronizza tutto (contatori inclusi) con il dato reale del server
+      setMessages(prev => prev.map(m =>
+        Number(m.id) === Number(messageId) ? updated : m
+      ));
     } catch {
+      // Rollback in caso di errore
+      setMessages(prev => prev.map(m =>
+        Number(m.id) === Number(messageId)
+          ? { ...m, myReaction: currentMsg.myReaction }
+          : m
+      ));
       toast.error("Errore reazione");
-      // In caso di errore ricarica i messaggi per ripristinare lo state corretto
-      messagingService.getMessages(conversationId)
-        .then(data => setMessages(Array.isArray(data) ? data : []))
-        .catch(() => {});
     }
   };
 
