@@ -99,9 +99,8 @@ function ChatPage() {
           `delivered_${conversationId}`,
           JSON.stringify([...deliveredIds.current]),
         );
-      } catch (e) {
-        console.error("Errore salvataggio delivered:", e);
-      }
+      } catch {deliveredIds.current.clear();}
+      console.log("Delivered IDs:", deliveredIds.current);
     }
   };
   const lastSoundMsgId = useRef(null);
@@ -196,11 +195,11 @@ function ChatPage() {
       }
 
       if (type === "REACTION") {
-        if (String(payload.conversationId) === String(conversationId)) {
-          setMessages((prev) =>
-            prev.map((m) => (m.id === payload.id ? payload : m)),
-          );
-        }
+        // payload è un MessageDTO completo — aggiorna il messaggio per id
+        // non serve controllare conversationId perché l'id messaggio è univoco
+        setMessages((prev) =>
+          prev.map((m) => (m.id === payload.id ? payload : m)),
+        );
       }
     });
     return () => clearIncomingMessageHandler();
@@ -521,7 +520,7 @@ function ChatPage() {
                 <div
                   key={msg.id ?? Math.random()}
                   className={`flex ${mine ? "justify-end" : "justify-start"} group`}>
-                  <div className="max-w-xs sm:max-w-sm lg:max-w-md space-y-0.5">
+                  <div className="max-w-xs sm:max-w-sm lg:max-w-md space-y-0.5 min-w-0">
                     {/* Reply preview */}
                     {msg.replyToId && !deleted && (
                       <div
@@ -563,7 +562,7 @@ function ChatPage() {
                         />
                       ) : msg.content ? (
                         <div
-                          className={`px-4 py-2 rounded-2xl text-sm ${mine ? "bg-blue-500 text-white rounded-tr-sm" : "bg-white text-gray-800 shadow-sm rounded-tl-sm"}`}>
+                          className={`px-4 py-2 rounded-2xl text-sm break-words ${mine ? "bg-blue-500 text-white rounded-tr-sm" : "bg-white text-gray-800 shadow-sm rounded-tl-sm"}`}>
                           {msg.content}
                         </div>
                       ) : null}
