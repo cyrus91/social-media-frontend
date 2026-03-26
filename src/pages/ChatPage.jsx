@@ -99,8 +99,7 @@ function ChatPage() {
           `delivered_${conversationId}`,
           JSON.stringify([...deliveredIds.current]),
         );
-      } catch {deliveredIds.current.clear();}
-      console.log("Delivered IDs:", deliveredIds.current);
+      } catch { /* empty */ }
     }
   };
   const lastSoundMsgId = useRef(null);
@@ -180,7 +179,7 @@ function ChatPage() {
         if (String(payload.conversationId) === String(conversationId)) {
           setMessages((prev) =>
             prev.map((m) =>
-              m.id === payload.messageId
+              Number(m.id) === Number(payload.messageId)
                 ? {
                     ...m,
                     deletedForAll: true,
@@ -195,10 +194,9 @@ function ChatPage() {
       }
 
       if (type === "REACTION") {
-        // payload è un MessageDTO completo — aggiorna il messaggio per id
-        // non serve controllare conversationId perché l'id messaggio è univoco
+        // Usa Number() per evitare mismatch stringa/numero tra JS e Java Long
         setMessages((prev) =>
-          prev.map((m) => (m.id === payload.id ? payload : m)),
+          prev.map((m) => (Number(m.id) === Number(payload.id) ? payload : m)),
         );
       }
     });
@@ -316,7 +314,7 @@ function ChatPage() {
       await messagingService.deleteMessage(messageId);
       setMessages((prev) =>
         prev.map((m) =>
-          m.id === messageId
+          Number(m.id) === Number(messageId)
             ? {
                 ...m,
                 deletedForAll: true,
@@ -337,9 +335,8 @@ function ChatPage() {
     setReactionTarget(null);
     try {
       const updated = await messagingService.toggleReaction(messageId, emoji);
-      // Aggiorna subito lo state locale (non aspettare il WebSocket che arriva in ritardo)
       setMessages((prev) =>
-        prev.map((m) => (m.id === messageId ? updated : m)),
+        prev.map((m) => (Number(m.id) === Number(messageId) ? updated : m)),
       );
     } catch {
       toast.error("Errore reazione");
