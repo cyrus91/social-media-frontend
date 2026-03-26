@@ -77,7 +77,7 @@ function ChatPage() {
     if (!deliveredIds.current.has(id)) {
       deliveredIds.current.add(id);
       try { localStorage.setItem(`delivered_${conversationId}`, JSON.stringify([...deliveredIds.current])); }
-      catch { /* empty */ }
+      catch {/* empty */}
     }
   };
   const lastSoundMsgId = useRef(null);
@@ -320,7 +320,20 @@ function ChatPage() {
       const res = await api.post("/ai/generate", {
         prompt: `Riassumi brevemente questa conversazione in 2-3 frasi:\n\n${last20}`
       });
-      toast(res.data?.result || "Nessun riassunto disponibile", { duration: 6000 });
+      // Toast con X manuale — non sparisce automaticamente (duration: Infinity)
+      toast(
+        (t) => (
+          <div className="flex items-start space-x-3 max-w-sm">
+            <span className="flex-1 text-sm">{res.data?.result || "Nessun riassunto disponibile"}</span>
+            <button
+              onClick={() => toast.dismiss(t.id)}
+              className="flex-shrink-0 text-gray-400 hover:text-gray-600 font-bold text-base leading-none ml-1">
+              ✕
+            </button>
+          </div>
+        ),
+        { duration: 6000 }
+      );
     } catch { toast.error("Errore AI"); } finally { setLoadingAI(false); }
   };
 
@@ -503,11 +516,15 @@ function ChatPage() {
 
                     {/* Timestamp + spunte */}
                     <p className={`text-xs px-1 text-gray-400 ${mine ? "text-right" : "text-left"}`}>
-                      {msg.expiresAt && (
-                        <span className="mr-1 text-orange-400">
-                          ⏱️ {Math.max(0, Math.round((new Date(msg.expiresAt) - new Date()) / 3600000))}h
-                        </span>
-                      )}
+                      {msg.expiresAt && (() => {
+                          const diffMs = new Date(msg.expiresAt) - new Date();
+                          if (diffMs <= 0) return null;
+                          const totalMins = Math.round(diffMs / 60000);
+                          const hrs = Math.floor(totalMins / 60);
+                          const mins = totalMins % 60;
+                          const label = hrs > 0 ? `${hrs}h ${mins}m` : `${mins}m`;
+                          return <span className="mr-1 text-orange-400">⏱️ {label}</span>;
+                        })()}
                       {formatTime(msg.createdAt)}
                       {mine && (() => {
                         if (msg.isRead) { addDelivered(msg.id); return <span className="ml-1 font-bold text-blue-500">✓✓</span>; }
