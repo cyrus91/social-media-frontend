@@ -13,6 +13,31 @@ import toast from "react-hot-toast";
 
 const WS_URL = import.meta.env.VITE_API_BASE_URL?.replace("/api", "") || "https://zany-karlotte-hobby-app-f20c3361.koyeb.app";
 
+// Suono campanellina — diverso dal suono messaggi
+// Due note veloci ascendenti, più "ding" che "ping"
+function playNotificationBell() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+
+    const playNote = (freq, startTime, duration) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(freq, startTime);
+      gain.gain.setValueAtTime(0.25, startTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+      osc.start(startTime);
+      osc.stop(startTime + duration);
+    };
+
+    // Ding-dong: due note (Mi6 → La6), suono campanella classico
+    playNote(1318, ctx.currentTime, 0.3);
+    playNote(1760, ctx.currentTime + 0.15, 0.4);
+  } catch { /* silenzioso se non supportato */ }
+}
+
 function NotificationBell(props) {
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState([]);
@@ -65,6 +90,9 @@ function NotificationBell(props) {
           try {
             const notification = JSON.parse(message.body);
             console.log("🔔 Nuova notifica real-time:", notification);
+
+            // Suono campanellina
+            playNotificationBell();
 
             // Incrementa badge
             setUnreadCount((prev) => prev + 1);
