@@ -21,7 +21,7 @@ function CreatePostWithImages({ onPostCreated }) {
     setImprovingAI(true);
     try {
       const result = await aiService.improveText(content.trim());
-      setContent(result.result || result);
+      setContent(result.suggestion || result.result || result);
       if (textareaRef.current) {
         textareaRef.current.style.height = "auto";
         textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 200) + "px";
