@@ -115,7 +115,7 @@ export function sendTypingEvent(conversationId, isTyping) {
 export function useMessagingWebSocket() {
   const user = useAuthStore((state) => state.user);
   const token = useAuthStore((state) => state.token);
-  const { setConversations, updateConversationPreview, updateOnlineStatus } = useMessagingStore();
+  const { setConversations, updateConversationPreview, updateOnlineStatus, setTyping } = useMessagingStore();
   const clientRef = useRef(null);
 
   useEffect(() => {
@@ -170,6 +170,12 @@ export function useMessagingWebSocket() {
         // 4. Typing
         client.subscribe(`/queue/typing/${user.id}`, (frame) => {
           const typing = JSON.parse(frame.body);
+          // Aggiorna lo store → MessagesPage mostra "sta scrivendo..."
+          setTyping(typing.conversationId, typing.username, typing.isTyping);
+          // Auto-reset dopo 4s se isTyping rimane true
+          if (typing.isTyping) {
+            setTimeout(() => setTyping(typing.conversationId, typing.username, false), 4000);
+          }
           if (incomingMessageHandler) incomingMessageHandler({ type: "TYPING", payload: typing });
         });
 

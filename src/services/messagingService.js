@@ -54,6 +54,10 @@ export const messagingService = {
     return res.data.count;
   },
 
+  deleteConversation: async (conversationId) => {
+    await api.delete(`/messages/conversations/${conversationId}`);
+  },
+
   deleteMessage: async (messageId) => {
     await api.delete(`/messages/messages/${messageId}`);
   },

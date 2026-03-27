@@ -15,11 +15,14 @@ function MessagesPage() {
   // Legge dallo store globale — aggiornato in tempo reale dal WebSocket in Navbar
   const conversations = useMessagingStore((state) => state.conversations);
   const initialized = useMessagingStore((state) => state.initialized);
+  const typingUsers = useMessagingStore((state) => state.typingUsers);
+  const removeConversation = useMessagingStore((state) => state.removeConversation);
 
   const [search, setSearch] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [searching, setSearching] = useState(false);
   const [showResults, setShowResults] = useState(false);
+  const [deleteConvTarget, setDeleteConvTarget] = useState(null);
 
   // Debounce ricerca utenti
   useEffect(() => {
@@ -49,6 +52,17 @@ function MessagesPage() {
       navigate(`/messages/${conv.id}`);
     } catch (e) {
       console.error("Errore apertura chat:", e);
+    }
+  };
+
+  const handleDeleteConv = async (convId) => {
+    try {
+      await messagingService.deleteConversation(convId);
+      removeConversation(convId);
+    } catch {
+      // ignora
+    } finally {
+      setDeleteConvTarget(null);
     }
   };
 
@@ -120,38 +134,97 @@ function MessagesPage() {
           </div>
         ) : (
           <div className="bg-white rounded-xl shadow-sm overflow-hidden divide-y divide-gray-100">
-            {conversations.map((conv) => (
-              <button key={conv.id} onClick={() => navigate(`/messages/${conv.id}`)}
-                className="w-full flex items-center space-x-3 px-4 py-4 hover:bg-gray-50 transition text-left">
-                <div className="relative flex-shrink-0">
-                  <AvatarZoom src={conv.otherAvatarUrl} username={conv.otherUsername} size="md" />
-                  {conv.otherOnline && (
-                    <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full" />
-                  )}
+            {conversations.map((conv) => {
+              const typing = typingUsers[conv.id];
+              return (
+                <div key={conv.id} className="flex items-center group hover:bg-gray-50 transition">
+                  <button
+                    onClick={() => navigate(`/messages/${conv.id}`)}
+                    className="flex-1 flex items-center space-x-3 px-4 py-4 text-left min-w-0">
+                    <div className="relative flex-shrink-0">
+                      <AvatarZoom src={conv.otherAvatarUrl} username={conv.otherUsername} size="md" />
+                      {conv.otherOnline && (
+                        <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <p className={`font-semibold text-sm ${conv.unreadCount > 0 ? "text-gray-900" : "text-gray-700"}`}>
+                          @{conv.otherUsername}
+                        </p>
+                        <span className="text-xs text-gray-400 flex-shrink-0 ml-2">{formatTime(conv.lastMessageAt)}</span>
+                      </div>
+                      <div className="flex items-center justify-between mt-0.5">
+                        {typing?.isTyping ? (
+                          <span className="text-xs text-blue-500 flex items-center space-x-1">
+                            <span>sta scrivendo</span>
+                            <span className="flex space-x-0.5 ml-1">
+                              <span className="w-1 h-1 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                              <span className="w-1 h-1 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                              <span className="w-1 h-1 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                            </span>
+                          </span>
+                        ) : (
+                          <p className={`text-sm truncate ${conv.unreadCount > 0 ? "font-semibold text-gray-800" : "text-gray-500"}`}>
+                            {conv.lastMessage || "Nessun messaggio ancora"}
+                          </p>
+                        )}
+                        {conv.unreadCount > 0 && (
+                          <span className="ml-2 flex-shrink-0 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
+                            {conv.unreadCount > 9 ? "9+" : conv.unreadCount}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </button>
+                  {/* Elimina chat — hover desktop / sempre mobile */}
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setDeleteConvTarget(conv.id); }}
+                    className="flex-shrink-0 px-3 opacity-0 group-hover:opacity-100 transition text-gray-300 hover:text-red-400">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <p className={`font-semibold text-sm ${conv.unreadCount > 0 ? "text-gray-900" : "text-gray-700"}`}>
-                      @{conv.otherUsername}
-                    </p>
-                    <span className="text-xs text-gray-400 flex-shrink-0 ml-2">{formatTime(conv.lastMessageAt)}</span>
-                  </div>
-                  <div className="flex items-center justify-between mt-0.5">
-                    <p className={`text-sm truncate ${conv.unreadCount > 0 ? "font-semibold text-gray-800" : "text-gray-500"}`}>
-                      {conv.lastMessage || "Nessun messaggio ancora"}
-                    </p>
-                    {conv.unreadCount > 0 && (
-                      <span className="ml-2 flex-shrink-0 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
-                        {conv.unreadCount > 9 ? "9+" : conv.unreadCount}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </button>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
+
+      {/* MODAL CONFERMA ELIMINA CHAT */}
+      {deleteConvTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4"
+          onClick={() => setDeleteConvTarget(null)}>
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+          <div className="relative bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full"
+            onClick={e => e.stopPropagation()}>
+            <div className="flex flex-col items-center text-center space-y-3">
+              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                <svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-bold text-gray-800">Elimina conversazione</h3>
+              <p className="text-sm text-gray-500">
+                La chat verrà rimossa dalla tua lista. L'altro utente potrà ancora vederla.
+              </p>
+              <div className="flex w-full space-x-3 pt-2">
+                <button onClick={() => setDeleteConvTarget(null)}
+                  className="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-semibold text-sm hover:bg-gray-50 transition">
+                  Annulla
+                </button>
+                <button onClick={() => handleDeleteConv(deleteConvTarget)}
+                  className="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white font-semibold text-sm transition">
+                  Elimina
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
