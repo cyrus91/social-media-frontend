@@ -3,8 +3,8 @@ import toast from "react-hot-toast";
 import useAuthStore from "../store/authStore";
 import api from "../services/api";
 import EmojiPickerButton from "./EmojiPickerButton";
-import AIHashtagSuggester from "./AIHashtagSuggester";
 import AICaptionGenerator from "./AICaptionGenerator";
+import { aiService } from "../services/aiService";
 
 function CreatePostWithImages({ onPostCreated }) {
   const currentUser = useAuthStore((state) => state.user);
@@ -12,8 +12,27 @@ function CreatePostWithImages({ onPostCreated }) {
   const [images, setImages] = useState([]);
   const [previews, setPreviews] = useState([]);
   const [uploading, setUploading] = useState(false);
+  const [improvingAI, setImprovingAI] = useState(false);
   const fileInputRef = useRef(null);
   const textareaRef = useRef(null);
+
+  const handleImproveText = async () => {
+    if (!content.trim()) return;
+    setImprovingAI(true);
+    try {
+      const result = await aiService.improveText(content.trim());
+      setContent(result.result || result);
+      if (textareaRef.current) {
+        textareaRef.current.style.height = "auto";
+        textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 200) + "px";
+      }
+      toast.success("Testo migliorato con AI ✨");
+    } catch {
+      toast.error("Errore nel miglioramento AI");
+    } finally {
+      setImprovingAI(false);
+    }
+  };
 
   const hasContent = content.trim() || images.length > 0;
 
@@ -174,10 +193,20 @@ function CreatePostWithImages({ onPostCreated }) {
                     </svg>
                   </button>
                 )}
-                <AIHashtagSuggester
-                  content={content}
-                  onHashtagsInsert={(tags) => setContent((prev) => prev + tags)}
-                />
+                {/* Migliora con AI — visibile solo se c'è testo */}
+                {content.trim() && (
+                  <button type="button" onClick={handleImproveText}
+                    disabled={improvingAI || uploading}
+                    className="flex items-center space-x-1 text-purple-500 hover:text-purple-600 transition px-2 py-1 rounded-full hover:bg-purple-50 text-xs font-semibold disabled:opacity-50"
+                    title="Migliora con AI">
+                    {improvingAI ? (
+                      <div className="w-3 h-3 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <span>✨</span>
+                    )}
+                    <span>{improvingAI ? "Miglioramento..." : "Migliora"}</span>
+                  </button>
+                )}
               </div>
               <button type="submit" disabled={uploading || !hasContent}
                 className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-1 rounded-full font-semibold text-sm transition disabled:opacity-50 flex items-center space-x-1">
