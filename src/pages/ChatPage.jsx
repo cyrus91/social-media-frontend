@@ -65,6 +65,7 @@ function ChatPage() {
   // Disappearing messages
   const [showDisappearing, setShowDisappearing] = useState(false);
 
+  const [deleteTarget, setDeleteTarget] = useState(null); // messageId da eliminare
   // AI summary
   const [loadingAI, setLoadingAI] = useState(false);
 
@@ -81,7 +82,7 @@ function ChatPage() {
     if (!deliveredIds.current.has(id)) {
       deliveredIds.current.add(id);
       try { localStorage.setItem(`delivered_${conversationId}`, JSON.stringify([...deliveredIds.current])); }
-      catch { }
+      catch { /* empty */ }
     }
   };
   const lastSoundMsgId = useRef(null);
@@ -256,7 +257,6 @@ function ChatPage() {
 
   // Delete
   const handleDelete = async (messageId) => {
-    if (!window.confirm("Eliminare questo messaggio per tutti?")) return;
     try {
       await messagingService.deleteMessage(messageId);
       setMessages(prev => prev.map(m =>
@@ -264,7 +264,9 @@ function ChatPage() {
           ? { ...m, deletedForAll: true, content: null, imageUrl: null, audioUrl: null }
           : m
       ));
-    } catch { toast.error("Errore eliminazione"); }
+    } catch { toast.error("Errore eliminazione"); } finally {
+      setDeleteTarget(null);
+    }
   };
 
   // Reaction — optimistic update solo su myReaction (istantaneo)
@@ -498,7 +500,7 @@ function ChatPage() {
                           </button>
                           {/* Delete (solo miei) */}
                           {mine && (
-                            <button onClick={() => handleDelete(msg.id)}
+                            <button onClick={() => setDeleteTarget(msg.id)}
                               className="p-1 bg-white rounded-full shadow text-red-400 hover:bg-red-50 transition">
                               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -678,6 +680,42 @@ function ChatPage() {
           </div>
         )}
       </div>
+      {/* MODAL CONFERMA ELIMINAZIONE */}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4"
+          onClick={() => setDeleteTarget(null)}>
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+          {/* Dialog */}
+          <div className="relative bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full"
+            onClick={e => e.stopPropagation()}>
+            <div className="flex flex-col items-center text-center space-y-3">
+              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                <svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-bold text-gray-800">Elimina messaggio</h3>
+              <p className="text-sm text-gray-500">
+                Il messaggio verrà eliminato per tutti i partecipanti alla chat. Questa azione non può essere annullata.
+              </p>
+              <div className="flex w-full space-x-3 pt-2">
+                <button
+                  onClick={() => setDeleteTarget(null)}
+                  className="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-semibold text-sm hover:bg-gray-50 transition">
+                  Annulla
+                </button>
+                <button
+                  onClick={() => handleDelete(deleteTarget)}
+                  className="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white font-semibold text-sm transition">
+                  Elimina
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
