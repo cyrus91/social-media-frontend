@@ -49,7 +49,11 @@ function ChatPage() {
   const [replyTo, setReplyTo] = useState(null);
 
   // Reactions popup
-  const [reactionTarget, setReactionTarget] = useState(null); // messageId
+  const [reactionTarget, setReactionTarget] = useState(null);
+
+  // Mobile: mostra azioni al tap (invece di hover)
+  const [activeMessageId, setActiveMessageId] = useState(null);
+  const longPressTimer = useRef(null); // messageId
 
   // Voice recording
   const [recording, setRecording] = useState(false);
@@ -77,7 +81,7 @@ function ChatPage() {
     if (!deliveredIds.current.has(id)) {
       deliveredIds.current.add(id);
       try { localStorage.setItem(`delivered_${conversationId}`, JSON.stringify([...deliveredIds.current])); }
-      catch {/* empty */}
+      catch { }
     }
   };
   const lastSoundMsgId = useRef(null);
@@ -252,6 +256,7 @@ function ChatPage() {
 
   // Delete
   const handleDelete = async (messageId) => {
+    if (!window.confirm("Eliminare questo messaggio per tutti?")) return;
     try {
       await messagingService.deleteMessage(messageId);
       setMessages(prev => prev.map(m =>
@@ -332,12 +337,17 @@ function ChatPage() {
             </button>
           </div>
         ),
-        { duration: 6000 }
+        { duration: Infinity }
       );
     } catch { toast.error("Errore AI"); } finally { setLoadingAI(false); }
   };
 
-  const formatTime = (s) => new Date(s).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
+  const formatTime = (s) => {
+    if (!s) return "";
+    // Se il timestamp non ha 'Z' o offset, aggiunge 'Z' per indicare UTC
+    const iso = String(s).includes("Z") || String(s).includes("+") ? s : s + "Z";
+    return new Date(iso).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
+  };
   const formatDuration = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
   const isMyMessage = (msg) => msg.senderId === currentUser?.id;
 
@@ -363,10 +373,8 @@ function ChatPage() {
                   className="font-semibold text-gray-800 text-sm hover:text-blue-500 transition">
                   @{conversation.otherUsername}
                 </button>
-                <p className={`text-xs ${otherOnline ? "text-green-500" : "text-gray-400"}`}>
-                  {otherTyping ? (
-                    <span className="text-blue-500">sta scrivendo...</span>
-                  ) : otherOnline ? "● Online" : "Offline"}
+                <p className={`text-xs ${otherTyping ? "text-blue-500" : otherOnline ? "text-green-500" : "text-gray-400"}`}>
+                  {otherTyping ? "sta scrivendo..." : otherOnline ? "● Online" : "Offline"}
                 </p>
               </div>
             </>
@@ -414,7 +422,8 @@ function ChatPage() {
       </div>
 
       {/* MESSAGGI */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2" onClick={() => setReactionTarget(null)}>
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2"
+        onClick={() => { setReactionTarget(null); setActiveMessageId(null); }}>
         {loading ? (
           <div className="flex justify-center py-12">
             <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
@@ -428,7 +437,18 @@ function ChatPage() {
               const deleted = msg.deletedForAll;
               return (
                 <div key={msg.id ?? Math.random()} className={`flex ${mine ? "justify-end" : "justify-start"} group`}>
-                  <div className="max-w-xs sm:max-w-sm lg:max-w-md space-y-0.5 min-w-0">
+                  <div className="max-w-xs sm:max-w-sm lg:max-w-md space-y-0.5 min-w-0"
+                    onTouchStart={() => {
+                      longPressTimer.current = setTimeout(() => {
+                        setActiveMessageId(msg.id);
+                      }, 400);
+                    }}
+                    onTouchEnd={() => clearTimeout(longPressTimer.current)}
+                    onTouchMove={() => clearTimeout(longPressTimer.current)}
+                    onClick={() => {
+                      if (activeMessageId === msg.id) setActiveMessageId(null);
+                    }}
+                  >
 
                     {/* Reply preview */}
                     {msg.replyToId && !deleted && (
@@ -460,9 +480,10 @@ function ChatPage() {
                         </div>
                       ) : null}
 
-                      {/* Azioni su hover — reply, react, delete */}
+                      {/* Azioni su hover/tap — reply, react, delete */}
                       {!deleted && (
-                        <div className={`absolute top-0 ${mine ? "left-0 -translate-x-full pr-2" : "right-0 translate-x-full pl-2"} hidden group-hover:flex items-center space-x-1`}>
+                        <div className={`absolute top-0 ${mine ? "left-0 -translate-x-full pr-2" : "right-0 translate-x-full pl-2"} 
+                          ${activeMessageId === msg.id ? "flex" : "hidden group-hover:flex"} items-center space-x-1`}>
                           {/* Reazione */}
                           <button onClick={(e) => { e.stopPropagation(); setReactionTarget(reactionTarget === msg.id ? null : msg.id); }}
                             className="p-1 bg-white rounded-full shadow text-sm hover:bg-gray-100 transition">
@@ -517,7 +538,9 @@ function ChatPage() {
                     {/* Timestamp + spunte */}
                     <p className={`text-xs px-1 text-gray-400 ${mine ? "text-right" : "text-left"}`}>
                       {msg.expiresAt && (() => {
-                          const diffMs = new Date(msg.expiresAt) - new Date();
+                          const iso = String(msg.expiresAt).includes("Z") || String(msg.expiresAt).includes("+")
+                            ? msg.expiresAt : msg.expiresAt + "Z";
+                          const diffMs = new Date(iso) - new Date();
                           if (diffMs <= 0) return null;
                           const totalMins = Math.round(diffMs / 60000);
                           const hrs = Math.floor(totalMins / 60);

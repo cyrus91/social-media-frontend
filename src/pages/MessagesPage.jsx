@@ -54,7 +54,8 @@ function MessagesPage() {
 
   const formatTime = (dateStr) => {
     if (!dateStr) return "";
-    const date = new Date(dateStr);
+    const iso = String(dateStr).includes("Z") || String(dateStr).includes("+") ? dateStr : dateStr + "Z";
+    const date = new Date(iso);
     const now = new Date();
     const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
     if (diffDays === 0) return date.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
