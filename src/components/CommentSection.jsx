@@ -111,7 +111,17 @@ function CommentItem({ comment, user, postId, onReact, onReplyCreated, depth = 0
   const [localComment, setLocalComment] = useState(comment);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  useEffect(() => { setLocalComment(comment); }, [comment]);
+  useEffect(() => {
+    // Aggiorna il commento ma preserva myReaction/reactions locali se già settati
+    // (evita che il re-render del parent cancelli le reaction appena messe)
+    setLocalComment(prev => ({
+      ...comment,
+      myReaction: prev.myReaction !== undefined ? prev.myReaction : comment.myReaction,
+      reactions: (prev.reactions && Object.keys(prev.reactions).length > 0)
+        ? prev.reactions
+        : comment.reactions,
+    }));
+  }, [comment]);
 
   const formatDate = (dateString) => {
     if (!dateString) return "";
@@ -180,13 +190,23 @@ function CommentItem({ comment, user, postId, onReact, onReplyCreated, depth = 0
 
   const handleReact = async (commentId, emoji) => {
     const normalize = (e) => e?.replace(/\uFE0F/g, "").trim() ?? null;
-    const isSame = normalize(localComment.myReaction) === normalize(emoji);
+    const prevMyReaction = localComment.myReaction;
+    const isSame = normalize(prevMyReaction) === normalize(emoji);
+
+    // Optimistic update immediato
     setLocalComment(prev => ({ ...prev, myReaction: isSame ? null : emoji }));
-    try {
-      const result = await toggleCommentReaction(commentId, emoji);
-      if (result.success) setLocalComment(prev => ({ ...prev, ...result.data }));
-    } catch {
-      setLocalComment(prev => ({ ...prev, myReaction: comment.myReaction }));
+
+    const result = await toggleCommentReaction(commentId, emoji);
+    if (result.success) {
+      // Sincronizza con dato reale dal server
+      setLocalComment(prev => ({
+        ...prev,
+        reactions: result.data.reactions,
+        myReaction: result.data.myReaction,
+      }));
+    } else {
+      // Rollback
+      setLocalComment(prev => ({ ...prev, myReaction: prevMyReaction }));
     }
   };
 
