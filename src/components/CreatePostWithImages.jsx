@@ -131,16 +131,16 @@ function CreatePostWithImages({ onPostCreated }) {
           </div>
         )}
 
-        {/* Box principale — unico sempre montato */}
+        {/* Box principale con mention support */}
+        <div className="relative">
+        <MentionSuggestions
+          suggestions={mentionSuggestions}
+          visible={showMentionSuggestions}
+          onSelect={(username) => selectMention(username, textareaRef)}
+        />
         <div className={`border rounded-2xl transition-all duration-200 ${hasContent ? 'border-blue-400' : 'border-gray-300'}`}>
 
           {/* Textarea SEMPRE nel DOM — niente rimount */}
-          <div className="relative">
-          <MentionSuggestions
-            suggestions={mentionSuggestions}
-            visible={showMentionSuggestions}
-            onSelect={(username) => selectMention(username, textareaRef)}
-          />
           <div className={`flex items-center px-3 space-x-2 ${hasContent ? 'pt-3 pb-1' : 'py-2'}`}>
             {/* Emoji visibile solo senza contenuto, allineata alla textarea */}
             {!hasContent && (
@@ -163,8 +163,6 @@ function CreatePostWithImages({ onPostCreated }) {
               className="flex-1"
             />
           </div>
-
-          </div>{/* end mention wrapper */}
 
           {/* Preview immagini */}
           {previews.length > 0 && (
@@ -234,7 +232,8 @@ function CreatePostWithImages({ onPostCreated }) {
               </button>
             </div>
           )}
-        </div>
+        </div>{/* end rounded-2xl */}
+        </div>{/* end relative wrapper */}
 
         {/* Bottone foto visibile senza contenuto */}
         {!hasContent && (

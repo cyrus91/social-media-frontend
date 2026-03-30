@@ -6,7 +6,7 @@ function MentionSuggestions({ suggestions, onSelect, visible }) {
   if (!visible || suggestions.length === 0) return null;
 
   return (
-    <div className="absolute bottom-full left-0 mb-1 w-56 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden">
+    <div className="absolute top-full left-0 mt-1 w-56 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden">
       {suggestions.map((user) => (
         <button
           key={user.id}

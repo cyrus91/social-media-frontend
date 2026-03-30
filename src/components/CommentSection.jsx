@@ -483,9 +483,9 @@ function CommentSection({ postId, initialCommentCount = 0, defaultExpanded = fal
                       {user.username?.charAt(0).toUpperCase()}
                     </div>}
               </div>
-              <div className={`flex-1 border rounded-2xl bg-white transition-all ${commentText ? "border-blue-400" : "border-gray-300"}`}>
-                <div className="relative">
-                  <MentionSuggestions suggestions={mainSuggestions} visible={showMainSuggestions} onSelect={(u) => selectMainMention(u, textareaRef)} />
+              <div className={`flex-1 relative`}>
+                <MentionSuggestions suggestions={mainSuggestions} visible={showMainSuggestions} onSelect={(u) => selectMainMention(u, textareaRef)} />
+                <div className={`border rounded-2xl bg-white transition-all ${commentText ? "border-blue-400" : "border-gray-300"}`}>
                 <div className="flex items-center px-3 py-2 space-x-2">
                   {!commentText && (
                     <EmojiPickerButton onEmojiSelect={emoji => setCommentText(p => p + emoji)} />
@@ -504,7 +504,7 @@ function CommentSection({ postId, initialCommentCount = 0, defaultExpanded = fal
                     className="flex-1"
                   />
                 </div>
-                </div>{/* end mention wrapper */}
+                </div>{/* end border box */}
                 {commentText && (
                   <div className="flex items-center justify-between px-2 pb-2 border-t border-gray-100">
                     <EmojiPickerButton onEmojiSelect={emoji => setCommentText(p => p + emoji)} />
@@ -514,7 +514,7 @@ function CommentSection({ postId, initialCommentCount = 0, defaultExpanded = fal
                     </button>
                   </div>
                 )}
-              </div>
+                </div>{/* end relative wrapper */}
             </form>
           )}
         </div>
