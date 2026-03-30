@@ -91,3 +91,12 @@ export const updateComment = async (commentId, content) => {
     };
   }
 };
+
+export const toggleCommentReaction = async (commentId, emoji) => {
+  try {
+    const response = await api.post(`/comments/${commentId}/reactions`, { emoji });
+    return { success: true, data: response.data };
+  } catch (error) {
+    return { success: false, error: error.response?.data?.message || "Errore reazione" };
+  }
+};

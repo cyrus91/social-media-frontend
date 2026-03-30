@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { useAI } from "../hooks/useAI";
 import { Link } from "react-router-dom";
 import EmojiPickerButton from "./EmojiPickerButton";
 import AvatarZoom from "./AvatarZoom";
@@ -8,6 +7,7 @@ import {
   createComment,
   deleteComment,
   updateComment,
+  toggleCommentReaction,
 } from "../services/commentService";
 import useAuthStore from "../store/authStore";
 import toast from "react-hot-toast";
@@ -19,7 +19,6 @@ function CommentSection({
   defaultExpanded = false,
 }) {
   const user = useAuthStore((state) => state.user);
-  const { loading: aiLoading, suggestReply } = useAI();
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -29,6 +28,9 @@ function CommentSection({
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editText, setEditText] = useState("");
   const [showMenuId, setShowMenuId] = useState(null);
+  const [reactionTarget, setReactionTarget] = useState(null);
+
+  const COMMENT_REACTIONS = ["❤️", "👍", "😂", "😮", "😢", "🙏"];
 
   // ============================================
   // FORMAT DATE
@@ -223,6 +225,31 @@ function CommentSection({
   // ============================================
   // HANDLE DELETE COMMENT
   // ============================================
+  const handleCommentReaction = async (commentId, emoji) => {
+    setReactionTarget(null);
+    const currentComment = comments.find(c => c.id === commentId);
+    if (!currentComment) return;
+
+    const normalize = (e) => e?.replace(/\uFE0F/g, "").trim() ?? null;
+    const isSame = normalize(currentComment.myReaction) === normalize(emoji);
+
+    // Optimistic update
+    setComments(prev => prev.map(c =>
+      c.id === commentId ? { ...c, myReaction: isSame ? null : emoji } : c
+    ));
+
+    try {
+      const result = await toggleCommentReaction(commentId, emoji);
+      if (result.success) {
+        setComments(prev => prev.map(c => c.id === commentId ? result.data : c));
+      }
+    } catch {
+      setComments(prev => prev.map(c =>
+        c.id === commentId ? { ...c, myReaction: currentComment.myReaction } : c
+      ));
+    }
+  };
+
   const handleDelete = async (commentId) => {
     if (!window.confirm("Eliminare questo commento?")) return;
 
@@ -300,7 +327,8 @@ function CommentSection({
               {comments.map((comment) => (
                 <div
                   key={comment.id}
-                  className="flex space-x-3 bg-gray-50 rounded-lg p-3 relative group">
+                  className="flex space-x-3 bg-gray-50 rounded-lg p-3 relative group"
+                  onClick={() => setReactionTarget(null)}>
                   {/* Avatar con zoom */}
                   <Link to={`/profile/${comment.authorUsername}`}>
                     <AvatarZoom
@@ -420,9 +448,49 @@ function CommentSection({
                         </div>
                       </div>
                     ) : (
-                      <p className="text-gray-700 text-sm mt-1 break-words">
-                        {comment.content}
-                      </p>
+                      <div>
+                        <p className="text-gray-700 text-sm mt-1 break-words">
+                          {comment.content}
+                        </p>
+
+                        {/* Reazioni */}
+                        <div className="flex items-center flex-wrap gap-1 mt-1.5">
+                          {/* Reazioni esistenti */}
+                          {comment.reactions && Object.entries(comment.reactions).map(([emoji, count]) => (
+                            <button key={emoji}
+                              onClick={() => handleCommentReaction(comment.id, emoji)}
+                              className={`text-xs rounded-full px-2 py-0.5 border flex items-center space-x-0.5 transition hover:bg-gray-100 ${
+                                comment.myReaction === emoji
+                                  ? "border-blue-300 bg-blue-50"
+                                  : "border-gray-200 bg-white"
+                              }`}>
+                              <span>{emoji}</span>
+                              <span className="text-gray-500 font-medium">{count}</span>
+                            </button>
+                          ))}
+
+                          {/* Bottone aggiungi reazione */}
+                          <div className="relative">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setReactionTarget(reactionTarget === comment.id ? null : comment.id); }}
+                              className="text-xs text-gray-400 hover:text-gray-600 px-1.5 py-0.5 rounded-full hover:bg-gray-100 transition">
+                              😊
+                            </button>
+                            {reactionTarget === comment.id && (
+                              <div className="absolute left-0 bottom-7 bg-white rounded-full shadow-xl border border-gray-100 flex items-center px-2 py-1 space-x-1 z-20"
+                                onClick={e => e.stopPropagation()}>
+                                {COMMENT_REACTIONS.map(emoji => (
+                                  <button key={emoji}
+                                    onClick={() => handleCommentReaction(comment.id, emoji)}
+                                    className={`text-lg hover:scale-125 transition-transform ${comment.myReaction === emoji ? "opacity-50" : ""}`}>
+                                    {emoji}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -482,31 +550,9 @@ function CommentSection({
                 {/* Barra inferiore: emoji a sinistra + commenta a destra — solo con testo */}
                 {commentText && (
                   <div className="flex items-center justify-between px-2 pb-2 border-t border-gray-100 mt-1">
-                    <div className="flex items-center space-x-1">
-                      <EmojiPickerButton
-                        onEmojiSelect={(emoji) => setCommentText((prev) => prev + emoji)}
-                      />
-                      {/* AI reply suggester */}
-                      <button
-                        type="button"
-                        disabled={aiLoading}
-                        onClick={async () => {
-                          const lastComment = comments[comments.length - 1]?.content || "";
-                          const suggestion = await suggestReply(commentText, lastComment);
-                          if (suggestion) setCommentText(suggestion);
-                        }}
-                        className="text-gray-400 hover:text-purple-500 transition p-1 rounded-full hover:bg-gray-100 disabled:opacity-40"
-                        title="Migliora con AI">
-                        {aiLoading ? (
-                          <div className="w-4 h-4 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                              d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-                          </svg>
-                        )}
-                      </button>
-                    </div>
+                    <EmojiPickerButton
+                      onEmojiSelect={(emoji) => setCommentText((prev) => prev + emoji)}
+                    />
                     <button
                       type="submit"
                       disabled={submitting}
