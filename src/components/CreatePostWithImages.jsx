@@ -137,6 +137,7 @@ function CreatePostWithImages({ onPostCreated }) {
           suggestions={mentionSuggestions}
           visible={showMentionSuggestions}
           onSelect={(username) => selectMention(username, textareaRef)}
+          anchorRef={textareaRef}
         />
         <div className={`border rounded-2xl transition-all duration-200 ${hasContent ? 'border-blue-400' : 'border-gray-300'}`}>
 
@@ -163,6 +164,8 @@ function CreatePostWithImages({ onPostCreated }) {
               className="flex-1"
             />
           </div>
+
+
 
           {/* Preview immagini */}
           {previews.length > 0 && (

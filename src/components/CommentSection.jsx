@@ -484,7 +484,7 @@ function CommentSection({ postId, initialCommentCount = 0, defaultExpanded = fal
                     </div>}
               </div>
               <div className={`flex-1 relative`}>
-                <MentionSuggestions suggestions={mainSuggestions} visible={showMainSuggestions} onSelect={(u) => selectMainMention(u, textareaRef)} />
+                <MentionSuggestions suggestions={mainSuggestions} visible={showMainSuggestions} onSelect={(u) => selectMainMention(u, textareaRef)}  anchorRef={textareaRef} />
                 <div className={`border rounded-2xl bg-white transition-all ${commentText ? "border-blue-400" : "border-gray-300"}`}>
                 <div className="flex items-center px-3 py-2 space-x-2">
                   {!commentText && (
