@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import EmojiPickerButton from "./EmojiPickerButton";
 import AvatarZoom from "./AvatarZoom";
@@ -12,560 +12,432 @@ import {
 import useAuthStore from "../store/authStore";
 import toast from "react-hot-toast";
 
-function CommentSection({
-  postId,
-  initialCommentCount = 0,
-  onCommentCountChange,
-  defaultExpanded = false,
-}) {
-  const user = useAuthStore((state) => state.user);
+const REACTIONS = ["❤️", "👍", "😂", "😮", "😢", "🙏"];
+
+// Mappa emoji → etichetta per il bottone "Mi piace"
+const REACTION_LABELS = { "❤️": "Adoro", "👍": "Mi piace", "😂": "Haha", "😮": "Wow", "😢": "Triste", "🙏": "Grazie" };
+
+// Componente reaction button stile Facebook
+function ReactionButton({ comment, onReact, disabled }) {
+  const [showPicker, setShowPicker] = useState(false);
+  const hoverTimer = useRef(null);
+  const pickerRef = useRef(null);
+
+  const myReaction = comment.myReaction;
+  const label = myReaction ? (REACTION_LABELS[myReaction] || "Mi piace") : "Mi piace";
+  const isLiked = !!myReaction;
+
+  const handleMouseEnter = () => {
+    hoverTimer.current = setTimeout(() => setShowPicker(true), 400);
+  };
+  const handleMouseLeave = () => {
+    clearTimeout(hoverTimer.current);
+    setTimeout(() => setShowPicker(false), 300);
+  };
+
+  // Mobile: long press
+  const touchTimer = useRef(null);
+  const handleTouchStart = () => {
+    touchTimer.current = setTimeout(() => setShowPicker(true), 500);
+  };
+  const handleTouchEnd = () => clearTimeout(touchTimer.current);
+
+  const handleClick = () => {
+    if (showPicker) { setShowPicker(false); return; }
+    // Click senza picker — toggle ❤️ di default o rimuovi
+    onReact(comment.id, myReaction || "❤️");
+  };
+
+  return (
+    <div className="relative inline-block"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}>
+
+      {/* Picker animato */}
+      {showPicker && (
+        <div ref={pickerRef}
+          className="absolute bottom-8 left-0 bg-white rounded-full shadow-2xl border border-gray-100 flex items-center px-3 py-2 space-x-1 z-30 animate-bounce-in"
+          style={{ animation: "slideUp 0.15s ease-out" }}
+          onMouseEnter={() => clearTimeout(hoverTimer.current)}
+          onMouseLeave={() => setShowPicker(false)}>
+          {REACTIONS.map((emoji, i) => (
+            <button key={emoji}
+              onClick={(e) => { e.stopPropagation(); setShowPicker(false); onReact(comment.id, emoji); }}
+              className="text-2xl hover:scale-150 transition-transform duration-100 cursor-pointer"
+              style={{ transitionDelay: `${i * 20}ms` }}
+              title={REACTION_LABELS[emoji]}>
+              {emoji}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Bottone Mi piace */}
+      <button
+        onClick={handleClick}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        disabled={disabled}
+        className={`flex items-center space-x-1 text-xs font-semibold px-2 py-1 rounded-lg transition hover:bg-gray-100 disabled:opacity-50 ${
+          isLiked ? "text-blue-500" : "text-gray-500"
+        }`}>
+        <span className="text-sm">{myReaction || "👍"}</span>
+        <span>{label}</span>
+      </button>
+    </div>
+  );
+}
+
+// Componente singolo commento (usato sia per principali che per risposte)
+function CommentItem({ comment, user, postId, onReact, onReplyCreated, depth = 0 }) {
+  const [showReplyForm, setShowReplyForm] = useState(false);
+  const [replyText, setReplyText] = useState("");
+  const [submittingReply, setSubmittingReply] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [editText, setEditText] = useState(comment.content);
+  const [showMenu, setShowMenu] = useState(false);
+  const [localComment, setLocalComment] = useState(comment);
+
+  useEffect(() => { setLocalComment(comment); }, [comment]);
+
+  const formatDate = (dateString) => {
+    if (!dateString) return "";
+    const iso = String(dateString).includes("Z") || String(dateString).includes("+") ? dateString : dateString + "Z";
+    const date = new Date(iso);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffMins < 1) return "Adesso";
+    if (diffMins < 60) return `${diffMins}m`;
+    if (diffHours < 24) return `${diffHours}h`;
+    if (diffDays === 1) return "Ieri";
+    return `${diffDays}g`;
+  };
+
+  const handleSubmitReply = async (e) => {
+    e.preventDefault();
+    if (!replyText.trim()) return;
+    setSubmittingReply(true);
+    try {
+      const result = await createComment({ postId, content: replyText.trim(), parentId: comment.id });
+      if (result.success) {
+        const newReply = {
+          ...result.data,
+          authorAvatarUrl: user.avatarUrl,
+          reactions: {},
+          myReaction: null,
+          replies: [],
+        };
+        setLocalComment(prev => ({
+          ...prev,
+          replies: [...(prev.replies || []), newReply]
+        }));
+        setReplyText("");
+        setShowReplyForm(false);
+        if (onReplyCreated) onReplyCreated();
+        toast.success("Risposta inviata!");
+      }
+    } catch { toast.error("Errore"); }
+    finally { setSubmittingReply(false); }
+  };
+
+  const handleEditSave = async () => {
+    if (!editText.trim()) return;
+    try {
+      const result = await updateComment(comment.id, editText.trim());
+      if (result.success) {
+        setLocalComment(prev => ({ ...prev, content: editText.trim() }));
+        setEditMode(false);
+        toast.success("Commento modificato");
+      }
+    } catch { toast.error("Errore"); }
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm("Eliminare questo commento?")) return;
+    try {
+      await deleteComment(comment.id);
+      setLocalComment(prev => ({ ...prev, content: null }));
+    } catch { toast.error("Errore"); }
+  };
+
+  const handleReact = async (commentId, emoji) => {
+    const normalize = (e) => e?.replace(/\uFE0F/g, "").trim() ?? null;
+    const isSame = normalize(localComment.myReaction) === normalize(emoji);
+    setLocalComment(prev => ({ ...prev, myReaction: isSame ? null : emoji }));
+    try {
+      const result = await toggleCommentReaction(commentId, emoji);
+      if (result.success) setLocalComment(prev => ({ ...prev, ...result.data }));
+    } catch {
+      setLocalComment(prev => ({ ...prev, myReaction: comment.myReaction }));
+    }
+  };
+
+  if (localComment.content === null) return null;
+
+  return (
+    <div className={`flex space-x-2 ${depth > 0 ? "ml-8 mt-2" : ""}`}>
+      <div className="flex-shrink-0">
+        <Link to={`/profile/${localComment.authorUsername}`}>
+          <AvatarZoom src={localComment.authorAvatarUrl} username={localComment.authorUsername} size="sm" />
+        </Link>
+      </div>
+
+      <div className="flex-1 min-w-0">
+        {/* Bubble commento */}
+        <div className="bg-gray-100 rounded-2xl px-3 py-2 inline-block max-w-full relative group/comment">
+          <Link to={`/profile/${localComment.authorUsername}`}
+            className="font-semibold text-gray-800 text-xs hover:underline">
+            {localComment.authorUsername}
+          </Link>
+
+          {editMode ? (
+            <div className="mt-1">
+              <textarea value={editText} onChange={e => setEditText(e.target.value)}
+                className="w-full text-sm bg-white border border-gray-300 rounded-lg px-2 py-1 outline-none resize-none"
+                rows={2} autoFocus />
+              <div className="flex space-x-2 mt-1">
+                <button onClick={handleEditSave}
+                  className="text-xs bg-blue-500 text-white px-2 py-1 rounded-lg hover:bg-blue-600 transition">
+                  Salva
+                </button>
+                <button onClick={() => setEditMode(false)}
+                  className="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-lg hover:bg-gray-300 transition">
+                  Annulla
+                </button>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-gray-700 mt-0.5 break-words">{localComment.content}</p>
+          )}
+
+          {/* Menu 3 punti — solo autore */}
+          {user?.id === localComment.authorId && !editMode && (
+            <div className="absolute top-1 right-1 opacity-0 group-hover/comment:opacity-100 transition">
+              <div className="relative">
+                <button onClick={() => setShowMenu(v => !v)}
+                  className="p-1 rounded-full hover:bg-gray-200 transition text-gray-400">
+                  <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                  </svg>
+                </button>
+                {showMenu && (
+                  <div className="absolute right-0 top-6 bg-white rounded-xl shadow-xl border border-gray-100 py-1 z-50 w-28">
+                    <button onClick={() => { setEditMode(true); setShowMenu(false); }}
+                      className="w-full text-left px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-50 transition">
+                      ✏️ Modifica
+                    </button>
+                    <button onClick={() => { handleDelete(); setShowMenu(false); }}
+                      className="w-full text-left px-3 py-1.5 text-xs text-red-500 hover:bg-gray-50 transition">
+                      🗑️ Elimina
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Reazioni esistenti */}
+        {localComment.reactions && Object.keys(localComment.reactions).length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-1 ml-1">
+            {Object.entries(localComment.reactions).map(([emoji, count]) => (
+              <button key={emoji}
+                onClick={() => handleReact(localComment.id, emoji)}
+                className={`text-xs rounded-full px-2 py-0.5 border flex items-center space-x-0.5 transition hover:bg-gray-100 ${
+                  localComment.myReaction === emoji ? "border-blue-300 bg-blue-50" : "border-gray-200 bg-white"
+                }`}>
+                <span>{emoji}</span>
+                <span className="text-gray-500 font-medium">{count}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Azioni sotto commento */}
+        <div className="flex items-center space-x-3 mt-1 ml-1">
+          <ReactionButton comment={localComment} onReact={handleReact} disabled={!user} />
+
+          {depth === 0 && user && (
+            <button onClick={() => setShowReplyForm(v => !v)}
+              className="text-xs font-semibold text-gray-500 hover:text-blue-500 transition">
+              Rispondi
+            </button>
+          )}
+
+          <span className="text-xs text-gray-400">{formatDate(localComment.createdAt)}</span>
+        </div>
+
+        {/* Form risposta */}
+        {showReplyForm && (
+          <form onSubmit={handleSubmitReply} className="flex items-center space-x-2 mt-2">
+            <div className="flex-shrink-0">
+              {user?.avatarUrl
+                ? <img src={user.avatarUrl} className="w-6 h-6 rounded-full object-cover" alt="" />
+                : <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                    {user?.username?.charAt(0).toUpperCase()}
+                  </div>}
+            </div>
+            <div className="flex-1 flex items-center bg-gray-100 rounded-full px-3 py-1.5 space-x-2">
+              <input value={replyText} onChange={e => setReplyText(e.target.value)}
+                placeholder={`Rispondi a @${localComment.authorUsername}...`}
+                className="flex-1 bg-transparent text-sm outline-none"
+                autoFocus />
+              <button type="submit" disabled={!replyText.trim() || submittingReply}
+                className="text-blue-500 hover:text-blue-600 disabled:opacity-40 transition">
+                <svg className="w-4 h-4 rotate-45" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                </svg>
+              </button>
+            </div>
+            <button type="button" onClick={() => setShowReplyForm(false)}
+              className="text-gray-400 hover:text-gray-600 text-xs">✕</button>
+          </form>
+        )}
+
+        {/* Risposte annidate */}
+        {localComment.replies && localComment.replies.length > 0 && (
+          <div className="mt-2 space-y-2">
+            {localComment.replies.map(reply => (
+              <CommentItem key={reply.id} comment={reply} user={user}
+                postId={postId} onReact={onReact} depth={1} />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ============================================
+// COMPONENTE PRINCIPALE
+// ============================================
+function CommentSection({ postId, initialCommentCount = 0, defaultExpanded = false }) {
+  const user = useAuthStore(state => state.user);
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [commentText, setCommentText] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [commentCount, setCommentCount] = useState(initialCommentCount);
-  const [editingCommentId, setEditingCommentId] = useState(null);
-  const [editText, setEditText] = useState("");
-  const [showMenuId, setShowMenuId] = useState(null);
-  const [reactionTarget, setReactionTarget] = useState(null);
+  const textareaRef = useRef(null);
 
-  const COMMENT_REACTIONS = ["❤️", "👍", "😂", "😮", "😢", "🙏"];
+  useEffect(() => {
+    if (isExpanded) loadComments();
+  }, [isExpanded, postId]);
 
-  // ============================================
-  // FORMAT DATE
-  // ============================================
-  const formatDate = (dateString) => {
-    // Il backend invia LocalDateTime senza timezone (es: "2026-03-11T09:44:21.987617")
-    // JavaScript lo interpreta come UTC, causando sfasamento!
-
-    let date;
-
-    if (dateString.includes("Z") || dateString.includes("+")) {
-      // Ha già timezone (formato ISO completo)
-      date = new Date(dateString);
-    } else {
-      // LocalDateTime senza timezone → Lo trattiamo come locale
-      // Soluzione: parse come stringa e crea Date nel timezone locale
-      date = new Date(dateString.replace("T", " "));
-    }
-
-    const now = new Date();
-
-    // Calcola differenza in millisecondi
-    const diffMs = now - date;
-    const diffSecs = Math.floor(diffMs / 1000);
-    const diffMins = Math.floor(diffSecs / 60);
-    const diffHours = Math.floor(diffMins / 60);
-    const diffDays = Math.floor(diffHours / 24);
-
-    // Debug (puoi rimuovere dopo il fix)
-    console.log("🕐 Comment date debug:", {
-      dateString,
-      parsedDate: date.toISOString(),
-      now: now.toISOString(),
-      diffSecs,
-      diffMins,
-      diffHours,
-    });
-
-    // Gestione date future (problema timezone non risolto)
-    if (diffSecs < 0) {
-      console.warn("⚠️ Data nel futuro - problema timezone!");
-      return "Adesso";
-    }
-
-    //  PRECISIONE AL SECONDO
-    if (diffSecs < 10) return "Adesso";
-    if (diffSecs < 60) return `${diffSecs}s fa`;
-    if (diffMins < 60) return `${diffMins}m fa`;
-    if (diffHours < 24) return `${diffHours}h fa`;
-    if (diffDays === 1) return "Ieri";
-    if (diffDays < 7) return `${diffDays}g fa`;
-
-    // Oltre 7 giorni: mostra data formattata
-    return date.toLocaleDateString("it-IT", {
-      day: "numeric",
-      month: "short",
-      year: now.getFullYear() !== date.getFullYear() ? "numeric" : undefined,
-    });
-  };
-
-  // ============================================
-  // LOAD COMMENTS
-  // ============================================
   const loadComments = async () => {
     setLoading(true);
-    const result = await fetchCommentsByPost(postId);
-
-    if (result.success) {
-      setComments(result.data);
-      setCommentCount(result.data.length);
-
-      if (onCommentCountChange) {
-        onCommentCountChange(result.data.length);
-      }
-    } else {
-      toast.error(result.error);
-    }
-
-    setLoading(false);
+    try {
+      const result = await fetchCommentsByPost(postId);
+      if (result.success) setComments(result.data?.content || result.data || []);
+    } catch { /* silenzioso */ }
+    finally { setLoading(false); }
   };
 
-  // ============================================
-  // useEffect - Fetch commenti quando espandi
-  // ============================================
-  useEffect(() => {
-    if (isExpanded && comments.length === 0) {
-      loadComments();
-    }
-  }, [isExpanded]);
-
-  // ============================================
-  // HANDLE SUBMIT COMMENT
-  // ============================================
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (!commentText.trim()) {
-      toast.error("Scrivi qualcosa prima di commentare!");
-      return;
-    }
-
-    if (!user || !user.id) {
-      toast.error("Devi essere autenticato per commentare");
-      return;
-    }
-
+    if (!commentText.trim() || !user) return;
     setSubmitting(true);
-
     try {
-      const result = await createComment(postId, commentText.trim());
-
-      if (result.success && result.data) {
-        const newComment = {
-          id: result.data.id || Date.now(),
-          content: commentText.trim(),
-          authorUsername: result.data.authorUsername || user.username,
-          authorId: result.data.authorId || user.id,
-          authorAvatarUrl: user.avatarUrl,
-          createdAt: result.data.createdAt || new Date().toISOString(),
-          updatedAt: result.data.updatedAt,
-          postId: postId,
-        };
-
-        setComments((prev) => [...prev, newComment]);
-        setCommentCount((prev) => (prev || 0) + 1);
-        setCommentText("");
-
-        toast.success("Commento pubblicato!");
-
-        if (onCommentCountChange) {
-          onCommentCountChange((commentCount || 0) + 1);
-        }
-      } else {
-        toast.error(result.error || "Errore nella pubblicazione del commento");
-      }
-    } catch (error) {
-      console.error("Errore handleSubmit:", error);
-      toast.error("Errore imprevisto nella pubblicazione del commento");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  // ============================================
-  // HANDLE EDIT START
-  // ============================================
-  const handleEditStart = (comment) => {
-    setEditingCommentId(comment.id);
-    setEditText(comment.content);
-    setShowMenuId(null);
-  };
-
-  // ============================================
-  // HANDLE EDIT SAVE
-  // ============================================
-  const handleEditSave = async (commentId) => {
-    if (!editText.trim()) {
-      toast.error("Il commento non può essere vuoto");
-      return;
-    }
-
-    const result = await updateComment(commentId, editText.trim());
-
-    if (result.success) {
-      setComments((prev) =>
-        prev.map((c) =>
-          c.id === commentId
-            ? {
-                ...c,
-                content: editText.trim(),
-                updatedAt: new Date().toISOString(),
-              }
-            : c,
-        ),
-      );
-      setEditingCommentId(null);
-      setEditText("");
-      toast.success("Commento modificato");
-    } else {
-      toast.error(result.error || "Errore nella modifica");
-    }
-  };
-
-  // ============================================
-  // HANDLE EDIT CANCEL
-  // ============================================
-  const handleEditCancel = () => {
-    setEditingCommentId(null);
-    setEditText("");
-  };
-
-  // ============================================
-  // HANDLE DELETE COMMENT
-  // ============================================
-  const handleCommentReaction = async (commentId, emoji) => {
-    setReactionTarget(null);
-    const currentComment = comments.find(c => c.id === commentId);
-    if (!currentComment) return;
-
-    const normalize = (e) => e?.replace(/\uFE0F/g, "").trim() ?? null;
-    const isSame = normalize(currentComment.myReaction) === normalize(emoji);
-
-    // Optimistic update
-    setComments(prev => prev.map(c =>
-      c.id === commentId ? { ...c, myReaction: isSame ? null : emoji } : c
-    ));
-
-    try {
-      const result = await toggleCommentReaction(commentId, emoji);
+      const result = await createComment({ postId, content: commentText.trim() });
       if (result.success) {
-        setComments(prev => prev.map(c => c.id === commentId ? result.data : c));
+        const newComment = {
+          ...result.data,
+          authorAvatarUrl: user.avatarUrl,
+          reactions: {},
+          myReaction: null,
+          replies: [],
+        };
+        setComments(prev => [...prev, newComment]);
+        setCommentCount(prev => prev + 1);
+        setCommentText("");
+        if (textareaRef.current) textareaRef.current.style.height = "auto";
+        toast.success("Commento pubblicato!");
       }
-    } catch {
-      setComments(prev => prev.map(c =>
-        c.id === commentId ? { ...c, myReaction: currentComment.myReaction } : c
-      ));
-    }
+    } catch { toast.error("Errore"); }
+    finally { setSubmitting(false); }
   };
 
-  const handleDelete = async (commentId) => {
-    if (!window.confirm("Eliminare questo commento?")) return;
-
-    setShowMenuId(null);
-
-    const result = await deleteComment(commentId);
-
-    if (result.success) {
-      setComments((prev) => prev.filter((c) => c.id !== commentId));
-      setCommentCount((prev) => prev - 1);
-
-      toast.success("Commento eliminato");
-
-      if (onCommentCountChange) {
-        onCommentCountChange(commentCount - 1);
-      }
-    } else {
-      toast.error(result.error);
-    }
-  };
-
-  // ============================================
-  // RENDER
-  // ============================================
   return (
-    <div className="border-t border-gray-100 pt-3">
-      {/* Toggle button */}
-      <button
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="flex items-center space-x-2 text-gray-600 hover:text-blue-500 font-semibold text-sm transition">
-        <svg
-          className="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-          />
-        </svg>
-        <span>
-          {!commentCount || commentCount === 0
-            ? "Nessun commento"
-            : `${commentCount} ${commentCount === 1 ? "commento" : "commenti"}`}
-        </span>
-        <svg
-          className={`w-4 h-4 transition-transform ${isExpanded ? "rotate-180" : ""}`}
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M19 9l-7 7-7-7"
-          />
-        </svg>
-      </button>
+    <div className="mt-3">
+      {/* Toggle */}
+      {!defaultExpanded && (
+        <button onClick={() => setIsExpanded(v => !v)}
+          className="text-sm text-gray-500 hover:text-blue-500 transition font-medium flex items-center space-x-1">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+              d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+          </svg>
+          <span>{commentCount > 0 ? `${commentCount} commenti` : "Commenta"}</span>
+        </button>
+      )}
 
-      {/* Expanded section */}
-      {isExpanded && (
+      {(isExpanded || defaultExpanded) && (
         <div className="mt-3 space-y-3">
-          {/* Loading */}
           {loading && (
             <div className="flex justify-center py-4">
-              <div className="inline-block w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+              <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
             </div>
           )}
 
-          {/* Comments list */}
-          {!loading && comments.length > 0 && (
-            <div className="space-y-3">
-              {comments.map((comment) => (
-                <div
-                  key={comment.id}
-                  className="flex space-x-3 bg-gray-50 rounded-lg p-3 relative group"
-                  onClick={() => setReactionTarget(null)}>
-                  {/* Avatar con zoom */}
-                  <Link to={`/profile/${comment.authorUsername}`}>
-                    <AvatarZoom
-                      src={comment.authorAvatarUrl}
-                      username={comment.authorUsername}
-                      size="sm"
-                    />
-                  </Link>
-
-                  {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <Link
-                          to={`/profile/${comment.authorUsername}`}
-                          className="font-semibold text-gray-800 text-sm hover:text-blue-500 transition">
-                          {comment.authorUsername}
-                        </Link>
-                        <span className="text-xs text-gray-500">
-                          {formatDate(comment.createdAt)}
-                        </span>
-                        {(() => {
-                          if (!comment.updatedAt) return null;
-                          const created = new Date(comment.createdAt).getTime();
-                          const updated = new Date(comment.updatedAt).getTime();
-                          // Differenza superiore a 1 secondo = è stato modificato
-                          return updated - created > 1000 ? (
-                            <span className="text-xs text-gray-400 italic">
-                              (modificato)
-                            </span>
-                          ) : null;
-                        })()}
-                      </div>
-
-                      {/* Menu 3 pallini (solo se sei l'autore) */}
-                      {user?.id === comment.authorId && (
-                        <div className="relative">
-                          <button
-                            onClick={() =>
-                              setShowMenuId(
-                                showMenuId === comment.id ? null : comment.id,
-                              )
-                            }
-                            className="text-gray-400 hover:text-gray-600 p-1.5 rounded-full hover:bg-gray-200 transition opacity-100 sm:opacity-0 sm:group-hover:opacity-100">
-                            <svg
-                              className="w-5 h-5"
-                              fill="currentColor"
-                              viewBox="0 0 20 20">
-                              <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
-                            </svg>
-                          </button>
-
-                          {/* Dropdown Menu */}
-                          {showMenuId === comment.id && (
-                            <div className="absolute right-0 mt-2 w-32 bg-white rounded-lg shadow-xl py-1 z-50 border border-gray-200">
-                              <button
-                                onClick={() => handleEditStart(comment)}
-                                className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition flex items-center space-x-2">
-                                <svg
-                                  className="w-4 h-4"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24">
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                                  />
-                                </svg>
-                                <span>Modifica</span>
-                              </button>
-                              <button
-                                onClick={() => handleDelete(comment.id)}
-                                className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-gray-100 transition flex items-center space-x-2">
-                                <svg
-                                  className="w-4 h-4"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24">
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                  />
-                                </svg>
-                                <span>Elimina</span>
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Commento normale o in edit */}
-                    {editingCommentId === comment.id ? (
-                      <div className="mt-2">
-                        <textarea
-                          value={editText}
-                          onChange={(e) => setEditText(e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none text-sm"
-                          rows="2"
-                          autoFocus
-                        />
-                        <div className="flex items-center space-x-2 mt-2">
-                          <button
-                            onClick={() => handleEditSave(comment.id)}
-                            className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-lg transition">
-                            Salva
-                          </button>
-                          <button
-                            onClick={handleEditCancel}
-                            className="px-3 py-1 bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm rounded-lg transition">
-                            Annulla
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div>
-                        <p className="text-gray-700 text-sm mt-1 break-words">
-                          {comment.content}
-                        </p>
-
-                        {/* Reazioni */}
-                        <div className="flex items-center flex-wrap gap-1 mt-1.5">
-                          {/* Reazioni esistenti */}
-                          {comment.reactions && Object.entries(comment.reactions).map(([emoji, count]) => (
-                            <button key={emoji}
-                              onClick={() => handleCommentReaction(comment.id, emoji)}
-                              className={`text-xs rounded-full px-2 py-0.5 border flex items-center space-x-0.5 transition hover:bg-gray-100 ${
-                                comment.myReaction === emoji
-                                  ? "border-blue-300 bg-blue-50"
-                                  : "border-gray-200 bg-white"
-                              }`}>
-                              <span>{emoji}</span>
-                              <span className="text-gray-500 font-medium">{count}</span>
-                            </button>
-                          ))}
-
-                          {/* Bottone aggiungi reazione */}
-                          <div className="relative">
-                            <button
-                              onClick={(e) => { e.stopPropagation(); setReactionTarget(reactionTarget === comment.id ? null : comment.id); }}
-                              className="text-xs text-gray-400 hover:text-gray-600 px-1.5 py-0.5 rounded-full hover:bg-gray-100 transition">
-                              😊
-                            </button>
-                            {reactionTarget === comment.id && (
-                              <div className="absolute left-0 bottom-7 bg-white rounded-full shadow-xl border border-gray-100 flex items-center px-2 py-1 space-x-1 z-20"
-                                onClick={e => e.stopPropagation()}>
-                                {COMMENT_REACTIONS.map(emoji => (
-                                  <button key={emoji}
-                                    onClick={() => handleCommentReaction(comment.id, emoji)}
-                                    className={`text-lg hover:scale-125 transition-transform ${comment.myReaction === emoji ? "opacity-50" : ""}`}>
-                                    {emoji}
-                                  </button>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Empty state */}
           {!loading && comments.length === 0 && (
-            <p className="text-center text-gray-500 text-sm py-4">
-              Nessun commento. Sii il primo a commentare!
-            </p>
+            <p className="text-center text-gray-400 text-sm py-2">Nessun commento ancora.</p>
           )}
 
-          {/* Add comment form — stile LinkedIn */}
-          <div className="mt-4 pt-4 border-t border-gray-200">
-            <form onSubmit={handleSubmit} className="flex items-start space-x-2">
-              {/* Avatar */}
+          {!loading && comments.map(comment => (
+            <CommentItem key={comment.id} comment={comment} user={user}
+              postId={postId} depth={0} />
+          ))}
+
+          {/* Form nuovo commento */}
+          {user && (
+            <form onSubmit={handleSubmit} className="flex items-start space-x-2 pt-2 border-t border-gray-100">
               <div className="flex-shrink-0">
-                {user?.avatarUrl ? (
-                  <img src={user.avatarUrl} alt={user.username}
-                    className="w-8 h-8 rounded-full object-cover" />
-                ) : (
-                  <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                    {user?.username?.charAt(0).toUpperCase()}
-                  </div>
-                )}
+                {user.avatarUrl
+                  ? <img src={user.avatarUrl} className="w-8 h-8 rounded-full object-cover" alt="" />
+                  : <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                      {user.username?.charAt(0).toUpperCase()}
+                    </div>}
               </div>
-
-              {/* Box commento — un solo textarea sempre montato */}
-              <div className={`flex-1 border rounded-2xl bg-white transition-all duration-200 ${commentText ? 'border-blue-400' : 'border-gray-300'}`}>
-
-                {/* Riga superiore: emoji (solo senza testo) + textarea */}
+              <div className={`flex-1 border rounded-2xl bg-white transition-all ${commentText ? "border-blue-400" : "border-gray-300"}`}>
                 <div className="flex items-center px-3 py-2 space-x-2">
-                  {/* Emoji visibile solo quando NON c'è testo */}
                   {!commentText && (
-                    <div className="flex-shrink-0" style={{ marginBottom: "4px" }}>
-                      <EmojiPickerButton
-                        onEmojiSelect={(emoji) => setCommentText((prev) => prev + emoji)}
-                      />
-                    </div>
+                    <EmojiPickerButton onEmojiSelect={emoji => setCommentText(p => p + emoji)} />
                   )}
-                  <textarea
-                    value={commentText}
-                    onChange={(e) => setCommentText(e.target.value)}
-                    placeholder="Scrivi un commento..."
-                    rows={1}
-                    style={{ resize: "none" }}
-                    className="flex-1 outline-none text-sm bg-transparent py-0.5 pb-2"
-                    onInput={(e) => {
-                      e.target.style.height = "auto";
-                      e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px";
+                  <textarea ref={textareaRef} value={commentText}
+                    onChange={e => {
+                      setCommentText(e.target.value);
+                      const ta = textareaRef.current;
+                      if (ta) { ta.style.height = "auto"; ta.style.height = Math.min(ta.scrollHeight, 120) + "px"; }
                     }}
-                  />
+                    placeholder="Scrivi un commento..."
+                    rows={1} style={{ resize: "none" }}
+                    className="flex-1 outline-none text-sm bg-transparent" />
                 </div>
-
-                {/* Barra inferiore: emoji a sinistra + commenta a destra — solo con testo */}
                 {commentText && (
-                  <div className="flex items-center justify-between px-2 pb-2 border-t border-gray-100 mt-1">
-                    <EmojiPickerButton
-                      onEmojiSelect={(emoji) => setCommentText((prev) => prev + emoji)}
-                    />
-                    <button
-                      type="submit"
-                      disabled={submitting}
-                      className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-1 rounded-full font-semibold text-sm transition disabled:opacity-50">
-                      {submitting ? "Invio..." : "Commenta"}
+                  <div className="flex items-center justify-between px-2 pb-2 border-t border-gray-100">
+                    <EmojiPickerButton onEmojiSelect={emoji => setCommentText(p => p + emoji)} />
+                    <button type="submit" disabled={submitting || !commentText.trim()}
+                      className="bg-blue-500 hover:bg-blue-600 text-white text-xs font-semibold px-3 py-1.5 rounded-full transition disabled:opacity-50">
+                      {submitting ? "..." : "Commenta"}
                     </button>
                   </div>
                 )}
               </div>
             </form>
-          </div>
+          )}
         </div>
       )}
+
+      <style>{`
+        @keyframes slideUp {
+          from { opacity: 0; transform: translateY(8px) scale(0.8); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+      `}</style>
     </div>
   );
 }
