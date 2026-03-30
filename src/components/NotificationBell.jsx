@@ -103,7 +103,7 @@ function NotificationBell(props) {
 
             // Toast di notifica
             toast(
-              `${notification.actorUsername} ${notification.message}`,
+              notification.message,
               {
                 icon: getNotificationIcon(notification.type),
                 duration: 4000,
