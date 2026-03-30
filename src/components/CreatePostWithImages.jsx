@@ -7,6 +7,7 @@ import AICaptionGenerator from "./AICaptionGenerator";
 import { aiService } from "../services/aiService";
 import { useMentionInput } from "../hooks/useMentionInput";
 import MentionSuggestions from "./MentionSuggestions";
+import MentionTextarea from "./MentionTextarea";
 
 function CreatePostWithImages({ onPostCreated }) {
   const currentUser = useAuthStore((state) => state.user);
@@ -152,15 +153,14 @@ function CreatePostWithImages({ onPostCreated }) {
                 />
               </div>
             )}
-            <textarea
-              ref={textareaRef}
+            <MentionTextarea
+              textareaRef={textareaRef}
               value={content}
               onChange={(e) => { handleTextareaChange(e); handleMentionChange(e); }}
               placeholder="Cosa stai pensando?"
               rows={hasContent ? 3 : 1}
-              style={{ resize: "none" }}
               disabled={uploading}
-              className="flex-1 outline-none text-sm bg-transparent py-0.5"
+              className="flex-1"
             />
           </div>
 

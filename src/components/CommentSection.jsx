@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useMentionInput } from "../hooks/useMentionInput";
 import MentionSuggestions from "./MentionSuggestions";
+import MentionTextarea from "./MentionTextarea";
 import { renderTextWithMentions } from "../utils/renderTextWithMentions";
 import { Link } from "react-router-dom";
 import EmojiPickerButton from "./EmojiPickerButton";
@@ -489,7 +490,9 @@ function CommentSection({ postId, initialCommentCount = 0, defaultExpanded = fal
                   {!commentText && (
                     <EmojiPickerButton onEmojiSelect={emoji => setCommentText(p => p + emoji)} />
                   )}
-                  <textarea ref={textareaRef} value={commentText}
+                  <MentionTextarea
+                    textareaRef={textareaRef}
+                    value={commentText}
                     onChange={e => {
                       setCommentText(e.target.value);
                       handleMentionChange(e);
@@ -497,8 +500,9 @@ function CommentSection({ postId, initialCommentCount = 0, defaultExpanded = fal
                       if (ta) { ta.style.height = "auto"; ta.style.height = Math.min(ta.scrollHeight, 120) + "px"; }
                     }}
                     placeholder="Scrivi un commento..."
-                    rows={1} style={{ resize: "none" }}
-                    className="flex-1 outline-none text-sm bg-transparent" />
+                    rows={1}
+                    className="flex-1"
+                  />
                 </div>
                 </div>{/* end mention wrapper */}
                 {commentText && (
