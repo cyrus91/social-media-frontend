@@ -96,7 +96,7 @@ function MentionTextarea({ value, onChange, placeholder, rows = 1, disabled, cla
           position: "absolute",
           inset: 0,
           pointerEvents: "none",
-          color: "transparent",
+          color: "inherit",
           overflow: "hidden",
           zIndex: 1,
         }}
