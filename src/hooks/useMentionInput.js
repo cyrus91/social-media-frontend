@@ -43,9 +43,12 @@ export function useMentionInput(value, onChange) {
       searchTimer.current = setTimeout(async () => {
         if (!currentUser?.id) return;
         const following = await loadFollowing(currentUser.id);
-        const filtered = following.filter(u =>
-          query === "" || u.username.toLowerCase().includes(query.toLowerCase())
-        ).slice(0, 5);
+        const filtered = following.filter(u => {
+          if (query !== "" && !u.username.toLowerCase().includes(query.toLowerCase())) return false;
+          // Nascondi utenti già menzionati nel testo
+          const alreadyIn = new RegExp(`@${u.username}\\b`, 'i').test(value);
+          return !alreadyIn;
+        }).slice(0, 5);
         setSuggestions(filtered);
         setShowSuggestions(filtered.length > 0);
       }, 150);
@@ -54,24 +57,39 @@ export function useMentionInput(value, onChange) {
       setSuggestions([]);
       setMentionStart(-1);
     }
-  }, [onChange, currentUser]);
+  }, [onChange, currentUser, value]);
 
   const selectMention = useCallback((username, inputRef) => {
     if (mentionStart < 0) return;
+
+    // Evita mention duplicata
+    const alreadyMentioned = new RegExp(`@${username}\\b`, 'i').test(value);
+    if (alreadyMentioned) {
+      setShowSuggestions(false);
+      setSuggestions([]);
+      setMentionStart(-1);
+      return;
+    }
+
     const before = value.slice(0, mentionStart);
     const after = value.slice(mentionStart + mentionQuery.length + 1);
     const newValue = `${before}@${username} ${after}`;
+    const cursorPos = before.length + username.length + 2; // @ + username + spazio
+
     onChange(newValue);
     setShowSuggestions(false);
     setSuggestions([]);
     setMentionStart(-1);
-    setTimeout(() => {
-      if (inputRef?.current) {
-        const pos = before.length + username.length + 2;
-        inputRef.current.setSelectionRange(pos, pos);
-        inputRef.current.focus();
-      }
-    }, 0);
+
+    // requestAnimationFrame garantisce che React abbia aggiornato il DOM prima di settare il cursore
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (inputRef?.current) {
+          inputRef.current.focus();
+          inputRef.current.setSelectionRange(cursorPos, cursorPos);
+        }
+      });
+    });
   }, [value, mentionStart, mentionQuery, onChange]);
 
   const closeSuggestions = useCallback(() => setShowSuggestions(false), []);
