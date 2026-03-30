@@ -20,19 +20,33 @@ const REACTION_LABELS = { "❤️": "Adoro", "👍": "Mi piace", "😂": "Haha",
 // Componente reaction button stile Facebook
 function ReactionButton({ comment, onReact, disabled }) {
   const [showPicker, setShowPicker] = useState(false);
-  const hoverTimer = useRef(null);
-  const pickerRef = useRef(null);
+  const openTimer = useRef(null);
+  const closeTimer = useRef(null);
 
   const myReaction = comment.myReaction;
   const label = myReaction ? (REACTION_LABELS[myReaction] || "Mi piace") : "Mi piace";
   const isLiked = !!myReaction;
 
-  const handleMouseEnter = () => {
-    hoverTimer.current = setTimeout(() => setShowPicker(true), 400);
+  const cancelClose = () => {
+    if (closeTimer.current) { clearTimeout(closeTimer.current); closeTimer.current = null; }
   };
-  const handleMouseLeave = () => {
-    clearTimeout(hoverTimer.current);
-    setTimeout(() => setShowPicker(false), 300);
+  const scheduleClose = () => {
+    closeTimer.current = setTimeout(() => setShowPicker(false), 400);
+  };
+
+  const handleButtonMouseEnter = () => {
+    cancelClose();
+    openTimer.current = setTimeout(() => setShowPicker(true), 400);
+  };
+  const handleButtonMouseLeave = () => {
+    clearTimeout(openTimer.current);
+    scheduleClose();
+  };
+  const handlePickerMouseEnter = () => {
+    cancelClose();
+  };
+  const handlePickerMouseLeave = () => {
+    scheduleClose();
   };
 
   // Mobile: long press
@@ -44,22 +58,18 @@ function ReactionButton({ comment, onReact, disabled }) {
 
   const handleClick = () => {
     if (showPicker) { setShowPicker(false); return; }
-    // Click senza picker — toggle ❤️ di default o rimuovi
     onReact(comment.id, myReaction || "❤️");
   };
 
   return (
-    <div className="relative inline-block"
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}>
-
+    <div className="relative inline-block">
       {/* Picker animato */}
       {showPicker && (
-        <div ref={pickerRef}
-          className="absolute bottom-8 left-0 bg-white rounded-full shadow-2xl border border-gray-100 flex items-center px-3 py-2 space-x-1 z-30 animate-bounce-in"
+        <div
+          className="absolute bottom-8 left-0 bg-white rounded-full shadow-2xl border border-gray-100 flex items-center px-3 py-2 space-x-1 z-30"
           style={{ animation: "slideUp 0.15s ease-out" }}
-          onMouseEnter={() => clearTimeout(hoverTimer.current)}
-          onMouseLeave={() => setShowPicker(false)}>
+          onMouseEnter={handlePickerMouseEnter}
+          onMouseLeave={handlePickerMouseLeave}>
           {REACTIONS.map((emoji, i) => (
             <button key={emoji}
               onClick={(e) => { e.stopPropagation(); setShowPicker(false); onReact(comment.id, emoji); }}
@@ -75,6 +85,8 @@ function ReactionButton({ comment, onReact, disabled }) {
       {/* Bottone Mi piace */}
       <button
         onClick={handleClick}
+        onMouseEnter={handleButtonMouseEnter}
+        onMouseLeave={handleButtonMouseLeave}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
         disabled={disabled}

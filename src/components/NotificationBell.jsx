@@ -54,6 +54,7 @@ function NotificationBell(props) {
       case "LIKE": return "❤️";
       case "COMMENT": return "💬";
       case "FOLLOW": return "👤";
+      case "REACTION": return "😊";
       default: return "🔔";
     }
   };
