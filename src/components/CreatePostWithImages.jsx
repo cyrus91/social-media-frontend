@@ -5,6 +5,8 @@ import api from "../services/api";
 import EmojiPickerButton from "./EmojiPickerButton";
 import AICaptionGenerator from "./AICaptionGenerator";
 import { aiService } from "../services/aiService";
+import { useMentionInput } from "../hooks/useMentionInput";
+import MentionSuggestions from "./MentionSuggestions";
 
 function CreatePostWithImages({ onPostCreated }) {
   const currentUser = useAuthStore((state) => state.user);
@@ -15,6 +17,11 @@ function CreatePostWithImages({ onPostCreated }) {
   const [improvingAI, setImprovingAI] = useState(false);
   const fileInputRef = useRef(null);
   const textareaRef = useRef(null);
+
+  const { handleChange: handleMentionChange, selectMention, suggestions: mentionSuggestions, showSuggestions: showMentionSuggestions } = useMentionInput(
+    content,
+    setContent
+  );
 
   const handleImproveText = async () => {
     if (!content.trim()) return;
@@ -127,6 +134,12 @@ function CreatePostWithImages({ onPostCreated }) {
         <div className={`border rounded-2xl transition-all duration-200 ${hasContent ? 'border-blue-400' : 'border-gray-300'}`}>
 
           {/* Textarea SEMPRE nel DOM — niente rimount */}
+          <div className="relative">
+          <MentionSuggestions
+            suggestions={mentionSuggestions}
+            visible={showMentionSuggestions}
+            onSelect={(username) => selectMention(username, textareaRef)}
+          />
           <div className={`flex items-center px-3 space-x-2 ${hasContent ? 'pt-3 pb-1' : 'py-2'}`}>
             {/* Emoji visibile solo senza contenuto, allineata alla textarea */}
             {!hasContent && (
@@ -142,7 +155,7 @@ function CreatePostWithImages({ onPostCreated }) {
             <textarea
               ref={textareaRef}
               value={content}
-              onChange={handleTextareaChange}
+              onChange={(e) => { handleTextareaChange(e); handleMentionChange(e); }}
               placeholder="Cosa stai pensando?"
               rows={hasContent ? 3 : 1}
               style={{ resize: "none" }}
@@ -150,6 +163,8 @@ function CreatePostWithImages({ onPostCreated }) {
               className="flex-1 outline-none text-sm bg-transparent py-0.5"
             />
           </div>
+
+          </div>{/* end mention wrapper */}
 
           {/* Preview immagini */}
           {previews.length > 0 && (

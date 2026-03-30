@@ -1,4 +1,7 @@
 import { useState, useEffect, useRef } from "react";
+import { useMentionInput } from "../hooks/useMentionInput";
+import MentionSuggestions from "./MentionSuggestions";
+import { renderTextWithMentions } from "../utils/renderTextWithMentions";
 import { Link } from "react-router-dom";
 import EmojiPickerButton from "./EmojiPickerButton";
 import AvatarZoom from "./AvatarZoom";
@@ -246,7 +249,7 @@ function CommentItem({ comment, user, postId, onReact, onReplyCreated, depth = 0
               </div>
             </div>
           ) : (
-            <p className="text-sm text-gray-700 mt-0.5 break-words">{localComment.content}</p>
+            <p className="text-sm text-gray-700 mt-0.5 break-words">{renderTextWithMentions(localComment.content)}</p>
           )}
 
           {/* Menu 3 punti — solo autore */}
@@ -399,6 +402,7 @@ function CommentSection({ postId, initialCommentCount = 0, defaultExpanded = fal
   const [submitting, setSubmitting] = useState(false);
   const [commentCount, setCommentCount] = useState(initialCommentCount);
   const textareaRef = useRef(null);
+  const { handleChange: handleMentionChange, selectMention: selectMainMention, suggestions: mainSuggestions, showSuggestions: showMainSuggestions } = useMentionInput(commentText, setCommentText);
 
   useEffect(() => {
     if (isExpanded) loadComments();
@@ -479,6 +483,8 @@ function CommentSection({ postId, initialCommentCount = 0, defaultExpanded = fal
                     </div>}
               </div>
               <div className={`flex-1 border rounded-2xl bg-white transition-all ${commentText ? "border-blue-400" : "border-gray-300"}`}>
+                <div className="relative">
+                  <MentionSuggestions suggestions={mainSuggestions} visible={showMainSuggestions} onSelect={(u) => selectMainMention(u, textareaRef)} />
                 <div className="flex items-center px-3 py-2 space-x-2">
                   {!commentText && (
                     <EmojiPickerButton onEmojiSelect={emoji => setCommentText(p => p + emoji)} />
@@ -486,6 +492,7 @@ function CommentSection({ postId, initialCommentCount = 0, defaultExpanded = fal
                   <textarea ref={textareaRef} value={commentText}
                     onChange={e => {
                       setCommentText(e.target.value);
+                      handleMentionChange(e);
                       const ta = textareaRef.current;
                       if (ta) { ta.style.height = "auto"; ta.style.height = Math.min(ta.scrollHeight, 120) + "px"; }
                     }}
@@ -493,6 +500,7 @@ function CommentSection({ postId, initialCommentCount = 0, defaultExpanded = fal
                     rows={1} style={{ resize: "none" }}
                     className="flex-1 outline-none text-sm bg-transparent" />
                 </div>
+                </div>{/* end mention wrapper */}
                 {commentText && (
                   <div className="flex items-center justify-between px-2 pb-2 border-t border-gray-100">
                     <EmojiPickerButton onEmojiSelect={emoji => setCommentText(p => p + emoji)} />
