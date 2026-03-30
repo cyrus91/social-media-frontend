@@ -130,7 +130,7 @@ function CommentItem({ comment, user, postId, onReact, onReplyCreated, depth = 0
   };
 
   const handleSubmitReply = async (e) => {
-    e.preventDefault();
+    if (e?.preventDefault) e.preventDefault();
     if (!replyText.trim()) return;
     setSubmittingReply(true);
     try {
@@ -286,9 +286,9 @@ function CommentItem({ comment, user, postId, onReact, onReplyCreated, depth = 0
           <span className="text-xs text-gray-400">{formatDate(localComment.createdAt)}</span>
         </div>
 
-        {/* Form risposta */}
+        {/* Form risposta — div invece di form per evitare bubbling al form padre */}
         {showReplyForm && (
-          <form onSubmit={handleSubmitReply} className="flex items-center space-x-2 mt-2">
+          <div className="flex items-center space-x-2 mt-2">
             <div className="flex-shrink-0">
               {user?.avatarUrl
                 ? <img src={user.avatarUrl} className="w-6 h-6 rounded-full object-cover" alt="" />
@@ -300,8 +300,16 @@ function CommentItem({ comment, user, postId, onReact, onReplyCreated, depth = 0
               <input value={replyText} onChange={e => setReplyText(e.target.value)}
                 placeholder={`Rispondi a @${localComment.authorUsername}...`}
                 className="flex-1 bg-transparent text-sm outline-none"
-                autoFocus />
-              <button type="submit" disabled={!replyText.trim() || submittingReply}
+                autoFocus
+                onKeyDown={e => {
+                  if (e.key === "Enter" && !e.shiftKey && replyText.trim()) {
+                    e.preventDefault();
+                    handleSubmitReply(e);
+                  }
+                }} />
+              <button type="button"
+                onClick={handleSubmitReply}
+                disabled={!replyText.trim() || submittingReply}
                 className="text-blue-500 hover:text-blue-600 disabled:opacity-40 transition">
                 <svg className="w-4 h-4 rotate-45" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
@@ -310,7 +318,7 @@ function CommentItem({ comment, user, postId, onReact, onReplyCreated, depth = 0
             </div>
             <button type="button" onClick={() => setShowReplyForm(false)}
               className="text-gray-400 hover:text-gray-600 text-xs">✕</button>
-          </form>
+          </div>
         )}
 
         {/* Risposte annidate */}
