@@ -101,3 +101,20 @@ export const toggleCommentReaction = async (commentId, emoji) => {
     return { success: false, error: error.response?.data?.message || "Errore reazione" };
   }
 };
+
+export const createCommentWithImage = async ({ postId, content, parentId, imageFile }) => {
+  try {
+    const formData = new FormData();
+    formData.append("postId", postId);
+    if (content) formData.append("content", content);
+    if (parentId) formData.append("parentId", parentId);
+    formData.append("image", imageFile);
+
+    const response = await api.post("/comments/with-image", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return { success: true, data: response.data };
+  } catch (error) {
+    return { success: false, error: error.response?.data?.message || "Errore upload immagine" };
+  }
+};

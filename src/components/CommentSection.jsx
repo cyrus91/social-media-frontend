@@ -12,6 +12,7 @@ import {
   deleteComment,
   updateComment,
   toggleCommentReaction,
+  createCommentWithImage,
 } from "../services/commentService";
 import useAuthStore from "../store/authStore";
 import toast from "react-hot-toast";
@@ -250,7 +251,15 @@ function CommentItem({ comment, user, postId, onReact, onReplyCreated, depth = 0
               </div>
             </div>
           ) : (
-            <p className="text-sm text-gray-700 mt-0.5 break-words">{renderTextWithMentions(localComment.content)}</p>
+            <>
+              <p className="text-sm text-gray-700 mt-0.5 break-words">{renderTextWithMentions(localComment.content)}</p>
+              {/* Immagine allegata al commento */}
+              {localComment.imageUrl && (
+                <img src={localComment.imageUrl} alt="img"
+                  className="mt-1.5 max-h-48 rounded-xl object-cover cursor-pointer border border-gray-200 hover:opacity-95 transition"
+                  onClick={() => window.open(localComment.imageUrl, "_blank")} />
+              )}
+            </>
           )}
 
           {/* Menu 3 punti — solo autore */}
@@ -403,6 +412,9 @@ function CommentSection({ postId, initialCommentCount = 0, defaultExpanded = fal
   const [submitting, setSubmitting] = useState(false);
   const [commentCount, setCommentCount] = useState(initialCommentCount);
   const textareaRef = useRef(null);
+  const imageInputRef = useRef(null);
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
   const { handleChange: handleMentionChange, selectMention: selectMainMention, suggestions: mainSuggestions, showSuggestions: showMainSuggestions } = useMentionInput(commentText, setCommentText);
 
   useEffect(() => {
@@ -420,10 +432,16 @@ function CommentSection({ postId, initialCommentCount = 0, defaultExpanded = fal
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!commentText.trim() || !user) return;
+    if (!commentText.trim() && !imageFile) return;
+    if (!user) return;
     setSubmitting(true);
     try {
-      const result = await createComment({ postId, content: commentText.trim() });
+      let result;
+      if (imageFile) {
+        result = await createCommentWithImage({ postId, content: commentText.trim() || null, imageFile });
+      } else {
+        result = await createComment({ postId, content: commentText.trim() });
+      }
       if (result.success) {
         const newComment = {
           ...result.data,
@@ -435,6 +453,8 @@ function CommentSection({ postId, initialCommentCount = 0, defaultExpanded = fal
         setComments(prev => [...prev, newComment]);
         setCommentCount(prev => prev + 1);
         setCommentText("");
+        setImageFile(null);
+        setImagePreview(null);
         if (textareaRef.current) textareaRef.current.style.height = "auto";
         toast.success("Commento pubblicato!");
       }
@@ -487,8 +507,19 @@ function CommentSection({ postId, initialCommentCount = 0, defaultExpanded = fal
                 <MentionSuggestions suggestions={mainSuggestions} visible={showMainSuggestions} onSelect={(u) => selectMainMention(u, textareaRef)}  anchorRef={textareaRef} />
                 <div className={`border rounded-2xl bg-white transition-all ${commentText ? "border-blue-400" : "border-gray-300"}`}>
                 <div className="flex items-center px-3 py-2 space-x-2">
-                  {!commentText && (
-                    <EmojiPickerButton onEmojiSelect={emoji => setCommentText(p => p + emoji)} />
+                  {!(commentText || imageFile) && (
+                    <div className="flex items-center space-x-1 flex-shrink-0">
+                      <EmojiPickerButton onEmojiSelect={emoji => setCommentText(p => p + emoji)} />
+                      <button type="button"
+                        onClick={() => imageInputRef.current?.click()}
+                        className="p-1 text-gray-400 hover:text-blue-500 transition rounded-full hover:bg-gray-100"
+                        title="Aggiungi foto">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      </button>
+                    </div>
                   )}
                   <MentionTextarea
                     textareaRef={textareaRef}
@@ -504,17 +535,53 @@ function CommentSection({ postId, initialCommentCount = 0, defaultExpanded = fal
                     className="flex-1"
                   />
                 </div>
-                </div>{/* end border box */}
-                {commentText && (
-                  <div className="flex items-center justify-between px-2 pb-2 border-t border-gray-100">
-                    <EmojiPickerButton onEmojiSelect={emoji => setCommentText(p => p + emoji)} />
-                    <button type="submit" disabled={submitting || !commentText.trim()}
+                {/* Preview immagine selezionata */}
+                {imagePreview && (
+                  <div className="px-3 pb-2 relative inline-block">
+                    <img src={imagePreview} alt="preview"
+                      className="max-h-32 rounded-xl object-cover border border-gray-200" />
+                    <button type="button"
+                      onClick={() => { setImageFile(null); setImagePreview(null); }}
+                      className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center">
+                      ✕
+                    </button>
+                  </div>
+                )}
+                {(commentText || imageFile) && (
+                  <div className="flex items-center justify-between px-2 pb-2 border-t border-gray-100 mt-1 pt-2">
+                    <div className="flex items-center space-x-1">
+                      <EmojiPickerButton onEmojiSelect={emoji => setCommentText(p => p + emoji)} />
+                      {/* Bottone foto */}
+                      <button type="button"
+                        onClick={() => imageInputRef.current?.click()}
+                        className="p-1 text-gray-400 hover:text-blue-500 transition rounded-full hover:bg-gray-100"
+                        title="Aggiungi foto">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      </button>
+                    </div>
+                    <button type="submit" disabled={submitting || (!commentText.trim() && !imageFile)}
                       className="bg-blue-500 hover:bg-blue-600 text-white text-xs font-semibold px-3 py-1.5 rounded-full transition disabled:opacity-50">
                       {submitting ? "..." : "Commenta"}
                     </button>
                   </div>
                 )}
-                </div>{/* end relative wrapper */}
+                {/* Input foto nascosto */}
+                <input ref={imageInputRef} type="file" accept="image/*" className="hidden"
+                  onChange={e => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    if (file.size > 5 * 1024 * 1024) { toast.error("Immagine troppo grande (max 5MB)"); return; }
+                    setImageFile(file);
+                    const reader = new FileReader();
+                    reader.onload = () => setImagePreview(reader.result);
+                    reader.readAsDataURL(file);
+                    e.target.value = "";
+                  }} />
+                </div>{/* end border box */}
+              </div>{/* end relative wrapper */}
             </form>
           )}
         </div>
