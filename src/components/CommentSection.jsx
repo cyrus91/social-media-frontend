@@ -13,6 +13,7 @@ import {
   updateComment,
   toggleCommentReaction,
   createCommentWithImage,
+  deleteCommentImage,
 } from "../services/commentService";
 import useAuthStore from "../store/authStore";
 import toast from "react-hot-toast";
@@ -109,7 +110,10 @@ function ReactionButton({ comment, onReact, disabled }) {
 function CommentItem({ comment, user, postId, onReact, onReplyCreated, depth = 0 }) {
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [replyText, setReplyText] = useState("");
+  const [replyImageFile, setReplyImageFile] = useState(null);
+  const [replyImagePreview, setReplyImagePreview] = useState(null);
   const [submittingReply, setSubmittingReply] = useState(false);
+  const replyImageInputRef = useRef(null);
   const [editMode, setEditMode] = useState(false);
   const [editText, setEditText] = useState(comment.content);
   const [showMenu, setShowMenu] = useState(false);
@@ -146,10 +150,15 @@ function CommentItem({ comment, user, postId, onReact, onReplyCreated, depth = 0
 
   const handleSubmitReply = async (e) => {
     if (e?.preventDefault) e.preventDefault();
-    if (!replyText.trim()) return;
+    if (!replyText.trim() && !replyImageFile) return;
     setSubmittingReply(true);
     try {
-      const result = await createComment({ postId, content: replyText.trim(), parentId: comment.id });
+      let result;
+      if (replyImageFile) {
+        result = await createCommentWithImage({ postId, content: replyText.trim() || null, parentId: comment.id, imageFile: replyImageFile });
+      } else {
+        result = await createComment({ postId, content: replyText.trim(), parentId: comment.id });
+      }
       if (result.success) {
         const newReply = {
           ...result.data,
@@ -163,6 +172,8 @@ function CommentItem({ comment, user, postId, onReact, onReplyCreated, depth = 0
           replies: [...(prev.replies || []), newReply]
         }));
         setReplyText("");
+        setReplyImageFile(null);
+        setReplyImagePreview(null);
         setShowReplyForm(false);
         if (onReplyCreated) onReplyCreated();
         toast.success("Risposta inviata!");
@@ -255,9 +266,25 @@ function CommentItem({ comment, user, postId, onReact, onReplyCreated, depth = 0
               <p className="text-sm text-gray-700 mt-0.5 break-words">{renderTextWithMentions(localComment.content)}</p>
               {/* Immagine allegata al commento */}
               {localComment.imageUrl && (
-                <img src={localComment.imageUrl} alt="img"
-                  className="mt-1.5 max-h-48 rounded-xl object-cover cursor-pointer border border-gray-200 hover:opacity-95 transition"
-                  onClick={() => window.open(localComment.imageUrl, "_blank")} />
+                <div className="relative inline-block mt-1.5">
+                  <img src={localComment.imageUrl} alt="img"
+                    className="max-h-48 rounded-xl object-cover cursor-pointer border border-gray-200 hover:opacity-95 transition"
+                    onClick={() => window.open(localComment.imageUrl, "_blank")} />
+                  {/* Bottone elimina solo immagine — solo autore */}
+                  {user?.id === localComment.authorId && (
+                    <button type="button"
+                      onClick={async () => {
+                        const res = await deleteCommentImage(localComment.id);
+                        if (res.success) {
+                          setLocalComment(prev => ({ ...prev, imageUrl: null }));
+                          toast.success("Immagine rimossa");
+                        }
+                      }}
+                      className="absolute top-1 right-1 w-5 h-5 bg-red-500 hover:bg-red-600 text-white rounded-full text-xs flex items-center justify-center shadow transition">
+                      ✕
+                    </button>
+                  )}
+                </div>
               )}
             </>
           )}
@@ -321,36 +348,76 @@ function CommentItem({ comment, user, postId, onReact, onReplyCreated, depth = 0
 
         {/* Form risposta — div invece di form per evitare bubbling al form padre */}
         {showReplyForm && (
-          <div className="flex items-center space-x-2 mt-2">
-            <div className="flex-shrink-0">
-              {user?.avatarUrl
-                ? <img src={user.avatarUrl} className="w-6 h-6 rounded-full object-cover" alt="" />
-                : <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                    {user?.username?.charAt(0).toUpperCase()}
-                  </div>}
+          <div className="mt-2 space-y-1">
+            {/* Preview immagine reply */}
+            {replyImagePreview && (
+              <div className="relative inline-block ml-8">
+                <img src={replyImagePreview} alt="preview"
+                  className="max-h-24 rounded-xl object-cover border border-gray-200" />
+                <button type="button"
+                  onClick={() => { setReplyImageFile(null); setReplyImagePreview(null); }}
+                  className="absolute top-0.5 right-0.5 w-4 h-4 bg-red-500 text-white rounded-full text-xs flex items-center justify-center">
+                  ✕
+                </button>
+              </div>
+            )}
+            <div className="flex items-center space-x-2">
+              <div className="flex-shrink-0">
+                {user?.avatarUrl
+                  ? <img src={user.avatarUrl} className="w-6 h-6 rounded-full object-cover" alt="" />
+                  : <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                      {user?.username?.charAt(0).toUpperCase()}
+                    </div>}
+              </div>
+              <div className="flex-1 bg-gray-100 rounded-2xl px-3 py-1.5 space-y-1">
+                <input value={replyText} onChange={e => setReplyText(e.target.value)}
+                  placeholder={`Rispondi a @${localComment.authorUsername}...`}
+                  className="w-full bg-transparent text-sm outline-none"
+                  autoFocus
+                  onKeyDown={e => {
+                    if (e.key === "Enter" && !e.shiftKey && (replyText.trim() || replyImageFile)) {
+                      e.preventDefault();
+                      handleSubmitReply(e);
+                    }
+                  }} />
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-1">
+                    <EmojiPickerButton onEmojiSelect={emoji => setReplyText(p => p + emoji)} />
+                    <button type="button"
+                      onClick={() => replyImageInputRef.current?.click()}
+                      className="p-1 text-gray-400 hover:text-blue-500 transition rounded-full hover:bg-gray-200"
+                      title="Aggiungi foto">
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </button>
+                  </div>
+                  <button type="button"
+                    onClick={handleSubmitReply}
+                    disabled={(!replyText.trim() && !replyImageFile) || submittingReply}
+                    className="text-blue-500 hover:text-blue-600 disabled:opacity-40 transition">
+                    <svg className="w-4 h-4 rotate-45" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <button type="button" onClick={() => { setShowReplyForm(false); setReplyImageFile(null); setReplyImagePreview(null); }}
+                className="text-gray-400 hover:text-gray-600 text-xs flex-shrink-0">✕</button>
             </div>
-            <div className="flex-1 flex items-center bg-gray-100 rounded-full px-3 py-1.5 space-x-2">
-              <input value={replyText} onChange={e => setReplyText(e.target.value)}
-                placeholder={`Rispondi a @${localComment.authorUsername}...`}
-                className="flex-1 bg-transparent text-sm outline-none"
-                autoFocus
-                onKeyDown={e => {
-                  if (e.key === "Enter" && !e.shiftKey && replyText.trim()) {
-                    e.preventDefault();
-                    handleSubmitReply(e);
-                  }
-                }} />
-              <button type="button"
-                onClick={handleSubmitReply}
-                disabled={!replyText.trim() || submittingReply}
-                className="text-blue-500 hover:text-blue-600 disabled:opacity-40 transition">
-                <svg className="w-4 h-4 rotate-45" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                </svg>
-              </button>
-            </div>
-            <button type="button" onClick={() => setShowReplyForm(false)}
-              className="text-gray-400 hover:text-gray-600 text-xs">✕</button>
+            {/* Input foto nascosto per reply */}
+            <input ref={replyImageInputRef} type="file" accept="image/*" className="hidden"
+              onChange={e => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                if (file.size > 5 * 1024 * 1024) { toast.error("Immagine troppo grande (max 5MB)"); return; }
+                setReplyImageFile(file);
+                const reader = new FileReader();
+                reader.onload = () => setReplyImagePreview(reader.result);
+                reader.readAsDataURL(file);
+                e.target.value = "";
+              }} />
           </div>
         )}
 
@@ -548,7 +615,7 @@ function CommentSection({ postId, initialCommentCount = 0, defaultExpanded = fal
                   </div>
                 )}
                 {(commentText || imageFile) && (
-                  <div className="flex items-center justify-between px-2 pb-2 border-t border-gray-100 mt-1 pt-2">
+                  <div className="flex items-center justify-between px-2 pb-2 border-t border-gray-100">
                     <div className="flex items-center space-x-1">
                       <EmojiPickerButton onEmojiSelect={emoji => setCommentText(p => p + emoji)} />
                       {/* Bottone foto */}

@@ -118,3 +118,12 @@ export const createCommentWithImage = async ({ postId, content, parentId, imageF
     return { success: false, error: error.response?.data?.message || "Errore upload immagine" };
   }
 };
+
+export const deleteCommentImage = async (commentId) => {
+  try {
+    await api.delete(`/comments/${commentId}/image`);
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.response?.data?.message || "Errore" };
+  }
+};
