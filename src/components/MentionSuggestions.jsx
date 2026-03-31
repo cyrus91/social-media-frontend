@@ -11,8 +11,8 @@ function MentionSuggestions({ suggestions, onSelect, visible, anchorRef }) {
     if (visible && anchorRef?.current) {
       const rect = anchorRef.current.getBoundingClientRect();
       setCoords({
-        top: rect.bottom + window.scrollY + 4,
-        left: rect.left + window.scrollX,
+        top: rect.bottom + 4,   // position:fixed è relativo al viewport — no scrollY
+        left: rect.left,
         width: Math.max(rect.width, 224),
       });
     }

@@ -114,6 +114,10 @@ function CommentItem({ comment, user, postId, onReact, onReplyCreated, depth = 0
   const [replyImagePreview, setReplyImagePreview] = useState(null);
   const [submittingReply, setSubmittingReply] = useState(false);
   const replyImageInputRef = useRef(null);
+  const replyInputRef = useRef(null);
+  const { handleChange: handleReplyMentionChange, selectMention: selectReplyMention,
+          suggestions: replySuggestions, showSuggestions: showReplySuggestions } =
+    useMentionInput(replyText, setReplyText);
   const [editMode, setEditMode] = useState(false);
   const [editText, setEditText] = useState(comment.content);
   const [showMenu, setShowMenu] = useState(false);
@@ -369,17 +373,21 @@ function CommentItem({ comment, user, postId, onReact, onReplyCreated, depth = 0
                       {user?.username?.charAt(0).toUpperCase()}
                     </div>}
               </div>
-              <div className="flex-1 bg-gray-100 rounded-2xl px-3 py-1.5 space-y-1">
-                <input value={replyText} onChange={e => setReplyText(e.target.value)}
+              <div className="flex-1 bg-gray-100 rounded-2xl px-3 py-1.5 space-y-1 relative">
+                <MentionSuggestions
+                  suggestions={replySuggestions}
+                  visible={showReplySuggestions}
+                  onSelect={(u) => selectReplyMention(u, replyInputRef)}
+                  anchorRef={replyInputRef}
+                />
+                <MentionTextarea
+                  textareaRef={replyInputRef}
+                  value={replyText}
+                  onChange={e => { setReplyText(e.target.value); handleReplyMentionChange(e); }}
                   placeholder={`Rispondi a @${localComment.authorUsername}...`}
-                  className="w-full bg-transparent text-sm outline-none"
-                  autoFocus
-                  onKeyDown={e => {
-                    if (e.key === "Enter" && !e.shiftKey && (replyText.trim() || replyImageFile)) {
-                      e.preventDefault();
-                      handleSubmitReply(e);
-                    }
-                  }} />
+                  rows={1}
+                  className="w-full"
+                />
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-1">
                     <EmojiPickerButton onEmojiSelect={emoji => setReplyText(p => p + emoji)} />
