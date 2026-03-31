@@ -2,6 +2,37 @@ import { useState } from "react";
 import { useAI } from "../hooks/useAI";
 import { aiService } from "../services/aiService";
 
+/**
+ * Ridimensiona e comprime un'immagine base64.
+ * maxSize: larghezza/altezza massima in px
+ * quality: 0-1 (JPEG quality)
+ * Restituisce il base64 senza prefisso data:...
+ */
+function compressImage(dataUrl, maxSize = 512, quality = 0.6) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      let w = img.width, h = img.height;
+      if (w > maxSize || h > maxSize) {
+        if (w > h) { h = Math.round(h * maxSize / w); w = maxSize; }
+        else { w = Math.round(w * maxSize / h); h = maxSize; }
+      }
+      canvas.width = w;
+      canvas.height = h;
+      canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+      // Rimuove il prefisso data:image/...;base64,
+      const compressed = canvas.toDataURL("image/jpeg", quality).split(",")[1];
+      resolve(compressed);
+    };
+    img.onerror = () => {
+      // Fallback: ritorna il base64 originale senza prefisso
+      resolve(dataUrl.includes(",") ? dataUrl.split(",")[1] : dataUrl);
+    };
+    img.src = dataUrl;
+  });
+}
+
 function AICaptionGenerator({ onCaptionGenerated, imageUrls = [] }) {
   const { generateCaption } = useAI();
   const [tone, setTone] = useState("friendly");
@@ -21,7 +52,11 @@ function AICaptionGenerator({ onCaptionGenerated, imageUrls = [] }) {
     try {
       let caption;
       if (imageUrls && imageUrls.length > 0) {
-        const res = await aiService.generateCaptionVision(imageUrls, tone, "");
+        // Ridimensiona le immagini prima di mandarle — Groq ha limite token
+        const compressedImages = await Promise.all(
+          imageUrls.slice(0, 2).map(dataUrl => compressImage(dataUrl, 512, 0.6))
+        );
+        const res = await aiService.generateCaptionVision(compressedImages, tone, "");
         caption = res.suggestion || res;
       } else {
         caption = await generateCaption("", [], tone);
