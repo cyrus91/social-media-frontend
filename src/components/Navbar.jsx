@@ -1,262 +1,287 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState, useRef, useEffect } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import useAuthStore from "../store/authStore";
 import toast from "react-hot-toast";
 import SearchBar from "./SearchBar";
 import NotificationBell from "./NotificationBell";
 import useMessagingStore from "../store/messagingStore";
+import NexusLogo from "./NexusLogo";
+
+const NxNavLink = ({ to, children }) => {
+  const location = useLocation();
+  const isActive = location.pathname === to || location.pathname.startsWith(to + "/");
+  
+  return (
+    <Link to={to} style={{
+      display: "flex", alignItems: "center", gap: "6px",
+      padding: "6px 12px", borderRadius: "var(--nx-radius-sm)",
+      fontSize: "14px", fontWeight: 500, textDecoration: "none",
+      transition: "all var(--nx-transition)",
+      color: isActive ? "#7c3aed" : "var(--nx-text-muted)",
+      background: isActive ? "rgba(124,58,237,0.1)" : "transparent",
+    }}
+    onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = "rgba(124,58,237,0.06)"; e.currentTarget.style.color = "#7c3aed"; }}
+    onMouseLeave={e => { if (!isActive) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--nx-text-muted)"; } }}>
+      {children}
+    </Link>
+  );
+};
 
 function Navbar() {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
+  const location = useLocation();
   const [showDropdown, setShowDropdown] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const unreadMessages = useMessagingStore((state) => state.unreadCount);
+  const dropdownRef = useRef(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handler = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   const handleLogout = () => {
-    toast.promise(
-      Promise.resolve().then(() => {
-        logout();
-        navigate("/login");
-      }),
-      {
-        loading: "Disconnessione...",
-        success: "Logout effettuato!",
-        error: "Errore nel logout",
-      },
-    );
+    logout();
+    navigate("/login");
+    toast.success("Arrivederci!");
     setShowDropdown(false);
     setShowMobileMenu(false);
   };
 
+  const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + "/");
+
   return (
-    <nav className="bg-white shadow-md sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+    <nav style={{
+      position: "sticky", top: 0, zIndex: 50,
+      background: "var(--nx-surface)",
+      borderBottom: "1px solid var(--nx-border)",
+      backdropFilter: "blur(12px)",
+      WebkitBackdropFilter: "blur(12px)",
+    }}>
+      <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "0 16px" }}>
+        <div style={{ display: "flex", alignItems: "center", height: "60px", gap: "16px" }}>
+
           {/* Logo */}
-          <Link
-            to="/feed"
-            className="text-xl sm:text-2xl font-bold text-blue-600 hover:text-blue-700 transition flex-shrink-0">
-            Social App
+          <Link to="/feed" style={{ textDecoration: "none", flexShrink: 0 }}>
+            <NexusLogo size={28} />
           </Link>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-4 lg:space-x-6 flex-1 justify-end">
-            {/* SearchBar */}
-            <div className="flex-1 max-w-md mx-4">
-              <SearchBar />
+          {/* Search — desktop */}
+          <div className="hidden md:block" style={{ flex: 1, maxWidth: "360px" }}>
+            <SearchBar />
+          </div>
+
+          {/* Desktop nav links */}
+          <div className="hidden md:flex" style={{ alignItems: "center", gap: "4px", flex: 1, justifyContent: "center" }}>
+            <NxNavLink to="/feed">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill={isActive("/feed") ? "#7c3aed" : "none"} stroke="currentColor" strokeWidth="2">
+                <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+              </svg>
+              Home
+            </NxNavLink>
+            <NxNavLink to="/explore">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              Esplora
+            </NxNavLink>
+          </div>
+
+          {/* Right side actions */}
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginLeft: "auto" }}>
+
+            {/* Notification Bell */}
+            <div className="hidden md:block">
+              <NotificationBell />
             </div>
 
-            <Link
-              to="/feed"
-              className="text-gray-700 hover:text-blue-600 font-semibold transition whitespace-nowrap">
-              Home
-            </Link>
-            <Link
-              to="/explore"
-              className="text-gray-700 hover:text-blue-600 font-semibold transition whitespace-nowrap">
-              Esplora
-            </Link>
-
-            {/*  NOTIFICATION BELL DESKTOP */}
-            <NotificationBell />
-
-            {/* Messages icon desktop */}
-            <Link
-              to="/messages"
-              className="relative text-gray-600 hover:text-blue-500 transition p-1">
-              <svg
-                className="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M8 10h.01M12 10h.01M16 10h.01M21 16V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2h3l3 3 3-3h3a2 2 0 002-2z"
-                />
+            {/* Messages */}
+            <Link to="/messages" style={{ position: "relative", padding: "7px", borderRadius: "var(--nx-radius-sm)", color: "var(--nx-text-muted)", transition: "all var(--nx-transition)", display: "flex" }}
+              onMouseEnter={e => { e.currentTarget.style.background = "rgba(124,58,237,0.08)"; e.currentTarget.style.color = "#7c3aed"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--nx-text-muted)"; }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
               </svg>
               {unreadMessages > 0 && (
-                <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold">
+                <span style={{
+                  position: "absolute", top: "2px", right: "2px",
+                  background: "linear-gradient(135deg,#7c3aed,#06b6d4)",
+                  color: "#fff", fontSize: "10px", fontWeight: 700,
+                  width: "16px", height: "16px", borderRadius: "50%",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  border: "2px solid var(--nx-surface)"
+                }}>
                   {unreadMessages > 9 ? "9+" : unreadMessages}
                 </span>
               )}
             </Link>
 
-            {/* User Dropdown */}
-            <div className="relative">
+            {/* Avatar + dropdown */}
+            <div ref={dropdownRef} style={{ position: "relative" }}>
               <button
                 onClick={() => setShowDropdown(!showDropdown)}
-                className="flex items-center space-x-2 focus:outline-none hover:opacity-80 transition">
+                style={{
+                  display: "flex", alignItems: "center", gap: "8px",
+                  padding: "4px 8px 4px 4px", border: "1.5px solid var(--nx-border)",
+                  borderRadius: "var(--nx-radius-full)", background: "var(--nx-surface-2)",
+                  cursor: "pointer", transition: "all var(--nx-transition)"
+                }}
+                onMouseEnter={e => e.currentTarget.style.borderColor = "var(--nx-border-hover)"}
+                onMouseLeave={e => e.currentTarget.style.borderColor = "var(--nx-border)"}>
                 {user?.avatarUrl ? (
-                  <img
-                    src={user.avatarUrl}
-                    alt={user.username}
-                    className="w-8 h-8 rounded-full object-cover border-2 border-blue-500"
-                  />
+                  <img src={user.avatarUrl} alt={user.username}
+                    style={{ width: "28px", height: "28px", borderRadius: "50%", objectFit: "cover" }} />
                 ) : (
-                  <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                  <div className="nx-avatar-gradient" style={{ width: "28px", height: "28px", fontSize: "11px" }}>
                     {user?.username?.charAt(0).toUpperCase()}
                   </div>
                 )}
-                <span className="text-gray-700 font-semibold hidden lg:block">
+                <span className="hidden lg:block" style={{ fontSize: "13px", fontWeight: 600, color: "var(--nx-text)", maxWidth: "100px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {user?.username}
                 </span>
-                <svg
-                  className="w-4 h-4 text-gray-500"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 9l-7 7-7-7"
-                  />
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--nx-text-muted)" strokeWidth="2.5">
+                  <polyline points="6 9 12 15 18 9"/>
                 </svg>
               </button>
 
-              {/* Dropdown Menu */}
+              {/* Dropdown */}
               {showDropdown && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl py-2 z-50 border border-gray-200">
-                  <Link
-                    to={`/profile/${user?.username}`}
-                    onClick={() => setShowDropdown(false)}
-                    className="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition">
-                    Il mio profilo
-                  </Link>
-                  {user?.role === "ADMIN" && (
-                    <Link
-                      to="/admin"
+                <div className="nx-animate-in" style={{
+                  position: "absolute", right: 0, top: "calc(100% + 8px)",
+                  width: "200px", background: "var(--nx-surface)",
+                  border: "1px solid var(--nx-border)", borderRadius: "var(--nx-radius-lg)",
+                  boxShadow: "var(--nx-shadow-lg)", overflow: "hidden", zIndex: 60
+                }}>
+                  {/* User info */}
+                  <div style={{ padding: "14px 16px 10px", borderBottom: "1px solid var(--nx-border)" }}>
+                    <p style={{ fontSize: "13px", fontWeight: 700, color: "var(--nx-text)" }}>{user?.username}</p>
+                    <p style={{ fontSize: "11px", color: "var(--nx-text-muted)", marginTop: "2px" }}>Nexus member</p>
+                  </div>
+
+                  {/* Links */}
+                  {[
+                    { to: `/profile/${user?.username}`, label: "Il mio profilo", icon: "M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z" },
+                    { to: "/messages", label: "Messaggi", icon: "M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z", badge: unreadMessages },
+                    ...(user?.role === "ADMIN" ? [{ to: "/admin", label: "Admin Panel", icon: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z", admin: true }] : [])
+                  ].map(item => (
+                    <Link key={item.to} to={item.to}
                       onClick={() => setShowDropdown(false)}
-                      className="block px-4 py-2 text-purple-600 hover:bg-gray-100 transition font-semibold">
-                      🛡️ Pannello Admin
+                      style={{
+                        display: "flex", alignItems: "center", justifyContent: "space-between",
+                        padding: "10px 16px", fontSize: "13px", fontWeight: 500,
+                        color: item.admin ? "#7c3aed" : "var(--nx-text)", textDecoration: "none",
+                        transition: "background var(--nx-transition)"
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.background = "rgba(124,58,237,0.06)"}
+                      onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d={item.icon}/>
+                        </svg>
+                        {item.label}
+                      </div>
+                      {item.badge > 0 && (
+                        <span style={{ background: "linear-gradient(135deg,#7c3aed,#06b6d4)", color: "#fff", fontSize: "10px", fontWeight: 700, padding: "2px 7px", borderRadius: "99px" }}>
+                          {item.badge}
+                        </span>
+                      )}
                     </Link>
-                  )}
-                  <button
-                    onClick={handleLogout}
-                    className="w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100 transition">
-                    Logout
-                  </button>
+                  ))}
+
+                  {/* Logout */}
+                  <div style={{ borderTop: "1px solid var(--nx-border)", padding: "6px" }}>
+                    <button onClick={handleLogout}
+                      style={{
+                        width: "100%", display: "flex", alignItems: "center", gap: "10px",
+                        padding: "8px 10px", fontSize: "13px", fontWeight: 500,
+                        color: "#ef4444", background: "none", border: "none", cursor: "pointer",
+                        borderRadius: "var(--nx-radius-sm)", transition: "background var(--nx-transition)"
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.background = "rgba(239,68,68,0.08)"}
+                      onMouseLeave={e => e.currentTarget.style.background = "none"}>
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/>
+                      </svg>
+                      Logout
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
-          </div>
 
-          {/* Mobile Hamburger Button */}
-          <button
-            onClick={() => setShowMobileMenu(!showMobileMenu)}
-            className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition focus:outline-none">
-            {showMobileMenu ? (
-              <svg
-                className="w-6 h-6 text-gray-700"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            ) : (
-              <svg
-                className="w-6 h-6 text-gray-700"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 6h16M4 12h16M4 18h16"
-                />
-              </svg>
-            )}
-          </button>
+            {/* Mobile hamburger */}
+            <button className="md:hidden"
+              onClick={() => setShowMobileMenu(!showMobileMenu)}
+              style={{ padding: "7px", borderRadius: "var(--nx-radius-sm)", background: "none", border: "1px solid var(--nx-border)", cursor: "pointer", color: "var(--nx-text-muted)", display: "flex" }}>
+              {showMobileMenu ? (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              ) : (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+                </svg>
+              )}
+            </button>
+          </div>
         </div>
 
         {/* Mobile Menu */}
         {showMobileMenu && (
-          <div className="md:hidden py-4 border-t border-gray-200">
-            <div className="flex flex-col space-y-4">
-              {/* SearchBar Mobile */}
-              <div className="px-4">
-                <SearchBar />
+          <div className="md:hidden nx-animate-in" style={{ borderTop: "1px solid var(--nx-border)", padding: "12px 0 16px" }}>
+            <div style={{ marginBottom: "12px" }}>
+              <SearchBar />
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "10px 4px", borderBottom: "1px solid var(--nx-border)", marginBottom: "8px" }}>
+              {user?.avatarUrl ? (
+                <img src={user.avatarUrl} alt={user.username} style={{ width: "36px", height: "36px", borderRadius: "50%", objectFit: "cover" }} />
+              ) : (
+                <div className="nx-avatar-gradient" style={{ width: "36px", height: "36px", fontSize: "13px" }}>
+                  {user?.username?.charAt(0).toUpperCase()}
+                </div>
+              )}
+              <div>
+                <p style={{ fontSize: "13px", fontWeight: 700, color: "var(--nx-text)" }}>{user?.username}</p>
+                <p style={{ fontSize: "11px", color: "var(--nx-text-muted)" }}>Nexus member</p>
               </div>
-
-              {/* User Info */}
-              <div className="flex items-center space-x-3 px-4">
-                {user?.avatarUrl ? (
-                  <img
-                    src={user.avatarUrl}
-                    alt={user.username}
-                    className="w-10 h-10 rounded-full object-cover border-2 border-blue-500"
-                  />
-                ) : (
-                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold">
-                    {user?.username?.charAt(0).toUpperCase()}
-                  </div>
-                )}
-                <span className="text-gray-700 font-semibold">
-                  {user?.username}
-                </span>
-              </div>
-
-              {/* Navigation Links */}
-              <Link
-                to="/feed"
+            </div>
+            {[
+              { to: "/feed", label: "Home" },
+              { to: "/explore", label: "Esplora" },
+              { to: "/messages", label: "Messaggi", badge: unreadMessages },
+              { to: `/profile/${user?.username}`, label: "Profilo" },
+              ...(user?.role === "ADMIN" ? [{ to: "/admin", label: "Admin Panel", admin: true }] : []),
+            ].map(item => (
+              <Link key={item.to} to={item.to}
                 onClick={() => setShowMobileMenu(false)}
-                className="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition">
-                🏠 Home
-              </Link>
-              <Link
-                to="/explore"
-                onClick={() => setShowMobileMenu(false)}
-                className="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition">
-                🌍 Esplora
-              </Link>
-
-              {/*  NOTIFICATION BELL MOBILE */}
-              <div className="px-4">
-                <NotificationBell
-                  isMobile={true}
-                  onClose={() => setShowMobileMenu(false)}
-                />
-              </div>
-
-              <Link
-                to="/messages"
-                onClick={() => setShowMobileMenu(false)}
-                className="flex items-center justify-between px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition">
-                <span>💬 Messaggi</span>
-                {unreadMessages > 0 && (
-                  <span className="bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
-                    {unreadMessages > 9 ? "9+" : unreadMessages}
+                style={{
+                  display: "flex", alignItems: "center", justifyContent: "space-between",
+                  padding: "10px 4px", fontSize: "14px", fontWeight: 500,
+                  color: item.admin ? "#7c3aed" : "var(--nx-text)", textDecoration: "none",
+                  borderRadius: "var(--nx-radius-sm)"
+                }}>
+                {item.label}
+                {item.badge > 0 && (
+                  <span style={{ background: "linear-gradient(135deg,#7c3aed,#06b6d4)", color: "#fff", fontSize: "10px", fontWeight: 700, padding: "2px 7px", borderRadius: "99px" }}>
+                    {item.badge}
                   </span>
                 )}
               </Link>
-
-              <Link
-                to={`/profile/${user?.username}`}
-                onClick={() => setShowMobileMenu(false)}
-                className="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition">
-                👤 Il mio profilo
-              </Link>
-              {user?.role === "ADMIN" && (
-                <Link
-                  to="/admin"
-                  onClick={() => setShowMobileMenu(false)}
-                  className="block px-4 py-2 text-purple-600 hover:bg-gray-100 rounded-lg transition font-semibold">
-                  🛡️ Pannello Admin
-                </Link>
-              )}
-              <button
-                onClick={handleLogout}
-                className="text-left px-4 py-2 text-red-600 hover:bg-gray-100 rounded-lg transition">
-                🚪 Logout
+            ))}
+            <div style={{ borderTop: "1px solid var(--nx-border)", paddingTop: "8px", marginTop: "8px" }}>
+              <div style={{ padding: "4px 0" }}>
+                <NotificationBell isMobile={true} onClose={() => setShowMobileMenu(false)} />
+              </div>
+              <button onClick={handleLogout}
+                style={{ width: "100%", textAlign: "left", padding: "10px 4px", fontSize: "14px", fontWeight: 500, color: "#ef4444", background: "none", border: "none", cursor: "pointer" }}>
+                Logout
               </button>
             </div>
           </div>

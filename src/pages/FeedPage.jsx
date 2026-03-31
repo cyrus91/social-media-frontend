@@ -8,132 +8,75 @@ import useInfiniteScroll from "../hooks/useInfiniteScroll";
 import { fetchFeed } from "../services/postService";
 
 function FeedPage() {
-  //  FETCH FUNCTION per infinite scroll (MEMOIZZATA!)
   const fetchFeedData = useCallback(async (page, size) => {
-    console.log(`📥 Fetching feed page ${page}`);
     return await fetchFeed(page, size);
   }, []);
 
-  //  USA HOOK INFINITE SCROLL
-  const {
-    items: posts,
-    loading,
-    hasMore,
-    error,
-    loadMore,
-    reset,
-  } = useInfiniteScroll(fetchFeedData, {
-    pageSize: 10,
-    initialPage: 0,
-    enabled: true,
+  const { items: posts, loading, hasMore, error, loadMore, reset } = useInfiniteScroll(fetchFeedData, {
+    pageSize: 10, initialPage: 0, enabled: true,
   });
 
-  // Handle post creato
-  const handleNewPost = () => {
-    console.log(" Nuovo post creato - ricarico feed");
-    reset();
-  };
-
-  // Handle like update
-  const handleLikeUpdate = (postId, isLiked) => {
-    console.log(`❤️ Post ${postId} - liked: ${isLiked}`);
-  };
-
-  // Loading iniziale (prima pagina)
-  if (posts.length === 0 && loading) {
-    return (
-      <div className="min-h-screen bg-gray-100">
-        <Navbar />
-        <div className="flex items-center justify-center h-screen">
-          <LoadingSpinner size="lg" text="Caricamento feed..." />
-        </div>
-      </div>
-    );
-  }
-
-  // Error state
-  if (error && posts.length === 0) {
-    return (
-      <div className="min-h-screen bg-gray-100">
-        <Navbar />
-        <div className="max-w-2xl mx-auto p-4 mt-8">
-          <div className="bg-white rounded-lg shadow p-8 text-center">
-            <div className="text-6xl mb-4">⚠️</div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">
-              Errore caricamento feed
-            </h2>
-            <p className="text-gray-600 mb-4">{error}</p>
-            <button
-              onClick={reset}
-              className="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-6 py-3 rounded-lg transition">
-              Riprova
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const handlePostDeleted = (postId) => {
-    console.log(`🗑️ Post ${postId} eliminato - rimuovo dalla lista`);
-    // Non serve fare nulla, il reset() ricaricherà il feed
-    reset();
-  };
-
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="nx-page">
       <Navbar />
 
-      <div className="max-w-2xl mx-auto px-4 sm:px-6 py-4">
-        {/* Header */}
-        <div className="mb-4 sm:mb-6 mt-4 sm:mt-8">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">
-            Home 🏠
-          </h1>
-          <p className="text-sm sm:text-base text-gray-600">
-            Post degli utenti che segui
-          </p>
+      <div style={{ maxWidth: "680px", margin: "0 auto", padding: "20px 16px 60px" }}>
+
+        {/* Create post */}
+        <div className="nx-card" style={{ marginBottom: "16px", padding: "16px" }}>
+          <CreatePostWithImages onPostCreated={reset} />
         </div>
 
-        {/* Create Post Form */}
-        <div className="mb-6">
-          <CreatePostWithImages onPostCreated={handleNewPost} />
-        </div>
-
-        {/* Posts List */}
-        {posts.length === 0 && !loading ? (
-          <div className="bg-white rounded-lg shadow p-12 text-center">
-            <div className="text-6xl mb-4">📭</div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">
-              Nessun post nel feed
-            </h2>
-            <p className="text-gray-600 mb-6">
-              Inizia a seguire qualcuno per vedere i loro post qui!
+        {/* Feed */}
+        {posts.length === 0 && loading ? (
+          <div style={{ display: "flex", justifyContent: "center", padding: "60px 0" }}>
+            <LoadingSpinner />
+          </div>
+        ) : posts.length === 0 && !loading ? (
+          <div style={{
+            textAlign: "center", padding: "60px 20px",
+            border: "1px dashed var(--nx-border)", borderRadius: "var(--nx-radius-xl)",
+          }}>
+            <div style={{
+              width: "56px", height: "56px", borderRadius: "50%",
+              background: "rgba(124,58,237,0.08)", border: "1px solid var(--nx-border)",
+              display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px"
+            }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="1.5">
+                <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
+              </svg>
+            </div>
+            <p style={{ fontWeight: 700, fontSize: "16px", color: "var(--nx-text)", marginBottom: "6px" }}>
+              Il tuo feed è vuoto
             </p>
-            <a
-              href="/explore"
-              className="inline-block bg-blue-500 hover:bg-blue-600 text-white font-semibold px-6 py-3 rounded-lg transition">
-              Esplora Utenti
-            </a>
+            <p style={{ fontSize: "13px", color: "var(--nx-text-muted)" }}>
+              Segui altri utenti per vedere i loro post qui.
+            </p>
           </div>
         ) : (
-          <div className="space-y-6">
+          <>
             {posts.map((post) => (
-              <PostCard
-                key={post.id}
-                post={post}
-                onLikeUpdate={handleLikeUpdate}
-                onPostDeleted={handlePostDeleted}
-              />
+              <PostCard key={post.id} post={post} onPostDeleted={() => reset()} />
             ))}
-
-            {/*  INFINITE SCROLL TRIGGER */}
-            <InfiniteScrollTrigger
-              onIntersect={loadMore}
-              loading={loading}
-              hasMore={hasMore}
-            />
-          </div>
+            {error && (
+              <p style={{ textAlign: "center", color: "#ef4444", fontSize: "13px", padding: "16px" }}>
+                Errore nel caricamento
+              </p>
+            )}
+            <InfiniteScrollTrigger hasMore={hasMore} loading={loading} onLoadMore={loadMore} />
+            {loading && (
+              <div style={{ display: "flex", justifyContent: "center", padding: "20px 0" }}>
+                <LoadingSpinner />
+              </div>
+            )}
+            {!hasMore && posts.length > 0 && (
+              <p style={{ textAlign: "center", fontSize: "12px", color: "var(--nx-text-subtle)", padding: "24px 0 8px" }}>
+                ✦ Sei aggiornato su tutto
+              </p>
+            )}
+          </>
         )}
       </div>
     </div>
