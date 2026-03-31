@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { useAI } from "../hooks/useAI";
+import { aiService } from "../services/aiService";
 
 function AICaptionGenerator({ onCaptionGenerated, imageUrls = [] }) {
-  const { loading, generateCaption } = useAI();
+  const { generateCaption } = useAI();
   const [tone, setTone] = useState("friendly");
   const [suggestion, setSuggestion] = useState("");
   const [showSuggestion, setShowSuggestion] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const tones = [
     { value: "friendly", label: "Amichevole", emoji: "😊" },
@@ -15,10 +17,23 @@ function AICaptionGenerator({ onCaptionGenerated, imageUrls = [] }) {
   ];
 
   const handleGenerate = async () => {
-    const result = await generateCaption("", imageUrls, tone);
-    if (result) {
-      setSuggestion(result);
-      setShowSuggestion(true);
+    setLoading(true);
+    try {
+      let caption;
+      if (imageUrls && imageUrls.length > 0) {
+        const res = await aiService.generateCaptionVision(imageUrls, tone, "");
+        caption = res.suggestion || res;
+      } else {
+        caption = await generateCaption("", [], tone);
+      }
+      if (caption) {
+        setSuggestion(caption);
+        setShowSuggestion(true);
+      }
+    } catch (e) {
+      console.error("Errore caption AI:", e);
+    } finally {
+      setLoading(false);
     }
   };
 

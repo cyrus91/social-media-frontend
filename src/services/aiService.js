@@ -1,6 +1,15 @@
 import api from './api';
 
 export const aiService = {
+  generateCaptionVision: async (base64Images = [], tone = 'friendly', partialText = '') => {
+    const response = await api.post('/ai/generate-caption-vision', {
+      images: base64Images,
+      tone,
+      partialText,
+    });
+    return response.data;
+  },
+
   generateCaption: async (partialText = '', imageUrls = [], tone = 'friendly') => {
     const response = await api.post('/ai/generate-caption',
       { imageUrls },
