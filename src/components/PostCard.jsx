@@ -424,7 +424,7 @@ function PostCard({ post, onLikeUpdate, onPostDeleted, onPostUpdated }) {
                   setShowLikesDrawer(true);
                 }}
                 className="text-sm font-semibold text-gray-800 hover:text-blue-500 transition">
-                {likeCount} {likeCount === 1 ? "like" : "likes"}
+                {likeCount}
               </button>
             </span>
           </button>
