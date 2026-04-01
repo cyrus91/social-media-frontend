@@ -4,338 +4,165 @@ import toast from "react-hot-toast";
 import api from "../services/api";
 
 function EditPostModal({ isOpen, onClose, post, onPostUpdated }) {
-  //  State iniziali
   const [content, setContent] = useState("");
-  // existingImages = array di oggetti { id, imageUrl, displayOrder }
   const [existingImages, setExistingImages] = useState([]);
-  // imagesToRemove = array di oggetti { id, imageUrl } da eliminare al salvataggio
   const [imagesToRemove, setImagesToRemove] = useState([]);
   const [newImages, setNewImages] = useState([]);
   const [newImagePreviews, setNewImagePreviews] = useState([]);
   const [saving, setSaving] = useState(false);
 
-  // ============================================
-  // RESET STATE QUANDO MODAL SI APRE
-  // ============================================
   useEffect(() => {
     if (isOpen) {
-      //  Usa post.images (con ID stabile) se disponibile,
-      //  altrimenti fallback a imageUrls per retrocompatibilità
       let images = [];
-      if (post.images && post.images.length > 0) {
-        // Formato nuovo: [{ id, imageUrl, displayOrder }]
-        images = [...post.images];
-      } else if (post.imageUrls && post.imageUrls.length > 0) {
-        // Fallback: converti URL in oggetti (id=null)
-        images = post.imageUrls.map((url, i) => ({
-          id: null,
-          imageUrl: url,
-          displayOrder: i,
-        }));
-      } else if (post.imageUrl) {
-        images = [{ id: null, imageUrl: post.imageUrl, displayOrder: 0 }];
-      }
-
+      if (post.images?.length > 0) images = [...post.images];
+      else if (post.imageUrls?.length > 0) images = post.imageUrls.map((url, i) => ({ id: null, imageUrl: url, displayOrder: i }));
+      else if (post.imageUrl) images = [{ id: null, imageUrl: post.imageUrl, displayOrder: 0 }];
       setContent(post.content || "");
       setExistingImages(images);
-      setImagesToRemove([]);
-      setNewImages([]);
-      setNewImagePreviews([]);
-      setSaving(false);
-
-      console.log("📂 Modal aperto - State inizializzato:", {
-        content: post.content,
-        images: images.length,
-        hasImageIds:
-          images.length > 0 && images.every((img) => img.id !== null),
-      });
+      setImagesToRemove([]); setNewImages([]); setNewImagePreviews([]); setSaving(false);
     }
   }, [isOpen, post.id]);
 
-  // ============================================
-  // CLOSE HANDLER CON RESET
-  // ============================================
-  const handleClose = () => {
-    setNewImages([]);
-    setNewImagePreviews([]);
-    setImagesToRemove([]);
-    console.log("❌ Modal chiuso - State pulito");
-    onClose();
-  };
-
-  // ============================================
-  // REMOVE EXISTING IMAGE
-  // ============================================
+  const handleClose = () => { setNewImages([]); setNewImagePreviews([]); setImagesToRemove([]); onClose(); };
   const handleRemoveExistingImage = (index) => {
-    const image = existingImages[index];
-    console.log(
-      `🗑️ Segnata per rimozione - ID: ${image.id}, URL: ${image.imageUrl}`,
-    );
-
-    // Aggiungi alla lista di immagini da rimuovere (tracciamo l'oggetto, non l'indice)
-    setImagesToRemove((prev) => [...prev, image]);
-    // Rimuovi dalla visualizzazione
-    setExistingImages((prev) => prev.filter((_, i) => i !== index));
+    setImagesToRemove(prev => [...prev, existingImages[index]]);
+    setExistingImages(prev => prev.filter((_, i) => i !== index));
+  };
+  const handleRemoveNewImage = (index) => {
+    setNewImages(prev => prev.filter((_, i) => i !== index));
+    setNewImagePreviews(prev => prev.filter((_, i) => i !== index));
   };
 
-  // ============================================
-  // ADD NEW IMAGES (Drag & Drop)
-  // ============================================
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    accept: {
-      "image/*": [".png", ".jpg", ".jpeg", ".webp", ".gif"],
-    },
-    maxFiles: 5,
-    maxSize: 5 * 1024 * 1024,
+    accept: { "image/*": [".png", ".jpg", ".jpeg", ".webp", ".gif"] },
+    maxFiles: 5, maxSize: 5 * 1024 * 1024,
     onDrop: (acceptedFiles, rejectedFiles) => {
-      const totalImages =
-        existingImages.length + newImages.length + acceptedFiles.length;
-      if (totalImages > 5) {
-        toast.error("Massimo 5 immagini per post");
-        return;
-      }
-
-      rejectedFiles.forEach((file) => {
-        file.errors.forEach((err) => {
-          if (err.code === "file-too-large") {
-            toast.error(`${file.file.name} supera 5MB`);
-          }
-        });
-      });
-
-      setNewImages((prev) => [...prev, ...acceptedFiles]);
-
-      acceptedFiles.forEach((file) => {
+      if (existingImages.length + newImages.length + acceptedFiles.length > 5) { toast.error("Massimo 5 immagini per post"); return; }
+      rejectedFiles.forEach(f => f.errors.forEach(e => { if (e.code === "file-too-large") toast.error(`${f.file.name} supera 5MB`); }));
+      setNewImages(prev => [...prev, ...acceptedFiles]);
+      acceptedFiles.forEach(file => {
         const reader = new FileReader();
-        reader.onload = () => {
-          setNewImagePreviews((prev) => [...prev, reader.result]);
-        };
+        reader.onload = () => setNewImagePreviews(prev => [...prev, reader.result]);
         reader.readAsDataURL(file);
       });
     },
   });
 
-  // ============================================
-  // REMOVE NEW IMAGE
-  // ============================================
-  const handleRemoveNewImage = (index) => {
-    setNewImages((prev) => prev.filter((_, i) => i !== index));
-    setNewImagePreviews((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  // ============================================
-  // SAVE CHANGES
-  // ============================================
   const handleSave = async () => {
-    if (
-      !content.trim() &&
-      existingImages.length === 0 &&
-      newImages.length === 0
-    ) {
-      toast.error("Il post deve avere contenuto o almeno un'immagine");
-      return;
+    if (!content.trim() && existingImages.length === 0 && newImages.length === 0) {
+      toast.error("Il post deve avere contenuto o almeno un'immagine"); return;
     }
-
     setSaving(true);
-
     try {
-      // STEP 1: Aggiorna contenuto
       await api.put(`/posts/${post.id}`, { content: content.trim() });
-      console.log("✅ Contenuto aggiornato");
-
-      // STEP 2: Rimuovi immagini eliminate usando l'ID stabile (non l'indice posizionale)
       for (const image of imagesToRemove) {
-        if (image.id != null) {
-          console.log(`🗑️ DELETE /posts/${post.id}/images/${image.id}`);
-          await api.delete(`/posts/${post.id}/images/${image.id}`);
-          console.log(`✅ Immagine ID ${image.id} eliminata`);
-        } else {
-          console.warn(
-            "⚠️ Immagine senza ID, salto la rimozione:",
-            image.imageUrl,
-          );
-        }
+        if (image.id != null) await api.delete(`/posts/${post.id}/images/${image.id}`);
       }
-
-      // STEP 3: Aggiungi nuove immagini
       if (newImages.length > 0) {
-        console.log(`📤 Upload ${newImages.length} nuove immagini`);
         const formData = new FormData();
-        newImages.forEach((image) => formData.append("images", image));
-
-        await api.post(`/posts/${post.id}/images`, formData, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
-        console.log("✅ Nuove immagini caricate");
+        newImages.forEach(img => formData.append("images", img));
+        await api.post(`/posts/${post.id}/images`, formData, { headers: { "Content-Type": "multipart/form-data" } });
       }
-
-      // STEP 4: Fetch post aggiornato (con il nuovo campo images che ha gli ID)
-      console.log("📂 Fetch post aggiornato...");
       const response = await api.get(`/posts/${post.id}`);
-      console.log("✅ Post aggiornato ricevuto:", response.data);
-
       toast.success("Post modificato con successo!");
-
-      if (onPostUpdated) {
-        onPostUpdated(response.data);
-      }
-
+      if (onPostUpdated) onPostUpdated(response.data);
       handleClose();
     } catch (error) {
-      console.error("❌ Errore salvataggio:", error);
-      toast.error(
-        error.response?.data?.message || "Errore nel salvataggio delle modifiche",
-      );
-    } finally {
-      setSaving(false);
-    }
+      toast.error(error.response?.data?.message || "Errore nel salvataggio delle modifiche");
+    } finally { setSaving(false); }
   };
 
   if (!isOpen) return null;
-
   const totalImages = existingImages.length + newImages.length;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+    <div style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}
       onClick={handleClose}>
-      <div
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
-        onClick={(e) => e.stopPropagation()}>
+      <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)" }} />
+      <div style={{ position: "relative", background: "var(--nx-surface)", border: "1px solid var(--nx-border)", borderRadius: "var(--nx-radius-xl)", boxShadow: "var(--nx-shadow-lg)", width: "100%", maxWidth: "600px", maxHeight: "90vh", display: "flex", flexDirection: "column", overflow: "hidden" }}
+        onClick={e => e.stopPropagation()}>
+
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 sticky top-0 bg-white z-10">
-          <h2 className="text-2xl font-bold text-gray-800">Modifica Post</h2>
-          <button
-            onClick={handleClose}
-            className="text-gray-400 hover:text-gray-600 transition">
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 20px", borderBottom: "1px solid var(--nx-border)", background: "var(--nx-surface)" }}>
+          <h2 style={{ fontWeight: 800, fontSize: "16px", color: "var(--nx-text)" }}>Modifica Post</h2>
+          <button onClick={handleClose}
+            style={{ padding: "5px", borderRadius: "50%", background: "none", border: "none", cursor: "pointer", color: "var(--nx-text-muted)", display: "flex", transition: "all var(--nx-transition)" }}
+            onMouseEnter={e => { e.currentTarget.style.background = "rgba(124,58,237,0.08)"; e.currentTarget.style.color = "#7c3aed"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "none"; e.currentTarget.style.color = "var(--nx-text-muted)"; }}>
+            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
 
-        {/* Content */}
-        <div className="p-6 space-y-4">
+        {/* Body */}
+        <div style={{ overflowY: "auto", padding: "20px", display: "flex", flexDirection: "column", gap: "16px" }}>
           {/* Textarea */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Contenuto
-            </label>
-            <textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              rows="4"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none"
+            <label style={{ fontSize: "12px", fontWeight: 700, color: "var(--nx-text-muted)", display: "block", marginBottom: "6px" }}>Contenuto</label>
+            <textarea value={content} onChange={e => setContent(e.target.value)} rows={4}
               placeholder="Modifica il contenuto del post..."
-            />
+              style={{ width: "100%", background: "var(--nx-input-bg)", border: "1.5px solid var(--nx-input-border)", borderRadius: "var(--nx-radius)", padding: "10px 12px", fontSize: "13px", color: "var(--nx-text)", outline: "none", resize: "none", transition: "border-color var(--nx-transition)" }}
+              onFocus={e => e.target.style.borderColor = "rgba(124,58,237,0.5)"}
+              onBlur={e => e.target.style.borderColor = "var(--nx-input-border)"} />
           </div>
 
-          {/* Existing Images */}
+          {/* Existing images */}
           {existingImages.length > 0 && (
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label style={{ fontSize: "12px", fontWeight: 700, color: "var(--nx-text-muted)", display: "block", marginBottom: "8px" }}>
                 Immagini attuali ({existingImages.length})
               </label>
-              <div className="grid grid-cols-5 gap-3">
-                {existingImages.map((img, index) => (
-                  <div key={img.id ?? `existing-${index}`} className="relative group">
-                    <img
-                      src={img.imageUrl}
-                      alt={`Immagine ${index + 1}`}
-                      className="w-full h-24 object-cover rounded-lg border-2 border-gray-200"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveExistingImage(index)}
-                      className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 transition shadow-lg opacity-80 hover:opacity-100 md:opacity-0 md:group-hover:opacity-100">
-                      <svg
-                        className="w-3 h-3"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24">
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M6 18L18 6M6 6l12 12"
-                        />
-                      </svg>
-                    </button>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "8px" }}>
+                {existingImages.map((img, i) => (
+                  <div key={img.id ?? `existing-${i}`} style={{ position: "relative" }}>
+                    <img src={img.imageUrl} alt={`Immagine ${i + 1}`}
+                      style={{ width: "100%", height: "80px", objectFit: "cover", borderRadius: "var(--nx-radius-sm)", border: "1px solid var(--nx-border)" }} />
+                    <button type="button" onClick={() => handleRemoveExistingImage(i)}
+                      style={{ position: "absolute", top: "3px", right: "3px", background: "#ef4444", color: "#fff", borderRadius: "50%", width: "18px", height: "18px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "10px", border: "none", cursor: "pointer" }}>✕</button>
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          {/* New Images */}
+          {/* New images */}
           {newImagePreviews.length > 0 && (
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label style={{ fontSize: "12px", fontWeight: 700, color: "var(--nx-text-muted)", display: "block", marginBottom: "8px" }}>
                 Nuove immagini ({newImagePreviews.length})
               </label>
-              <div className="grid grid-cols-5 gap-3">
-                {newImagePreviews.map((preview, index) => (
-                  <div key={`new-${index}`} className="relative group">
-                    <img
-                      src={preview}
-                      alt={`Nuova ${index + 1}`}
-                      className="w-full h-24 object-cover rounded-lg border-2 border-green-200"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveNewImage(index)}
-                      className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 transition shadow-lg opacity-80 hover:opacity-100 md:opacity-0 md:group-hover:opacity-100">
-                      <svg
-                        className="w-3 h-3"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24">
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M6 18L18 6M6 6l12 12"
-                        />
-                      </svg>
-                    </button>
-                    <div className="absolute bottom-1 left-1 bg-green-500 text-white text-xs px-2 py-0.5 rounded-full font-semibold">
-                      NEW
-                    </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "8px" }}>
+                {newImagePreviews.map((preview, i) => (
+                  <div key={`new-${i}`} style={{ position: "relative" }}>
+                    <img src={preview} alt={`Nuova ${i + 1}`}
+                      style={{ width: "100%", height: "80px", objectFit: "cover", borderRadius: "var(--nx-radius-sm)", border: "1px solid rgba(124,58,237,0.3)" }} />
+                    <button type="button" onClick={() => handleRemoveNewImage(i)}
+                      style={{ position: "absolute", top: "3px", right: "3px", background: "#ef4444", color: "#fff", borderRadius: "50%", width: "18px", height: "18px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "10px", border: "none", cursor: "pointer" }}>✕</button>
+                    <div style={{ position: "absolute", bottom: "3px", left: "3px", background: "rgba(124,58,237,0.85)", color: "#fff", fontSize: "9px", fontWeight: 700, padding: "1px 5px", borderRadius: "3px" }}>NEW</div>
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Add Images Dropzone */}
+          {/* Dropzone */}
           {totalImages < 5 && (
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label style={{ fontSize: "12px", fontWeight: 700, color: "var(--nx-text-muted)", display: "block", marginBottom: "8px" }}>
                 Aggiungi immagini ({totalImages}/5)
               </label>
-              <div
-                {...getRootProps()}
-                className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition ${
-                  isDragActive ? "border-blue-500 bg-blue-50" : "border-gray-300 hover:border-blue-400"
-                }`}>
+              <div {...getRootProps()} style={{
+                border: `2px dashed ${isDragActive ? "#7c3aed" : "var(--nx-border)"}`,
+                borderRadius: "var(--nx-radius-lg)", padding: "24px", textAlign: "center", cursor: "pointer",
+                background: isDragActive ? "rgba(124,58,237,0.06)" : "var(--nx-surface-2)",
+                transition: "all var(--nx-transition)",
+              }}>
                 <input {...getInputProps()} />
-                <svg
-                  className="w-10 h-10 mx-auto text-gray-400 mb-2"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                <svg width="32" height="32" fill="none" stroke="var(--nx-text-subtle)" viewBox="0 0 24 24" style={{ margin: "0 auto 8px" }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" />
                 </svg>
-                <p className="text-sm text-gray-600">
+                <p style={{ fontSize: "13px", color: "var(--nx-text-muted)" }}>
                   {isDragActive ? "Rilascia qui..." : "Trascina immagini o clicca"}
                 </p>
               </div>
@@ -344,25 +171,16 @@ function EditPostModal({ isOpen, onClose, post, onPostUpdated }) {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end space-x-3 p-6 border-t border-gray-200 bg-gray-50">
-          <button
-            onClick={handleClose}
-            disabled={saving}
-            className="px-6 py-2.5 text-gray-700 font-semibold hover:bg-gray-200 rounded-lg transition disabled:opacity-50">
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "10px", padding: "14px 20px", borderTop: "1px solid var(--nx-border)", background: "var(--nx-surface-2)" }}>
+          <button onClick={handleClose} disabled={saving}
+            style={{ padding: "8px 18px", fontSize: "13px", fontWeight: 600, background: "rgba(124,58,237,0.08)", color: "#7c3aed", border: "1px solid rgba(124,58,237,0.2)", borderRadius: "var(--nx-radius-full)", cursor: "pointer" }}>
             Annulla
           </button>
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="px-6 py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg transition disabled:opacity-50 flex items-center space-x-2">
-            {saving ? (
-              <>
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                <span>Salvataggio...</span>
-              </>
-            ) : (
-              <span>Salva modifiche</span>
-            )}
+          <button onClick={handleSave} disabled={saving}
+            style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 18px", fontSize: "13px", fontWeight: 600, background: "var(--nx-grad-btn)", color: "#fff", border: "none", borderRadius: "var(--nx-radius-full)", cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.7 : 1 }}>
+            {saving
+              ? <><div style={{ width: "14px", height: "14px", border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} /><span>Salvataggio...</span></>
+              : <span>Salva modifiche</span>}
           </button>
         </div>
       </div>
@@ -371,4 +189,3 @@ function EditPostModal({ isOpen, onClose, post, onPostUpdated }) {
 }
 
 export default EditPostModal;
-

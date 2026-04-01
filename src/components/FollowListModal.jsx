@@ -11,88 +11,75 @@ function FollowListModal({ isOpen, onClose, userId, type }) {
   useEffect(() => {
     if (!isOpen || !userId) return;
     let ignore = false;
-
-    const fetchList = async () => {
+    
+    const fetchFollows = async () => {
       setLoading(true);
+      const endpoint = type === "followers"
+        ? `/follows/user/${userId}/followers`
+        : `/follows/user/${userId}/following`;
+      
       try {
-        const endpoint = type === "followers"
-          ? `/follows/user/${userId}/followers`
-          : `/follows/user/${userId}/following`;
-        const response = await api.get(endpoint);
-        if (!ignore) setUsers(response.data || []);
-      } catch (err) {
-        console.error("Errore caricamento lista:", err);
+        const res = await api.get(endpoint);
+        if (!ignore) setUsers(res.data || []);
+      } catch {
         if (!ignore) setUsers([]);
       } finally {
         if (!ignore) setLoading(false);
       }
     };
 
-    fetchList();
+    fetchFollows();
     return () => { ignore = true; };
   }, [isOpen, userId, type]);
 
-  const handleUserClick = (username) => {
-    onClose();
-    navigate(`/profile/${username}`);
-  };
+  const handleUserClick = (username) => { onClose(); navigate(`/profile/${username}`); };
 
   if (!isOpen) return null;
-
   const title = type === "followers" ? "Followers" : "Following";
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 px-4"
+    <div style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}
       onClick={onClose}>
-      <div
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-sm max-h-[70vh] flex flex-col"
-        onClick={(e) => e.stopPropagation()}>
+      <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)" }} />
+      <div style={{ position: "relative", background: "var(--nx-surface)", border: "1px solid var(--nx-border)", borderRadius: "var(--nx-radius-xl)", boxShadow: "var(--nx-shadow-lg)", width: "100%", maxWidth: "360px", maxHeight: "70vh", display: "flex", flexDirection: "column", overflow: "hidden" }}
+        onClick={e => e.stopPropagation()}>
 
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-          <h2 className="text-lg font-bold text-gray-800">{title}</h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition p-1 rounded-full hover:bg-gray-100">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 18px", borderBottom: "1px solid var(--nx-border)" }}>
+          <h2 style={{ fontWeight: 800, fontSize: "15px", color: "var(--nx-text)" }}>{title}</h2>
+          <button onClick={onClose}
+            style={{ padding: "5px", borderRadius: "50%", background: "none", border: "none", cursor: "pointer", color: "var(--nx-text-muted)", display: "flex", transition: "all var(--nx-transition)" }}
+            onMouseEnter={e => { e.currentTarget.style.background = "rgba(124,58,237,0.08)"; e.currentTarget.style.color = "#7c3aed"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "none"; e.currentTarget.style.color = "var(--nx-text-muted)"; }}>
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
 
         {/* List */}
-        <div className="overflow-y-auto flex-1 py-2">
+        <div style={{ overflowY: "auto", flex: 1 }}>
           {loading ? (
-            <div className="flex justify-center py-10">
-              <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+            <div style={{ display: "flex", justifyContent: "center", padding: "40px 0" }}>
+              <div style={{ width: "22px", height: "22px", border: "3px solid rgba(124,58,237,0.2)", borderTopColor: "#7c3aed", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
             </div>
           ) : users.length === 0 ? (
-            <div className="text-center py-10 text-gray-500 text-sm">
+            <div style={{ textAlign: "center", padding: "40px 0", fontSize: "13px", color: "var(--nx-text-muted)" }}>
               {type === "followers" ? "Nessun follower" : "Non segue nessuno"}
             </div>
-          ) : (
-            users.map((follow) => {
-              const username = type === "followers"
-                ? follow.followerUsername
-                : follow.followedUsername;
-              const avatarUrl = type === "followers"
-                ? follow.followerAvatarUrl
-                : follow.followedAvatarUrl;
-
-              return (
-                <button
-                  key={username}
-                  onClick={() => handleUserClick(username)}
-                  className="w-full flex items-center space-x-3 px-5 py-3 hover:bg-gray-50 transition text-left">
-                  <AvatarZoom src={avatarUrl} username={username} size="sm" />
-                  <div>
-                    <p className="font-semibold text-gray-800 text-sm">@{username}</p>
-                  </div>
-                </button>
-              );
-            })
-          )}
+          ) : users.map(follow => {
+            const username = type === "followers" ? follow.followerUsername : follow.followedUsername;
+            const avatarUrl = type === "followers" ? follow.followerAvatarUrl : follow.followedAvatarUrl;
+            return (
+              <button key={username} onClick={() => handleUserClick(username)}
+                style={{ width: "100%", display: "flex", alignItems: "center", gap: "10px", padding: "10px 18px", background: "none", border: "none", cursor: "pointer", textAlign: "left", transition: "background var(--nx-transition)" }}
+                onMouseEnter={e => e.currentTarget.style.background = "rgba(124,58,237,0.05)"}
+                onMouseLeave={e => e.currentTarget.style.background = "none"}>
+                <AvatarZoom src={avatarUrl} username={username} size="sm" />
+                <p style={{ fontWeight: 600, fontSize: "13px", color: "var(--nx-text)" }}>@{username}</p>
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>
