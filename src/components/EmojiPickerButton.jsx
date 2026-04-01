@@ -1,16 +1,23 @@
 import { useState, useEffect, useRef } from "react";
 import EmojiPicker from "emoji-picker-react";
 
-function EmojiPickerButton({ onEmojiSelect, theme = "light" }) {
+function EmojiPickerButton({ onEmojiSelect }) {
   const [open, setOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 640);
   const [pickerStyle, setPickerStyle] = useState({});
+  const [isDark, setIsDark] = useState(window.matchMedia("(prefers-color-scheme: dark)").matches);
   const wrapperRef = useRef(null);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 640);
     window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const handleDark = (e) => setIsDark(e.matches);
+    mq.addEventListener("change", handleDark);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      mq.removeEventListener("change", handleDark);
+    };
   }, []);
 
   useEffect(() => {
@@ -66,8 +73,10 @@ function EmojiPickerButton({ onEmojiSelect, theme = "light" }) {
       <button
         type="button"
         onClick={handleToggle}
-        className="text-gray-400 hover:text-yellow-500 transition p-1 rounded-full hover:bg-gray-100 text-base leading-none"
-        title="Aggiungi emoji">
+        title="Aggiungi emoji"
+        style={{ padding: "5px", borderRadius: "50%", background: "none", border: "none", cursor: "pointer", fontSize: "16px", lineHeight: 1, transition: "background var(--nx-transition)", display: "flex" }}
+        onMouseEnter={e => e.currentTarget.style.background = "rgba(124,58,237,0.08)"}
+        onMouseLeave={e => e.currentTarget.style.background = "none"}>
         😊
       </button>
 
@@ -76,23 +85,24 @@ function EmojiPickerButton({ onEmojiSelect, theme = "light" }) {
           {isMobile ? (
             <>
               <div
-                style={{ position: "fixed", inset: 0, zIndex: 9998, background: "rgba(0,0,0,0.3)" }}
+                style={{ position: "fixed", inset: 0, zIndex: 9998, background: "rgba(0,0,0,0.4)" }}
                 onClick={() => setOpen(false)}
               />
               <div style={{
                 position: "fixed", bottom: 0, left: 0, right: 0,
-                zIndex: 9999, background: "white",
-                borderRadius: "16px 16px 0 0",
-                boxShadow: "0 -4px 20px rgba(0,0,0,0.15)"
+                zIndex: 9999,
+                background: "var(--nx-surface)",
+                borderRadius: "var(--nx-radius-xl) var(--nx-radius-xl) 0 0",
+                boxShadow: "0 -4px 20px rgba(0,0,0,0.3)",
               }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", borderBottom: "1px solid #e5e7eb" }}>
-                  <span style={{ fontWeight: 600, color: "#374151" }}>Scegli emoji</span>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", borderBottom: "1px solid var(--nx-border)" }}>
+                  <span style={{ fontWeight: 600, fontSize: "14px", color: "var(--nx-text)" }}>Scegli emoji</span>
                   <button onClick={() => setOpen(false)}
-                    style={{ background: "none", border: "none", fontSize: 18, cursor: "pointer", color: "#9ca3af" }}>✕</button>
+                    style={{ background: "none", border: "none", fontSize: "18px", cursor: "pointer", color: "var(--nx-text-muted)" }}>✕</button>
                 </div>
                 <EmojiPicker
                   onEmojiClick={handleSelect}
-                  theme={theme}
+                  theme={isDark ? "dark" : "light"}
                   width="100%"
                   height={300}
                   searchPlaceholder="Cerca emoji..."
@@ -104,14 +114,14 @@ function EmojiPickerButton({ onEmojiSelect, theme = "light" }) {
             <div style={{
               position: "absolute",
               zIndex: 9999,
-              boxShadow: "0 4px 24px rgba(0,0,0,0.15)",
-              borderRadius: 12,
+              boxShadow: "var(--nx-shadow-lg)",
+              borderRadius: "var(--nx-radius-lg)",
               overflow: "hidden",
               ...pickerStyle
             }}>
               <EmojiPicker
                 onEmojiClick={handleSelect}
-                theme={theme}
+                theme={isDark ? "dark" : "light"}
                 width={300}
                 height={350}
                 searchPlaceholder="Cerca emoji..."

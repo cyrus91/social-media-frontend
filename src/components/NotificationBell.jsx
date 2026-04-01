@@ -234,29 +234,43 @@ function NotificationBell(props) {
   };
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div style={{ position: "relative" }} ref={dropdownRef}>
       {/* Bell Button */}
       <button
         onClick={handleToggle}
-        className={`relative text-gray-700 hover:text-blue-600 transition p-2 rounded-full hover:bg-gray-100 ${
-          props.isMobile ? "w-full flex items-center justify-start space-x-3" : ""
-        }`}>
-        {props.isMobile && <span className="text-lg">🔔</span>}
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        style={{
+          position: "relative", padding: "7px", borderRadius: "var(--nx-radius-sm)",
+          background: "none", border: "none", cursor: "pointer",
+          color: "var(--nx-text-muted)", transition: "all var(--nx-transition)",
+          display: props.isMobile ? "flex" : "flex", alignItems: "center",
+          gap: props.isMobile ? "10px" : undefined,
+          width: props.isMobile ? "100%" : undefined,
+        }}
+        onMouseEnter={e => { e.currentTarget.style.background = "rgba(124,58,237,0.08)"; e.currentTarget.style.color = "#7c3aed"; }}
+        onMouseLeave={e => { e.currentTarget.style.background = "none"; e.currentTarget.style.color = "var(--nx-text-muted)"; }}>
+        {props.isMobile && <span style={{ fontSize: "18px" }}>🔔</span>}
+        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
             d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
         </svg>
         {props.isMobile && (
-          <span className="text-gray-700 font-semibold flex-1 text-left">
-            Notifiche {connected && <span className="text-xs text-green-500">● live</span>}
+          <span style={{ fontSize: "14px", fontWeight: 600, color: "var(--nx-text)", flex: 1, textAlign: "left" }}>
+            Notifiche {connected && <span style={{ fontSize: "11px", color: "#22c55e" }}>● live</span>}
           </span>
         )}
-
-        {/* Badge rosso */}
+        {/* Badge */}
         {unreadCount > 0 && (
-          <span className={`absolute bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center ${
-            props.isMobile ? "right-2 top-1/2 -translate-y-1/2" : "top-1 right-1"
-          }`}>
+          <span style={{
+            position: "absolute",
+            top: props.isMobile ? "50%" : "2px",
+            right: props.isMobile ? "8px" : "2px",
+            transform: props.isMobile ? "translateY(-50%)" : undefined,
+            background: "linear-gradient(135deg,#7c3aed,#06b6d4)",
+            color: "#fff", fontSize: "10px", fontWeight: 700,
+            width: "16px", height: "16px", borderRadius: "50%",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            border: "2px solid var(--nx-surface)",
+          }}>
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
@@ -264,18 +278,30 @@ function NotificationBell(props) {
 
       {/* Dropdown */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-lg shadow-xl border border-gray-200 max-h-96 overflow-y-auto z-50">
+        <div style={{
+          position: "absolute", right: 0, top: "calc(100% + 8px)",
+          width: "340px",
+          background: "var(--nx-surface)",
+          border: "1px solid var(--nx-border)",
+          borderRadius: "var(--nx-radius-lg)",
+          boxShadow: "var(--nx-shadow-lg)",
+          maxHeight: "380px", overflowY: "auto", zIndex: 60,
+        }}>
           {/* Header */}
-          <div className="p-4 border-b border-gray-200 flex items-center justify-between sticky top-0 bg-white z-10">
-            <div className="flex items-center gap-2">
-              <h3 className="font-bold text-gray-800">Notifiche</h3>
-              {connected && (
-                <span className="text-xs text-green-500 font-medium">● live</span>
-              )}
+          <div style={{
+            padding: "12px 16px", borderBottom: "1px solid var(--nx-border)",
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            position: "sticky", top: 0, background: "var(--nx-surface)", zIndex: 10,
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <h3 style={{ fontWeight: 700, fontSize: "14px", color: "var(--nx-text)" }}>Notifiche</h3>
+              {connected && <span style={{ fontSize: "11px", color: "#22c55e", fontWeight: 600 }}>● live</span>}
             </div>
             {unreadCount > 0 && (
               <button onClick={handleMarkAllAsRead}
-                className="text-xs text-blue-500 hover:text-blue-600 font-semibold">
+                style={{ fontSize: "11px", fontWeight: 600, color: "#7c3aed", background: "none", border: "none", cursor: "pointer" }}
+                onMouseEnter={e => e.currentTarget.style.opacity = "0.7"}
+                onMouseLeave={e => e.currentTarget.style.opacity = "1"}>
                 Segna tutte come lette
               </button>
             )}
@@ -283,52 +309,51 @@ function NotificationBell(props) {
 
           {/* Loading */}
           {loading && (
-            <div className="p-8 text-center">
-              <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+            <div style={{ padding: "32px", display: "flex", justifyContent: "center" }}>
+              <div style={{ width: "24px", height: "24px", border: "3px solid rgba(124,58,237,0.2)", borderTopColor: "#7c3aed", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
             </div>
           )}
 
-          {/* Empty state */}
+          {/* Empty */}
           {!loading && notifications.length === 0 && (
-            <div className="p-8 text-center">
-              <div className="text-4xl mb-2">🔔</div>
-              <p className="text-gray-500">Nessuna notifica</p>
+            <div style={{ padding: "32px", textAlign: "center" }}>
+              <div style={{ fontSize: "32px", marginBottom: "8px" }}>🔔</div>
+              <p style={{ fontSize: "13px", color: "var(--nx-text-muted)" }}>Nessuna notifica</p>
             </div>
           )}
 
-          {/* Notifications list */}
-          {!loading && notifications.length > 0 && (
-            <div>
-              {notifications.map((notification) => (
-                <button key={notification.id} onClick={() => handleNotificationClick(notification)}
-                  className={`w-full p-4 hover:bg-gray-50 transition text-left border-b border-gray-100 ${
-                    !notification.isRead ? "bg-blue-50" : ""
-                  }`}>
-                  <div className="flex items-start space-x-3">
-                    {notification.actorAvatarUrl ? (
-                      <img src={notification.actorAvatarUrl} alt={notification.actorUsername}
-                        className="w-10 h-10 rounded-full object-cover flex-shrink-0" />
-                    ) : (
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold flex-shrink-0">
-                        {notification.actorUsername?.charAt(0).toUpperCase()}
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center space-x-2">
-                        <span className="text-lg">{getNotificationIcon(notification.type)}</span>
-                        <p className="text-sm text-gray-800 font-medium">{notification.actorUsername}</p>
-                      </div>
-                      <p className="text-sm text-gray-600 mt-1">{notification.message}</p>
-                      <p className="text-xs text-gray-400 mt-1">{formatDate(notification.createdAt)}</p>
-                    </div>
-                    {!notification.isRead && (
-                      <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-2"></div>
-                    )}
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
+          {/* List */}
+          {!loading && notifications.length > 0 && notifications.map((notification) => (
+            <button key={notification.id} onClick={() => handleNotificationClick(notification)}
+              style={{
+                width: "100%", display: "flex", alignItems: "flex-start", gap: "12px",
+                padding: "12px 16px", background: notification.isRead ? "none" : "rgba(124,58,237,0.05)",
+                border: "none", borderBottom: "1px solid var(--nx-border)", cursor: "pointer",
+                textAlign: "left", transition: "background var(--nx-transition)",
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = "rgba(124,58,237,0.08)"}
+              onMouseLeave={e => e.currentTarget.style.background = notification.isRead ? "none" : "rgba(124,58,237,0.05)"}>
+              {notification.actorAvatarUrl ? (
+                <img src={notification.actorAvatarUrl} alt={notification.actorUsername}
+                  style={{ width: "38px", height: "38px", borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
+              ) : (
+                <div className="nx-avatar-gradient" style={{ width: "38px", height: "38px", fontSize: "13px", flexShrink: 0 }}>
+                  {notification.actorUsername?.charAt(0).toUpperCase()}
+                </div>
+              )}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "2px" }}>
+                  <span style={{ fontSize: "14px" }}>{getNotificationIcon(notification.type)}</span>
+                  <p style={{ fontSize: "13px", fontWeight: 700, color: "var(--nx-text)" }}>{notification.actorUsername}</p>
+                </div>
+                <p style={{ fontSize: "12px", color: "var(--nx-text-muted)", marginBottom: "2px" }}>{notification.message}</p>
+                <p style={{ fontSize: "11px", color: "var(--nx-text-subtle)" }}>{formatDate(notification.createdAt)}</p>
+              </div>
+              {!notification.isRead && (
+                <div style={{ width: "8px", height: "8px", background: "#7c3aed", borderRadius: "50%", flexShrink: 0, marginTop: "4px" }} />
+              )}
+            </button>
+          ))}
         </div>
       )}
     </div>
