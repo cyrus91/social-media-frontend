@@ -30,7 +30,7 @@
     --nx-cyan-900: #164e63;
 
     /* Light mode surfaces */
-    --nx-bg:         #f5f3ff;
+    --nx-bg:         #f8f7ff;
     --nx-surface:    #ffffff;
     --nx-surface-2:  #f0eeff;
     --nx-border:     rgba(124, 58, 237, 0.12);
@@ -42,10 +42,15 @@
     --nx-text-subtle:  #9d92bc;
 
     /* Gradients */
-    --nx-grad-brand:  linear-gradient(135deg, #5b21b6 0%, #7c3aed 50%, #06b6d4 100%);
-    --nx-grad-warm:   linear-gradient(135deg, #7c3aed 0%, #db2777 100%);
-    --nx-grad-cool:   linear-gradient(135deg, #0891b2 0%, #5b21b6 100%);
-    --nx-grad-subtle: linear-gradient(135deg, #f5f3ff, #ecfeff);
+    --nx-grad-brand:   linear-gradient(135deg, #5b21b6 0%, #7c3aed 50%, #06b6d4 100%);
+    --nx-grad-btn:     linear-gradient(135deg, #5b21b6, #7c3aed);
+    --nx-grad-warm:    linear-gradient(135deg, #7c3aed 0%, #db2777 100%);
+    --nx-grad-cool:    linear-gradient(135deg, #0891b2 0%, #5b21b6 100%);
+    --nx-grad-subtle:  linear-gradient(135deg, #f5f3ff, #ecfeff);
+
+    /* Input */
+    --nx-input-bg:     rgba(124, 58, 237, 0.06);
+    --nx-input-border: rgba(124, 58, 237, 0.20);
 
     /* Shadows */
     --nx-shadow-sm: 0 1px 3px rgba(91, 33, 182, 0.08), 0 1px 2px rgba(91, 33, 182, 0.04);
@@ -74,12 +79,14 @@
       --nx-border:     rgba(124, 58, 237, 0.14);
       --nx-border-hover: rgba(124, 58, 237, 0.32);
       --nx-text:         #e8e6ff;
-      --nx-text-muted:   #8b82b0;
-      --nx-text-subtle:  #5a5278;
+      --nx-text-muted:   #6b6890;
+      --nx-text-subtle:  #4a4768;
+      --nx-input-bg:     rgba(124, 58, 237, 0.08);
+      --nx-input-border: rgba(124, 58, 237, 0.22);
       --nx-shadow-sm: 0 1px 3px rgba(0,0,0,0.4);
       --nx-shadow:    0 4px 16px rgba(0,0,0,0.5), 0 0 0 1px rgba(124,58,237,0.08);
       --nx-shadow-lg: 0 12px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(124,58,237,0.1);
-      --nx-grad-subtle: linear-gradient(135deg, #141420, #1a1030);
+      --nx-grad-subtle: linear-gradient(135deg, #1e1e30, #2d1b69);
     }
   }
 
@@ -382,3 +389,82 @@
   color: var(--nx-text-subtle);
   opacity: 1;
 }
+/* ============================================
+   NEXUS BRAND GUIDE — Exact Component Classes
+   ============================================ */
+
+/* Primary button — brand guide: purple→violet, border-radius 8px */
+.nx-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: all 150ms ease-out;
+}
+.nx-btn-primary {
+  background: var(--nx-grad-btn);
+  color: #fff;
+}
+.nx-btn-primary:hover { opacity: 0.88; }
+
+.nx-btn-secondary {
+  background: rgba(124, 58, 237, 0.12);
+  color: #8b5cf6;
+  border: 1px solid rgba(124, 58, 237, 0.25);
+}
+.nx-btn-secondary:hover { background: rgba(124, 58, 237, 0.18); }
+
+.nx-btn-ghost {
+  background: transparent;
+  color: #8b5cf6;
+  border: 1px solid rgba(124, 58, 237, 0.20);
+}
+.nx-btn-ghost:hover { background: rgba(124, 58, 237, 0.08); }
+
+.nx-btn-danger {
+  background: rgba(220, 38, 38, 0.10);
+  color: #f87171;
+  border: 1px solid rgba(220, 38, 38, 0.20);
+}
+.nx-btn-danger:hover { background: rgba(220, 38, 38, 0.16); }
+
+.nx-btn-sm { padding: 6px 14px; font-size: 12px; border-radius: 6px; }
+
+/* Input — brand guide */
+.nx-input {
+  background: var(--nx-input-bg);
+  border: 1px solid var(--nx-input-border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--nx-text);
+  width: 100%;
+  outline: none;
+  transition: border 150ms ease-out;
+}
+.nx-input::placeholder { opacity: 0.35; }
+.nx-input:focus {
+  border-color: #7c3aed;
+  background: rgba(124, 58, 237, 0.10);
+}
+
+/* Badge — brand guide */
+.nx-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 500;
+}
+.nx-badge-purple { background: rgba(124,58,237,.15); color: #a78bfa; border: 1px solid rgba(124,58,237,.2); }
+.nx-badge-cyan   { background: rgba(6,182,212,.12);  color: #22d3ee; border: 1px solid rgba(6,182,212,.2); }
+.nx-badge-green  { background: rgba(16,185,129,.12); color: #34d399; border: 1px solid rgba(16,185,129,.2); }
+.nx-badge-red    { background: rgba(239,68,68,.10);  color: #f87171; border: 1px solid rgba(239,68,68,.2); }
+.nx-badge-yellow { background: rgba(245,158,11,.12); color: #fbbf24; border: 1px solid rgba(245,158,11,.2); }
