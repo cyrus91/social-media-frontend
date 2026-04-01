@@ -155,20 +155,20 @@ function ProfilePage() {
       <div style={{ maxWidth: "680px", margin: "0 auto", padding: "20px 16px 60px" }}>
 
         {/* Profile Header Card */}
-        <div style={{ background: "var(--nx-surface)", border: "1px solid var(--nx-border)", borderRadius: "var(--nx-radius-lg)", overflow: "hidden", marginBottom: "16px", boxShadow: "var(--nx-shadow-sm)" }}>
+        <div style={{ background: "var(--nx-surface)", border: "1px solid var(--nx-border)", borderRadius: "var(--nx-radius-lg)", marginBottom: "16px", boxShadow: "var(--nx-shadow-sm)" }}>
 
           {/* Cover */}
-          <div style={{ height: "120px", background: "var(--nx-grad-brand)", position: "relative" }} />
+          <div style={{ height: "120px", background: "var(--nx-grad-brand)", borderRadius: "var(--nx-radius-lg) var(--nx-radius-lg) 0 0" }} />
 
           {/* Info section */}
-          <div style={{ padding: "0 20px 20px" }}>
-            <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginTop: "-40px", marginBottom: "12px" }}>
+          <div style={{ padding: "0 24px 24px" }}>
+            <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginTop: "-40px", marginBottom: "14px" }}>
               {/* Avatar */}
               {profile.avatarUrl ? (
                 <img src={profile.avatarUrl} alt={profile.username}
-                  style={{ width: "80px", height: "80px", borderRadius: "50%", objectFit: "cover", border: "3px solid var(--nx-surface)", boxShadow: "var(--nx-shadow)" }} />
+                  style={{ width: "80px", height: "80px", borderRadius: "50%", objectFit: "cover", border: "3px solid var(--nx-surface)", boxShadow: "var(--nx-shadow)", position: "relative", zIndex: 1 }} />
               ) : (
-                <div className="nx-avatar-gradient" style={{ width: "80px", height: "80px", fontSize: "28px", border: "3px solid var(--nx-surface)", boxShadow: "var(--nx-shadow)" }}>
+                <div className="nx-avatar-gradient" style={{ width: "80px", height: "80px", fontSize: "28px", border: "3px solid var(--nx-surface)", boxShadow: "var(--nx-shadow)", position: "relative", zIndex: 1 }}>
                   {profile.username?.charAt(0).toUpperCase()}
                 </div>
               )}

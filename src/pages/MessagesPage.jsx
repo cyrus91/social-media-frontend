@@ -506,17 +506,12 @@ function MessagesPage() {
                       border: "none",
                       cursor: "pointer",
                       color: "var(--nx-text-subtle)",
-                      transition: "color var(--nx-transition)",
+                      transition: "color var(--nx-transition), opacity var(--nx-transition)",
                       opacity: 0,
                       display: "flex",
                     }}
-                    className="group-hover:opacity-100"
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.color = "#ef4444")
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.color = "var(--nx-text-subtle)")
-                    }>
+                    onMouseEnter={(e) => { e.currentTarget.style.color = "#ef4444"; e.currentTarget.style.opacity = "1"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.color = "var(--nx-text-subtle)"; e.currentTarget.style.opacity = "0"; }}>
                     <svg
                       width="15"
                       height="15"
