@@ -23,7 +23,7 @@ function FeedPage() {
       <div style={{ maxWidth: "680px", margin: "0 auto", padding: "20px 16px 60px" }}>
 
         {/* Create post */}
-        <div className="nx-card" style={{ marginBottom: "16px", padding: "16px" }}>
+        <div style={{ marginBottom: "16px" }}>
           <CreatePostWithImages onPostCreated={reset} />
         </div>
 

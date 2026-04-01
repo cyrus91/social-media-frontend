@@ -103,21 +103,27 @@ function CreatePostWithImages({ onPostCreated }) {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6">
+    <div style={{
+      background: "var(--nx-surface)",
+      border: "1px solid var(--nx-border)",
+      borderRadius: "var(--nx-radius-lg)",
+      boxShadow: "var(--nx-shadow-sm)",
+      padding: "16px",
+    }}>
       <form onSubmit={handleSubmit}>
         {/* Header */}
-        <div className="flex items-center space-x-3 mb-3">
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
           {currentUser?.avatarUrl ? (
             <img src={currentUser.avatarUrl} alt={currentUser.username}
-              className="w-10 h-10 rounded-full object-cover border-2 border-blue-500" />
+              style={{ width: "38px", height: "38px", borderRadius: "50%", objectFit: "cover", border: "2px solid rgba(124,58,237,0.3)" }} />
           ) : (
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold">
+            <div className="nx-avatar-gradient" style={{ width: "38px", height: "38px", fontSize: "13px", flexShrink: 0 }}>
               {currentUser?.username?.charAt(0).toUpperCase()}
             </div>
           )}
           <div>
-            <p className="font-semibold text-gray-800">{currentUser?.username}</p>
-            <p className="text-xs text-gray-500">Crea un nuovo post</p>
+            <p style={{ fontWeight: 700, fontSize: "13px", color: "var(--nx-text)" }}>{currentUser?.username}</p>
+            <p style={{ fontSize: "11px", color: "var(--nx-text-muted)" }}>Crea un nuovo post</p>
           </div>
         </div>
 
@@ -131,130 +137,169 @@ function CreatePostWithImages({ onPostCreated }) {
           </div>
         )}
 
-        {/* Box principale con mention support */}
-        <div className="relative">
-        <MentionSuggestions
-          suggestions={mentionSuggestions}
-          visible={showMentionSuggestions}
-          onSelect={(username) => selectMention(username, textareaRef)}
-          anchorRef={textareaRef}
-        />
-        <div className={`border rounded-2xl transition-all duration-200 ${hasContent ? 'border-blue-400' : 'border-gray-300'}`}>
+        {/* Box principale */}
+        <div style={{ position: "relative" }}>
+          <MentionSuggestions
+            suggestions={mentionSuggestions}
+            visible={showMentionSuggestions}
+            onSelect={(username) => selectMention(username, textareaRef)}
+            anchorRef={textareaRef}
+          />
+          <div style={{
+            border: `1.5px solid ${hasContent ? "rgba(124,58,237,0.4)" : "var(--nx-border)"}`,
+            borderRadius: "var(--nx-radius-lg)",
+            transition: "border-color var(--nx-transition), box-shadow var(--nx-transition)",
+            boxShadow: hasContent ? "0 0 0 3px rgba(124,58,237,0.08)" : "none",
+            background: "var(--nx-surface-2)",
+          }}>
+            {/* Textarea row */}
+            <div style={{ display: "flex", alignItems: "center", padding: hasContent ? "10px 12px 4px" : "6px 12px", gap: "8px" }}>
+              {!hasContent && (
+                <div style={{ flexShrink: 0 }}>
+                  <EmojiPickerButton
+                    onEmojiSelect={(emoji) => {
+                      setContent((prev) => prev + emoji);
+                      textareaRef.current?.focus();
+                    }}
+                  />
+                </div>
+              )}
+              <MentionTextarea
+                textareaRef={textareaRef}
+                value={content}
+                onChange={(e) => { handleTextareaChange(e); handleMentionChange(e); }}
+                placeholder="Cosa stai pensando?"
+                rows={hasContent ? 3 : 1}
+                disabled={uploading}
+                className="flex-1"
+              />
+            </div>
 
-          {/* Textarea SEMPRE nel DOM — niente rimount */}
-          <div className={`flex items-center px-3 space-x-2 ${hasContent ? 'pt-3 pb-1' : 'py-2'}`}>
-            {/* Emoji visibile solo senza contenuto, allineata alla textarea */}
-            {!hasContent && (
-              <div className="flex-shrink-0" style={{ marginBottom: "4px" }}>
-                <EmojiPickerButton
-                  onEmojiSelect={(emoji) => {
-                    setContent((prev) => prev + emoji);
-                    textareaRef.current?.focus();
-                  }}
-                />
+            {/* Preview immagini */}
+            {previews.length > 0 && (
+              <div style={{ padding: "0 12px 10px" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "6px" }}>
+                  {previews.map((preview, index) => (
+                    <div key={index} style={{ position: "relative" }} className="group">
+                      <img src={preview} alt={`Preview ${index + 1}`}
+                        style={{ width: "100%", height: "72px", objectFit: "cover", borderRadius: "var(--nx-radius-sm)", border: "1px solid var(--nx-border)" }} />
+                      <button type="button" onClick={() => removeImage(index)}
+                        style={{
+                          position: "absolute", top: "3px", right: "3px",
+                          background: "#ef4444", color: "#fff",
+                          borderRadius: "50%", width: "18px", height: "18px",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          fontSize: "10px", border: "none", cursor: "pointer",
+                          opacity: 0, transition: "opacity var(--nx-transition)",
+                        }}
+                        className="group-hover:opacity-100">✕</button>
+                      <div style={{
+                        position: "absolute", bottom: "3px", left: "3px",
+                        background: "rgba(0,0,0,0.6)", color: "#fff",
+                        fontSize: "10px", padding: "1px 5px", borderRadius: "99px"
+                      }}>{index + 1}</div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
-            <MentionTextarea
-              textareaRef={textareaRef}
-              value={content}
-              onChange={(e) => { handleTextareaChange(e); handleMentionChange(e); }}
-              placeholder="Cosa stai pensando?"
-              rows={hasContent ? 3 : 1}
-              disabled={uploading}
-              className="flex-1"
-            />
-          </div>
 
-
-
-          {/* Preview immagini */}
-          {previews.length > 0 && (
-            <div className="px-3 pb-2">
-              <div className="grid grid-cols-5 gap-2">
-                {previews.map((preview, index) => (
-                  <div key={index} className="relative group">
-                    <img src={preview} alt={`Preview ${index + 1}`}
-                      className="w-full h-20 object-cover rounded-lg border border-gray-200" />
-                    <button type="button" onClick={() => removeImage(index)}
-                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition text-xs shadow">
-                      ✕
+            {/* Barra inferiore */}
+            {hasContent && (
+              <div style={{
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                padding: "6px 10px 8px",
+                borderTop: "1px solid var(--nx-border)",
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "2px" }}>
+                  <EmojiPickerButton
+                    onEmojiSelect={(emoji) => {
+                      setContent((prev) => prev + emoji);
+                      textareaRef.current?.focus();
+                    }}
+                  />
+                  {images.length < 5 && (
+                    <button type="button" onClick={() => fileInputRef.current?.click()}
+                      disabled={uploading}
+                      title="Aggiungi immagine"
+                      style={{
+                        padding: "6px", border: "none", background: "none", cursor: "pointer",
+                        color: "var(--nx-text-muted)", borderRadius: "var(--nx-radius-sm)",
+                        transition: "all var(--nx-transition)", display: "flex",
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.background = "rgba(124,58,237,0.08)"; e.currentTarget.style.color = "#7c3aed"; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = "none"; e.currentTarget.style.color = "var(--nx-text-muted)"; }}>
+                      <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
                     </button>
-                    <div className="absolute bottom-1 left-1 bg-black bg-opacity-60 text-white text-xs px-1.5 py-0.5 rounded-full">
-                      {index + 1}
-                    </div>
-                  </div>
-                ))}
+                  )}
+                  {content.trim() && (
+                    <button type="button" onClick={handleImproveText}
+                      disabled={improvingAI || uploading}
+                      style={{
+                        display: "flex", alignItems: "center", gap: "4px",
+                        padding: "4px 10px", fontSize: "11px", fontWeight: 600,
+                        color: "#7c3aed", background: "rgba(124,58,237,0.08)",
+                        border: "1px solid rgba(124,58,237,0.2)",
+                        borderRadius: "var(--nx-radius-full)", cursor: "pointer",
+                        transition: "all var(--nx-transition)",
+                        opacity: improvingAI || uploading ? 0.5 : 1,
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.background = "rgba(124,58,237,0.14)"}
+                      onMouseLeave={e => e.currentTarget.style.background = "rgba(124,58,237,0.08)"}>
+                      {improvingAI
+                        ? <><div style={{ width: "10px", height: "10px", border: "2px solid rgba(124,58,237,0.3)", borderTopColor: "#7c3aed", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} /><span>Miglioramento...</span></>
+                        : <><span>✨</span><span>Migliora</span></>
+                      }
+                    </button>
+                  )}
+                </div>
+                <button type="submit" disabled={uploading || !hasContent}
+                  style={{
+                    display: "flex", alignItems: "center", gap: "6px",
+                    padding: "6px 16px", fontSize: "13px", fontWeight: 600,
+                    background: "linear-gradient(135deg,#7c3aed,#06b6d4)",
+                    color: "#fff", border: "none", borderRadius: "var(--nx-radius-full)",
+                    cursor: uploading || !hasContent ? "not-allowed" : "pointer",
+                    opacity: !hasContent ? 0.5 : 1,
+                    transition: "opacity var(--nx-transition)",
+                  }}>
+                  {uploading
+                    ? <><div style={{ width: "12px", height: "12px", border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} /><span>Pubblicazione...</span></>
+                    : <span>Pubblica</span>}
+                </button>
               </div>
-            </div>
-          )}
+            )}
+          </div>
+        </div>
 
-          {/* Barra inferiore — visibile solo con contenuto */}
-          {hasContent && (
-            <div className="flex items-center justify-between px-2 pb-2 border-t border-gray-100 mt-1">
-              <div className="flex items-center space-x-1">
-                <EmojiPickerButton
-                  onEmojiSelect={(emoji) => {
-                    setContent((prev) => prev + emoji);
-                    textareaRef.current?.focus();
-                  }}
-                />
-                {images.length < 5 && (
-                  <button type="button" onClick={() => fileInputRef.current?.click()}
-                    disabled={uploading}
-                    className="text-gray-400 hover:text-blue-500 transition p-1 rounded-full hover:bg-gray-100"
-                    title="Aggiungi immagine">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                  </button>
-                )}
-                {/* Migliora con AI — visibile solo se c'è testo */}
-                {content.trim() && (
-                  <button type="button" onClick={handleImproveText}
-                    disabled={improvingAI || uploading}
-                    className="flex items-center space-x-1 text-purple-500 hover:text-purple-600 transition px-2 py-1 rounded-full hover:bg-purple-50 text-xs font-semibold disabled:opacity-50"
-                    title="Migliora con AI">
-                    {improvingAI ? (
-                      <div className="w-3 h-3 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <span>✨</span>
-                    )}
-                    <span>{improvingAI ? "Miglioramento..." : "Migliora"}</span>
-                  </button>
-                )}
-              </div>
-              <button type="submit" disabled={uploading || !hasContent}
-                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-1 rounded-full font-semibold text-sm transition disabled:opacity-50 flex items-center space-x-1">
-                {uploading ? (
-                  <>
-                    <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>Pubblicazione...</span>
-                  </>
-                ) : <span>Pubblica</span>}
-              </button>
-            </div>
-          )}
-        </div>{/* end rounded-2xl */}
-        </div>{/* end relative wrapper */}
-
-        {/* Bottone foto visibile senza contenuto */}
+        {/* Bottone foto — senza contenuto */}
         {!hasContent && (
-          <div className="flex items-center mt-2 px-1">
+          <div style={{ display: "flex", alignItems: "center", marginTop: "8px", paddingLeft: "4px" }}>
             <button type="button" onClick={() => fileInputRef.current?.click()}
               disabled={uploading}
-              className="flex items-center space-x-1 text-gray-500 hover:text-blue-500 transition text-sm px-2 py-1 rounded-lg hover:bg-gray-100">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              style={{
+                display: "flex", alignItems: "center", gap: "6px",
+                fontSize: "13px", fontWeight: 500, color: "var(--nx-text-muted)",
+                background: "none", border: "none", cursor: "pointer",
+                padding: "4px 8px", borderRadius: "var(--nx-radius-sm)",
+                transition: "all var(--nx-transition)",
+              }}
+              onMouseEnter={e => { e.currentTarget.style.color = "#7c3aed"; e.currentTarget.style.background = "rgba(124,58,237,0.06)"; }}
+              onMouseLeave={e => { e.currentTarget.style.color = "var(--nx-text-muted)"; e.currentTarget.style.background = "none"; }}>
+              <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                   d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
-              <span>Foto</span>
+              Foto
             </button>
           </div>
         )}
 
         <input ref={fileInputRef} type="file" accept="image/*" multiple
-          className="hidden" onChange={handleFileSelect} disabled={uploading} />
+          style={{ display: "none" }} onChange={handleFileSelect} disabled={uploading} />
       </form>
     </div>
   );

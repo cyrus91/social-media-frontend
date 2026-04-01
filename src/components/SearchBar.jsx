@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { searchUsers } from "../services/userService";
 
+// SearchBar redesignata con Nexus design system
 function SearchBar() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
@@ -69,96 +70,105 @@ function SearchBar() {
   };
 
   return (
-    <div ref={searchRef} className="relative w-full max-w-md">
+    <div ref={searchRef} style={{ position: "relative", width: "100%", maxWidth: "360px" }}>
       {/* Input */}
-      <div className="relative">
+      <div style={{ position: "relative" }}>
+        <svg
+          style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", color: "var(--nx-text-subtle)", pointerEvents: "none" }}
+          width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
         <input
           type="text"
           placeholder="Cerca utenti..."
           value={query}
           onChange={handleQueryChange}
-          onFocus={() => query.length > 0 && setIsOpen(true)}
+          onFocus={(e) => {
+            e.target.style.borderColor = "rgba(124,58,237,0.5)";
+            e.target.style.boxShadow = "0 0 0 3px rgba(124,58,237,0.1)";
+            if (query.length > 0) setIsOpen(true);
+          }}
+          onBlur={(e) => {
+            e.target.style.borderColor = "var(--nx-border)";
+            e.target.style.boxShadow = "none";
+          }}
           onKeyDown={handleKeyDown}
-          className="w-full bg-gray-100 border border-gray-300 rounded-full py-2 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          style={{
+            width: "100%",
+            background: "var(--nx-surface-2)",
+            border: "1.5px solid var(--nx-border)",
+            borderRadius: "var(--nx-radius-full)",
+            padding: "7px 36px 7px 32px",
+            fontSize: "13px",
+            color: "var(--nx-text)",
+            outline: "none",
+            transition: "border-color var(--nx-transition), box-shadow var(--nx-transition)",
+          }}
         />
-
-        {/* Icona lente */}
-        <svg
-          className="absolute left-3 top-2.5 w-5 h-5 text-gray-400"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-          />
-        </svg>
-
-        {/* Loader */}
         {loading && (
-          <div className="absolute right-3 top-2.5">
-            <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+          <div style={{ position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)" }}>
+            <div style={{
+              width: "14px", height: "14px",
+              border: "2px solid rgba(124,58,237,0.25)",
+              borderTopColor: "#7c3aed",
+              borderRadius: "50%",
+              animation: "spin 0.7s linear infinite"
+            }} />
           </div>
         )}
       </div>
 
-      {/* Dropdown risultati */}
+      {/* Dropdown */}
       {isOpen && (
-        <div className="absolute top-full mt-2 w-full bg-white rounded-lg shadow-lg border border-gray-200 max-h-96 overflow-y-auto z-50">
+        <div style={{
+          position: "absolute", top: "calc(100% + 6px)", left: 0, width: "100%",
+          background: "var(--nx-surface)",
+          border: "1px solid var(--nx-border)",
+          borderRadius: "var(--nx-radius-lg)",
+          boxShadow: "var(--nx-shadow-lg)",
+          maxHeight: "320px", overflowY: "auto", zIndex: 60,
+        }}>
           {results.length === 0 && !loading && (
-            <div className="p-4 text-center text-gray-500">
-              <div className="text-4xl mb-2">🔍</div>
-              <p>Nessun utente trovato</p>
+            <div style={{ padding: "20px", textAlign: "center", color: "var(--nx-text-muted)", fontSize: "13px" }}>
+              <div style={{ fontSize: "28px", marginBottom: "6px" }}>🔍</div>
+              Nessun utente trovato
             </div>
           )}
-
-          {results.length > 0 && (
-            <ul>
-              {results.map((user) => (
-                <li key={user.id}>
-                  <button
-                    onClick={() => handleSelectUser(user.username)}
-                    className="w-full flex items-center space-x-3 p-3 hover:bg-gray-50 transition">
-                    {/* Avatar */}
-                    <div className="flex-shrink-0">
-                      <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold">
-                        {user.username.charAt(0).toUpperCase()}
-                      </div>
-                    </div>
-
-                    {/* Info */}
-                    <div className="flex-1 text-left">
-                      <p className="font-semibold text-gray-800">
-                        {user.username}
-                      </p>
-                      <p className="text-sm text-gray-500">{user.email}</p>
-                      {user.bio && (
-                        <p className="text-xs text-gray-400 truncate">
-                          {user.bio}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Freccia */}
-                    <svg
-                      className="w-5 h-5 text-gray-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 5l7 7-7 7"
-                      />
-                    </svg>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
+          {results.map((user) => (
+            <button
+              key={user.id}
+              onClick={() => handleSelectUser(user.username)}
+              style={{
+                width: "100%", display: "flex", alignItems: "center", gap: "10px",
+                padding: "10px 14px", background: "none", border: "none", cursor: "pointer",
+                textAlign: "left", transition: "background var(--nx-transition)",
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = "rgba(124,58,237,0.06)"}
+              onMouseLeave={e => e.currentTarget.style.background = "none"}
+            >
+              {user.avatarUrl ? (
+                <img src={user.avatarUrl} alt={user.username}
+                  style={{ width: "34px", height: "34px", borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
+              ) : (
+                <div className="nx-avatar-gradient" style={{ width: "34px", height: "34px", fontSize: "12px", flexShrink: 0 }}>
+                  {user.username.charAt(0).toUpperCase()}
+                </div>
+              )}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontWeight: 600, fontSize: "13px", color: "var(--nx-text)", marginBottom: "1px" }}>
+                  {user.username}
+                </p>
+                {user.bio && (
+                  <p style={{ fontSize: "11px", color: "var(--nx-text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {user.bio}
+                  </p>
+                )}
+              </div>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--nx-text-subtle)" strokeWidth="2">
+                <polyline points="9 18 15 12 9 6"/>
+              </svg>
+            </button>
+          ))}
         </div>
       )}
     </div>

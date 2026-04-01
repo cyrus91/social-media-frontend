@@ -72,8 +72,7 @@ function ReactionButton({ comment, onReact, disabled }) {
       {/* Picker animato */}
       {showPicker && (
         <div
-          className="absolute bottom-8 left-0 bg-white rounded-full shadow-2xl border border-gray-100 flex items-center px-3 py-2 space-x-1 z-30"
-          style={{ animation: "slideUp 0.15s ease-out" }}
+          style={{ position:"absolute", bottom:"36px", left:0, background:"var(--nx-surface)", border:"1px solid var(--nx-border)", borderRadius:"var(--nx-radius-full)", boxShadow:"var(--nx-shadow-lg)", display:"flex", alignItems:"center", padding:"6px 12px", gap:"4px", zIndex:30, animation:"slideUp 0.15s ease-out" }}
           onMouseEnter={handlePickerMouseEnter}
           onMouseLeave={handlePickerMouseLeave}>
           {REACTIONS.map((emoji, i) => (
@@ -243,38 +242,39 @@ function CommentItem({ comment, user, postId, onReact, onReplyCreated, depth = 0
 
       <div className="flex-1 min-w-0">
         {/* Bubble commento */}
-        <div className="bg-gray-100 rounded-2xl px-3 py-2 inline-block max-w-full relative group/comment">
+        <div style={{ background: "var(--nx-surface-2)", border: "1px solid var(--nx-border)", borderRadius: "var(--nx-radius-lg)", padding: "8px 12px", display: "inline-block", maxWidth: "100%", position: "relative" }} className="group/comment">
           <Link to={`/profile/${localComment.authorUsername}`}
-            className="font-semibold text-gray-800 text-xs hover:underline">
+            style={{ fontWeight: 700, fontSize: "12px", color: "var(--nx-text)", textDecoration: "none" }}
+            onMouseEnter={e => e.currentTarget.style.textDecoration = "underline"}
+            onMouseLeave={e => e.currentTarget.style.textDecoration = "none"}>
             {localComment.authorUsername}
           </Link>
 
           {editMode ? (
-            <div className="mt-1">
+            <div style={{ marginTop: "4px" }}>
               <textarea value={editText} onChange={e => setEditText(e.target.value)}
-                className="w-full text-sm bg-white border border-gray-300 rounded-lg px-2 py-1 outline-none resize-none"
+                style={{ width: "100%", fontSize: "13px", background: "var(--nx-surface)", border: "1px solid var(--nx-border)", borderRadius: "var(--nx-radius-sm)", padding: "6px 8px", outline: "none", resize: "none", color: "var(--nx-text)" }}
                 rows={2} autoFocus />
-              <div className="flex space-x-2 mt-1">
+              <div style={{ display: "flex", gap: "6px", marginTop: "4px" }}>
                 <button onClick={handleEditSave}
-                  className="text-xs bg-blue-500 text-white px-2 py-1 rounded-lg hover:bg-blue-600 transition">
+                  style={{ fontSize: "11px", background: "linear-gradient(135deg,#7c3aed,#06b6d4)", color: "#fff", padding: "3px 10px", borderRadius: "var(--nx-radius-sm)", border: "none", cursor: "pointer" }}>
                   Salva
                 </button>
                 <button onClick={() => setEditMode(false)}
-                  className="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-lg hover:bg-gray-300 transition">
+                  style={{ fontSize: "11px", background: "var(--nx-surface)", color: "var(--nx-text-muted)", padding: "3px 10px", borderRadius: "var(--nx-radius-sm)", border: "1px solid var(--nx-border)", cursor: "pointer" }}>
                   Annulla
                 </button>
               </div>
             </div>
           ) : (
             <>
-              <p className="text-sm text-gray-700 mt-0.5 break-words">{renderTextWithMentions(localComment.content)}</p>
+              <p style={{ fontSize: "13px", color: "var(--nx-text)", marginTop: "2px", wordBreak: "break-word" }}>{renderTextWithMentions(localComment.content)}</p>
               {/* Immagine allegata al commento */}
               {localComment.imageUrl && (
-                <div className="relative inline-block mt-1.5">
+                <div style={{ position: "relative", display: "inline-block", marginTop: "6px" }}>
                   <img src={localComment.imageUrl} alt="img"
-                    className="max-h-48 rounded-xl object-cover cursor-pointer border border-gray-200 hover:opacity-95 transition"
+                    style={{ maxHeight: "180px", borderRadius: "var(--nx-radius)", objectFit: "cover", cursor: "pointer", border: "1px solid var(--nx-border)" }}
                     onClick={() => window.open(localComment.imageUrl, "_blank")} />
-                  {/* Bottone elimina solo immagine — solo autore */}
                   {user?.id === localComment.authorId && (
                     <button type="button"
                       onClick={async () => {
@@ -284,7 +284,7 @@ function CommentItem({ comment, user, postId, onReact, onReplyCreated, depth = 0
                           toast.success("Immagine rimossa");
                         }
                       }}
-                      className="absolute top-1 right-1 w-5 h-5 bg-red-500 hover:bg-red-600 text-white rounded-full text-xs flex items-center justify-center shadow transition">
+                      style={{ position: "absolute", top: "4px", right: "4px", width: "20px", height: "20px", background: "#ef4444", color: "#fff", borderRadius: "50%", fontSize: "10px", display: "flex", alignItems: "center", justifyContent: "center", border: "none", cursor: "pointer" }}>
                       ✕
                     </button>
                   )}
@@ -295,22 +295,28 @@ function CommentItem({ comment, user, postId, onReact, onReplyCreated, depth = 0
 
           {/* Menu 3 punti — solo autore */}
           {user?.id === localComment.authorId && !editMode && (
-            <div className="absolute top-1 right-1 opacity-0 group-hover/comment:opacity-100 transition">
-              <div className="relative">
+            <div style={{ position: "absolute", top: "4px", right: "4px", opacity: 0, transition: "opacity var(--nx-transition)" }} className="group-hover/comment:opacity-100">
+              <div style={{ position: "relative" }}>
                 <button onClick={() => setShowMenu(v => !v)}
-                  className="p-1 rounded-full hover:bg-gray-200 transition text-gray-400">
-                  <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                  style={{ padding: "3px", borderRadius: "50%", background: "none", border: "none", cursor: "pointer", color: "var(--nx-text-subtle)", display: "flex" }}
+                  onMouseEnter={e => e.currentTarget.style.background = "var(--nx-surface)"}
+                  onMouseLeave={e => e.currentTarget.style.background = "none"}>
+                  <svg width="14" height="14" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
                   </svg>
                 </button>
                 {showMenu && (
-                  <div className="absolute right-0 top-6 bg-white rounded-xl shadow-xl border border-gray-100 py-1 z-50 w-28">
+                  <div style={{ position: "absolute", right: 0, top: "24px", background: "var(--nx-surface)", border: "1px solid var(--nx-border)", borderRadius: "var(--nx-radius)", boxShadow: "var(--nx-shadow-lg)", padding: "4px", zIndex: 50, width: "110px" }}>
                     <button onClick={() => { setEditMode(true); setShowMenu(false); }}
-                      className="w-full text-left px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-50 transition">
+                      style={{ width: "100%", textAlign: "left", padding: "6px 10px", fontSize: "12px", color: "var(--nx-text)", background: "none", border: "none", cursor: "pointer", borderRadius: "var(--nx-radius-sm)" }}
+                      onMouseEnter={e => e.currentTarget.style.background = "rgba(124,58,237,0.06)"}
+                      onMouseLeave={e => e.currentTarget.style.background = "none"}>
                       ✏️ Modifica
                     </button>
                     <button onClick={() => { setShowDeleteConfirm(true); setShowMenu(false); }}
-                      className="w-full text-left px-3 py-1.5 text-xs text-red-500 hover:bg-gray-50 transition">
+                      style={{ width: "100%", textAlign: "left", padding: "6px 10px", fontSize: "12px", color: "#ef4444", background: "none", border: "none", cursor: "pointer", borderRadius: "var(--nx-radius-sm)" }}
+                      onMouseEnter={e => e.currentTarget.style.background = "rgba(239,68,68,0.06)"}
+                      onMouseLeave={e => e.currentTarget.style.background = "none"}>
                       🗑️ Elimina
                     </button>
                   </div>
@@ -322,58 +328,65 @@ function CommentItem({ comment, user, postId, onReact, onReplyCreated, depth = 0
 
         {/* Reazioni esistenti */}
         {localComment.reactions && Object.keys(localComment.reactions).length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-1 ml-1">
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", marginTop: "4px", marginLeft: "4px" }}>
             {Object.entries(localComment.reactions).map(([emoji, count]) => (
               <button key={emoji}
                 onClick={() => handleReact(localComment.id, emoji)}
-                className={`text-xs rounded-full px-2 py-0.5 border flex items-center space-x-0.5 transition hover:bg-gray-100 ${
-                  localComment.myReaction === emoji ? "border-blue-300 bg-blue-50" : "border-gray-200 bg-white"
-                }`}>
+                style={{
+                  fontSize: "11px", borderRadius: "var(--nx-radius-full)",
+                  padding: "2px 8px", display: "flex", alignItems: "center", gap: "2px",
+                  border: `1px solid ${localComment.myReaction === emoji ? "rgba(124,58,237,0.4)" : "var(--nx-border)"}`,
+                  background: localComment.myReaction === emoji ? "rgba(124,58,237,0.1)" : "var(--nx-surface)",
+                  color: "var(--nx-text-muted)", cursor: "pointer",
+                  transition: "all var(--nx-transition)",
+                }}>
                 <span>{emoji}</span>
-                <span className="text-gray-500 font-medium">{count}</span>
+                <span style={{ fontWeight: 600 }}>{count}</span>
               </button>
             ))}
           </div>
         )}
 
         {/* Azioni sotto commento */}
-        <div className="flex items-center space-x-3 mt-1 ml-1">
+        <div style={{ display: "flex", alignItems: "center", gap: "12px", marginTop: "4px", marginLeft: "4px" }}>
           <ReactionButton comment={localComment} onReact={handleReact} disabled={!user} />
 
           {depth === 0 && user && (
             <button onClick={() => setShowReplyForm(v => !v)}
-              className="text-xs font-semibold text-gray-500 hover:text-blue-500 transition">
+              style={{ fontSize: "11px", fontWeight: 700, color: "var(--nx-text-muted)", background: "none", border: "none", cursor: "pointer", transition: "color var(--nx-transition)" }}
+              onMouseEnter={e => e.currentTarget.style.color = "#7c3aed"}
+              onMouseLeave={e => e.currentTarget.style.color = "var(--nx-text-muted)"}>
               Rispondi
             </button>
           )}
 
-          <span className="text-xs text-gray-400">{formatDate(localComment.createdAt)}</span>
+          <span style={{ fontSize: "11px", color: "var(--nx-text-subtle)" }}>{formatDate(localComment.createdAt)}</span>
         </div>
 
-        {/* Form risposta — div invece di form per evitare bubbling al form padre */}
+        {/* Form risposta */}
         {showReplyForm && (
-          <div className="mt-2 space-y-1">
+          <div style={{ marginTop: "8px" }}>
             {/* Preview immagine reply */}
             {replyImagePreview && (
-              <div className="relative inline-block ml-8">
+              <div style={{ position: "relative", display: "inline-block", marginLeft: "32px", marginBottom: "6px" }}>
                 <img src={replyImagePreview} alt="preview"
-                  className="max-h-24 rounded-xl object-cover border border-gray-200" />
+                  style={{ maxHeight: "80px", borderRadius: "var(--nx-radius)", objectFit: "cover", border: "1px solid var(--nx-border)" }} />
                 <button type="button"
                   onClick={() => { setReplyImageFile(null); setReplyImagePreview(null); }}
-                  className="absolute top-0.5 right-0.5 w-4 h-4 bg-red-500 text-white rounded-full text-xs flex items-center justify-center">
+                  style={{ position: "absolute", top: "2px", right: "2px", width: "16px", height: "16px", background: "#ef4444", color: "#fff", borderRadius: "50%", fontSize: "9px", display: "flex", alignItems: "center", justifyContent: "center", border: "none", cursor: "pointer" }}>
                   ✕
                 </button>
               </div>
             )}
-            <div className="flex items-center space-x-2">
-              <div className="flex-shrink-0">
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <div style={{ flexShrink: 0 }}>
                 {user?.avatarUrl
-                  ? <img src={user.avatarUrl} className="w-6 h-6 rounded-full object-cover" alt="" />
-                  : <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                  ? <img src={user.avatarUrl} style={{ width: "24px", height: "24px", borderRadius: "50%", objectFit: "cover" }} alt="" />
+                  : <div className="nx-avatar-gradient" style={{ width: "24px", height: "24px", fontSize: "9px" }}>
                       {user?.username?.charAt(0).toUpperCase()}
                     </div>}
               </div>
-              <div className="flex-1 bg-gray-100 rounded-2xl px-3 py-1.5 space-y-1 relative">
+              <div style={{ flex: 1, background: "var(--nx-surface-2)", border: "1px solid var(--nx-border)", borderRadius: "var(--nx-radius-lg)", padding: "6px 12px", position: "relative" }}>
                 <MentionSuggestions
                   suggestions={replySuggestions}
                   visible={showReplySuggestions}
@@ -388,14 +401,16 @@ function CommentItem({ comment, user, postId, onReact, onReplyCreated, depth = 0
                   rows={1}
                   className="w-full"
                 />
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-1">
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "4px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "2px" }}>
                     <EmojiPickerButton onEmojiSelect={emoji => setReplyText(p => p + emoji)} />
                     <button type="button"
                       onClick={() => replyImageInputRef.current?.click()}
-                      className="p-1 text-gray-400 hover:text-blue-500 transition rounded-full hover:bg-gray-200"
-                      title="Aggiungi foto">
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      title="Aggiungi foto"
+                      style={{ padding: "4px", color: "var(--nx-text-subtle)", background: "none", border: "none", cursor: "pointer", display: "flex", borderRadius: "50%" }}
+                      onMouseEnter={e => e.currentTarget.style.color = "#7c3aed"}
+                      onMouseLeave={e => e.currentTarget.style.color = "var(--nx-text-subtle)"}>
+                      <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                           d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
@@ -404,18 +419,18 @@ function CommentItem({ comment, user, postId, onReact, onReplyCreated, depth = 0
                   <button type="button"
                     onClick={handleSubmitReply}
                     disabled={(!replyText.trim() && !replyImageFile) || submittingReply}
-                    className="text-blue-500 hover:text-blue-600 disabled:opacity-40 transition">
-                    <svg className="w-4 h-4 rotate-45" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    style={{ color: "#7c3aed", background: "none", border: "none", cursor: "pointer", opacity: (!replyText.trim() && !replyImageFile) ? 0.4 : 1, display: "flex" }}>
+                    <svg width="16" height="16" style={{ transform: "rotate(45deg)" }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                     </svg>
                   </button>
                 </div>
               </div>
               <button type="button" onClick={() => { setShowReplyForm(false); setReplyImageFile(null); setReplyImagePreview(null); }}
-                className="text-gray-400 hover:text-gray-600 text-xs flex-shrink-0">✕</button>
+                style={{ color: "var(--nx-text-subtle)", fontSize: "12px", background: "none", border: "none", cursor: "pointer", flexShrink: 0 }}>✕</button>
             </div>
             {/* Input foto nascosto per reply */}
-            <input ref={replyImageInputRef} type="file" accept="image/*" className="hidden"
+            <input ref={replyImageInputRef} type="file" accept="image/*" style={{ display: "none" }}
               onChange={e => {
                 const file = e.target.files?.[0];
                 if (!file) return;
