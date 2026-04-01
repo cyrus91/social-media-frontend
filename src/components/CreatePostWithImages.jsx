@@ -4,6 +4,7 @@ import useAuthStore from "../store/authStore";
 import api from "../services/api";
 import EmojiPickerButton from "./EmojiPickerButton";
 import AICaptionGenerator from "./AICaptionGenerator";
+import AIHashtagSuggester from "./AIHashtagSuggester";
 import { aiService } from "../services/aiService";
 import { useMentionInput } from "../hooks/useMentionInput";
 import MentionSuggestions from "./MentionSuggestions";
@@ -155,28 +156,13 @@ function CreatePostWithImages({ onPostCreated }) {
             {/* Textarea row */}
             <div style={{ display: "flex", alignItems: "center", padding: hasContent ? "10px 12px 4px" : "6px 12px", gap: "8px" }}>
               {!hasContent && (
-                <div style={{ display: "flex", alignItems: "center", gap: "2px", flexShrink: 0 }}>
+                <div style={{ flexShrink: 0 }}>
                   <EmojiPickerButton
                     onEmojiSelect={(emoji) => {
                       setContent((prev) => prev + emoji);
                       textareaRef.current?.focus();
                     }}
                   />
-                  <button type="button" onClick={() => fileInputRef.current?.click()}
-                    disabled={uploading}
-                    title="Aggiungi foto"
-                    style={{
-                      padding: "6px", border: "none", background: "none", cursor: "pointer",
-                      color: "var(--nx-text-muted)", borderRadius: "var(--nx-radius-sm)",
-                      transition: "all var(--nx-transition)", display: "flex",
-                    }}
-                    onMouseEnter={e => { e.currentTarget.style.background = "rgba(124,58,237,0.08)"; e.currentTarget.style.color = "#7c3aed"; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = "none"; e.currentTarget.style.color = "var(--nx-text-muted)"; }}>
-                    <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                  </button>
                 </div>
               )}
               <MentionTextarea
@@ -267,6 +253,15 @@ function CreatePostWithImages({ onPostCreated }) {
                         : <><span>✨</span><span>Migliora</span></>
                       }
                     </button>
+                  )}
+                  {content.trim() && (
+                    <AIHashtagSuggester
+                      content={content}
+                      onHashtagsInsert={(text) => {
+                        setContent(prev => prev + text);
+                        textareaRef.current?.focus();
+                      }}
+                    />
                   )}
                 </div>
                 <button type="submit" disabled={uploading || !hasContent}

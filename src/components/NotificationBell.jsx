@@ -235,7 +235,12 @@ function NotificationBell(props) {
 
   return (
     <div style={{ position: "relative" }} ref={dropdownRef}>
-      {/* Bell Button */}
+      <style>{`
+        @keyframes nx-pulse-glow {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0.5); }
+          50% { box-shadow: 0 0 0 5px rgba(16,185,129,0); }
+        }
+      `}</style>
       <button
         onClick={handleToggle}
         style={{
@@ -255,7 +260,10 @@ function NotificationBell(props) {
         </svg>
         {props.isMobile && (
           <span style={{ fontSize: "14px", fontWeight: 600, color: "var(--nx-text)", flex: 1, textAlign: "left" }}>
-            Notifiche {connected && <span style={{ fontSize: "11px", color: "#22c55e" }}>● live</span>}
+            Notifiche {connected && <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                <span style={{ width: "7px", height: "7px", background: "#10B981", borderRadius: "50%", display: "inline-block", animation: "nx-pulse-glow 2s infinite", flexShrink: 0 }} />
+                <span style={{ fontSize: "11px", color: "#10B981", fontWeight: 600 }}>live</span>
+              </span>}
           </span>
         )}
         {/* Badge */}
@@ -295,7 +303,10 @@ function NotificationBell(props) {
           }}>
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               <h3 style={{ fontWeight: 700, fontSize: "14px", color: "var(--nx-text)" }}>Notifiche</h3>
-              {connected && <span style={{ fontSize: "11px", color: "#22c55e", fontWeight: 600 }}>● live</span>}
+              {connected && <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                <span style={{ width: "7px", height: "7px", background: "#10B981", borderRadius: "50%", display: "inline-block", animation: "nx-pulse-glow 2s infinite", flexShrink: 0 }} />
+                <span style={{ fontSize: "11px", color: "#10B981", fontWeight: 600 }}>live</span>
+              </span>}
             </div>
             {unreadCount > 0 && (
               <button onClick={handleMarkAllAsRead}
