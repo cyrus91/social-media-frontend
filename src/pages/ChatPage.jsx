@@ -49,6 +49,7 @@ function ChatPage() {
   const [replyTo, setReplyTo] = useState(null);
   const [reactionTarget, setReactionTarget] = useState(null);
   const [activeMessageId, setActiveMessageId] = useState(null);
+  const [hoveredMsgId, setHoveredMsgId] = useState(null);
   const longPressTimer = useRef(null);
   const [recording, setRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
@@ -307,7 +308,10 @@ function ChatPage() {
               const mine = isMyMessage(msg);
               const deleted = msg.deletedForAll;
               return (
-                <div key={msg.id ?? Math.random()} style={{ display: "flex", justifyContent: mine ? "flex-end" : "flex-start" }} className="group">
+                <div key={msg.id ?? Math.random()}
+                  style={{ display: "flex", justifyContent: mine ? "flex-end" : "flex-start" }}
+                  onMouseEnter={() => setHoveredMsgId(msg.id)}
+                  onMouseLeave={() => setHoveredMsgId(null)}>
                   <div style={{ maxWidth: "min(320px, 75%)", minWidth: 0 }}
                     onTouchStart={() => { longPressTimer.current = setTimeout(() => setActiveMessageId(msg.id), 400); }}
                     onTouchEnd={() => clearTimeout(longPressTimer.current)}
@@ -355,9 +359,9 @@ function ChatPage() {
                         <div style={{
                           position: "absolute", top: 0,
                           ...(mine ? { left: 0, transform: "translateX(-100%)", paddingRight: "6px" } : { right: 0, transform: "translateX(100%)", paddingLeft: "6px" }),
-                          display: activeMessageId === msg.id ? "flex" : "none",
+                          display: (hoveredMsgId === msg.id || activeMessageId === msg.id) ? "flex" : "none",
                           alignItems: "center", gap: "2px",
-                        }} className={activeMessageId !== msg.id ? "group-hover:flex" : undefined}>
+                        }}>
                           <button onClick={(e) => { e.stopPropagation(); setReactionTarget(reactionTarget === msg.id ? null : msg.id); }}
                             style={{ padding: "4px", background: "var(--nx-surface)", border: "1px solid var(--nx-border)", borderRadius: "50%", boxShadow: "var(--nx-shadow-sm)", fontSize: "13px", cursor: "pointer", display: "flex" }}>
                             😊
