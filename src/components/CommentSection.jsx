@@ -585,93 +585,107 @@ function CommentSection({ postId, initialCommentCount = 0, defaultExpanded = fal
 
           {/* Form nuovo commento */}
           {user && (
-            <form onSubmit={handleSubmit} className="flex items-start space-x-2 pt-2 border-t border-gray-100">
-              <div className="flex-shrink-0">
+            <form onSubmit={handleSubmit} style={{ display: "flex", alignItems: "flex-start", gap: "8px", paddingTop: "12px", borderTop: "1px solid var(--nx-border)" }}>
+              <div style={{ flexShrink: 0 }}>
                 {user.avatarUrl
-                  ? <img src={user.avatarUrl} className="w-8 h-8 rounded-full object-cover" alt="" />
-                  : <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                  ? <img src={user.avatarUrl} style={{ width: "32px", height: "32px", borderRadius: "50%", objectFit: "cover" }} alt="" />
+                  : <div className="nx-avatar-gradient" style={{ width: "32px", height: "32px", fontSize: "11px" }}>
                       {user.username?.charAt(0).toUpperCase()}
                     </div>}
               </div>
-              <div className={`flex-1 relative`}>
-                <MentionSuggestions suggestions={mainSuggestions} visible={showMainSuggestions} onSelect={(u) => selectMainMention(u, textareaRef)}  anchorRef={textareaRef} />
-                <div className={`border rounded-2xl bg-white transition-all ${commentText ? "border-blue-400" : "border-gray-300"}`}>
-                <div className="flex items-center px-3 py-2 space-x-2">
-                  {!(commentText || imageFile) && (
-                    <div className="flex items-center space-x-1 flex-shrink-0">
-                      <EmojiPickerButton onEmojiSelect={emoji => setCommentText(p => p + emoji)} />
+              <div style={{ flex: 1, position: "relative" }}>
+                <MentionSuggestions suggestions={mainSuggestions} visible={showMainSuggestions} onSelect={(u) => selectMainMention(u, textareaRef)} anchorRef={textareaRef} />
+                <div style={{
+                  border: `1.5px solid ${commentText ? "rgba(124,58,237,0.4)" : "var(--nx-border)"}`,
+                  borderRadius: "var(--nx-radius-lg)",
+                  background: "var(--nx-surface-2)",
+                  boxShadow: commentText ? "0 0 0 3px rgba(124,58,237,0.08)" : "none",
+                  transition: "border-color var(--nx-transition), box-shadow var(--nx-transition)",
+                }}>
+                  <div style={{ display: "flex", alignItems: "center", padding: "6px 12px", gap: "8px" }}>
+                    {!(commentText || imageFile) && (
+                      <div style={{ display: "flex", alignItems: "center", gap: "2px", flexShrink: 0 }}>
+                        <EmojiPickerButton onEmojiSelect={emoji => setCommentText(p => p + emoji)} />
+                        <button type="button"
+                          onClick={() => imageInputRef.current?.click()}
+                          title="Aggiungi foto"
+                          style={{ padding: "4px", color: "var(--nx-text-subtle)", background: "none", border: "none", cursor: "pointer", display: "flex", borderRadius: "50%", transition: "color var(--nx-transition)" }}
+                          onMouseEnter={e => e.currentTarget.style.color = "#7c3aed"}
+                          onMouseLeave={e => e.currentTarget.style.color = "var(--nx-text-subtle)"}>
+                          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                        </button>
+                      </div>
+                    )}
+                    <MentionTextarea
+                      textareaRef={textareaRef}
+                      value={commentText}
+                      onChange={e => {
+                        setCommentText(e.target.value);
+                        handleMentionChange(e);
+                        const ta = textareaRef.current;
+                        if (ta) { ta.style.height = "auto"; ta.style.height = Math.min(ta.scrollHeight, 120) + "px"; }
+                      }}
+                      placeholder="Scrivi un commento..."
+                      rows={1}
+                      className="flex-1"
+                    />
+                  </div>
+                  {/* Preview immagine */}
+                  {imagePreview && (
+                    <div style={{ padding: "0 12px 8px", position: "relative", display: "inline-block" }}>
+                      <img src={imagePreview} alt="preview"
+                        style={{ maxHeight: "120px", borderRadius: "var(--nx-radius)", objectFit: "cover", border: "1px solid var(--nx-border)" }} />
                       <button type="button"
-                        onClick={() => imageInputRef.current?.click()}
-                        className="p-1 text-gray-400 hover:text-blue-500 transition rounded-full hover:bg-gray-100"
-                        title="Aggiungi foto">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
+                        onClick={() => { setImageFile(null); setImagePreview(null); }}
+                        style={{ position: "absolute", top: "4px", right: "4px", width: "18px", height: "18px", background: "#ef4444", color: "#fff", borderRadius: "50%", fontSize: "10px", display: "flex", alignItems: "center", justifyContent: "center", border: "none", cursor: "pointer" }}>
+                        ✕
                       </button>
                     </div>
                   )}
-                  <MentionTextarea
-                    textareaRef={textareaRef}
-                    value={commentText}
-                    onChange={e => {
-                      setCommentText(e.target.value);
-                      handleMentionChange(e);
-                      const ta = textareaRef.current;
-                      if (ta) { ta.style.height = "auto"; ta.style.height = Math.min(ta.scrollHeight, 120) + "px"; }
-                    }}
-                    placeholder="Scrivi un commento..."
-                    rows={1}
-                    className="flex-1"
-                  />
-                </div>
-                {/* Preview immagine selezionata */}
-                {imagePreview && (
-                  <div className="px-3 pb-2 relative inline-block">
-                    <img src={imagePreview} alt="preview"
-                      className="max-h-32 rounded-xl object-cover border border-gray-200" />
-                    <button type="button"
-                      onClick={() => { setImageFile(null); setImagePreview(null); }}
-                      className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center">
-                      ✕
-                    </button>
-                  </div>
-                )}
-                {(commentText || imageFile) && (
-                  <div className="flex items-center justify-between px-2 pb-2 border-t border-gray-100">
-                    <div className="flex items-center space-x-1">
-                      <EmojiPickerButton onEmojiSelect={emoji => setCommentText(p => p + emoji)} />
-                      {/* Bottone foto */}
-                      <button type="button"
-                        onClick={() => imageInputRef.current?.click()}
-                        className="p-1 text-gray-400 hover:text-blue-500 transition rounded-full hover:bg-gray-100"
-                        title="Aggiungi foto">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
+                  {(commentText || imageFile) && (
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "4px 10px 8px", borderTop: "1px solid var(--nx-border)" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "2px" }}>
+                        <EmojiPickerButton onEmojiSelect={emoji => setCommentText(p => p + emoji)} />
+                        <button type="button"
+                          onClick={() => imageInputRef.current?.click()}
+                          title="Aggiungi foto"
+                          style={{ padding: "4px", color: "var(--nx-text-subtle)", background: "none", border: "none", cursor: "pointer", display: "flex", borderRadius: "50%", transition: "color var(--nx-transition)" }}
+                          onMouseEnter={e => e.currentTarget.style.color = "#7c3aed"}
+                          onMouseLeave={e => e.currentTarget.style.color = "var(--nx-text-subtle)"}>
+                          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                        </button>
+                      </div>
+                      <button type="submit" disabled={submitting || (!commentText.trim() && !imageFile)}
+                        style={{
+                          background: "linear-gradient(135deg,#7c3aed,#06b6d4)", color: "#fff",
+                          fontSize: "11px", fontWeight: 600, padding: "4px 14px",
+                          borderRadius: "var(--nx-radius-full)", border: "none", cursor: "pointer",
+                          opacity: submitting || (!commentText.trim() && !imageFile) ? 0.5 : 1,
+                          transition: "opacity var(--nx-transition)",
+                        }}>
+                        {submitting ? "..." : "Commenta"}
                       </button>
                     </div>
-                    <button type="submit" disabled={submitting || (!commentText.trim() && !imageFile)}
-                      className="bg-blue-500 hover:bg-blue-600 text-white text-xs font-semibold px-3 py-1.5 rounded-full transition disabled:opacity-50">
-                      {submitting ? "..." : "Commenta"}
-                    </button>
-                  </div>
-                )}
-                {/* Input foto nascosto */}
-                <input ref={imageInputRef} type="file" accept="image/*" className="hidden"
-                  onChange={e => {
-                    const file = e.target.files?.[0];
-                    if (!file) return;
-                    if (file.size > 5 * 1024 * 1024) { toast.error("Immagine troppo grande (max 5MB)"); return; }
-                    setImageFile(file);
-                    const reader = new FileReader();
-                    reader.onload = () => setImagePreview(reader.result);
-                    reader.readAsDataURL(file);
-                    e.target.value = "";
-                  }} />
-                </div>{/* end border box */}
-              </div>{/* end relative wrapper */}
+                  )}
+                  <input ref={imageInputRef} type="file" accept="image/*" style={{ display: "none" }}
+                    onChange={e => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      if (file.size > 5 * 1024 * 1024) { toast.error("Immagine troppo grande (max 5MB)"); return; }
+                      setImageFile(file);
+                      const reader = new FileReader();
+                      reader.onload = () => setImagePreview(reader.result);
+                      reader.readAsDataURL(file);
+                      e.target.value = "";
+                    }} />
+                </div>
+              </div>
             </form>
           )}
         </div>

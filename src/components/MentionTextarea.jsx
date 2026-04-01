@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef } from "react";
 
 const MENTION_REGEX = /(#\w+|@[\w.]+)/g;
 
@@ -65,13 +65,12 @@ function MentionTextarea({ value, onChange, placeholder, rows = 1, disabled, cla
   const ref = textareaRef || localRef;
 
   // Sincronizza scroll dell'overlay con la textarea
-  const syncScroll = useCallback(() => {
+  const syncScroll = () => {
     if (ref.current && overlayRef.current) {
       overlayRef.current.scrollTop = ref.current.scrollTop;
       overlayRef.current.scrollLeft = ref.current.scrollLeft;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ref.current]);
+  };
 
   // Aggiorna HTML dell'overlay ogni volta che il valore cambia
   useEffect(() => {
@@ -119,7 +118,7 @@ function MentionTextarea({ value, onChange, placeholder, rows = 1, disabled, cla
           width: "100%",
           resize: "none",
           color: "transparent",
-          caretColor: "#111827",
+          caretColor: "var(--nx-text)",
           background: "transparent",
           outline: "none",
           zIndex: 2,

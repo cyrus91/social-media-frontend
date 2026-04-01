@@ -377,3 +377,8 @@
 .nx-action-btn.active {
   color: #7c3aed;
 }
+/* MentionTextarea — placeholder visibile con colore Nexus */
+.mention-textarea-input::placeholder {
+  color: var(--nx-text-subtle);
+  opacity: 1;
+}

@@ -79,86 +79,63 @@ function AICaptionGenerator({ onCaptionGenerated, imageUrls = [] }) {
   };
 
   return (
-    <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-4 border border-purple-200 mb-4">
+    <div style={{
+      background: "linear-gradient(135deg, rgba(124,58,237,0.08), rgba(6,182,212,0.06))",
+      border: "1px solid rgba(124,58,237,0.2)",
+      borderRadius: "var(--nx-radius-lg)",
+      padding: "14px 16px",
+      marginBottom: "12px",
+    }}>
       {/* Header */}
-      <div className="flex items-center gap-2 mb-3">
-        <svg
-          className="w-5 h-5 text-purple-500"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"
-          />
+      <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px" }}>
+        <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#7c3aed">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+            d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
         </svg>
-        <h3 className="font-semibold text-gray-900">Genera Caption con AI</h3>
+        <h3 style={{ fontWeight: 700, fontSize: "13px", color: "var(--nx-text)" }}>Genera Caption con AI</h3>
       </div>
 
       {/* Tone Selector */}
-      <div className="mb-3">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+      <div style={{ marginBottom: "12px" }}>
+        <label style={{ display: "block", fontSize: "11px", fontWeight: 600, color: "var(--nx-text-muted)", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
           Scegli il tono:
         </label>
-        <div className="grid grid-cols-2 gap-2">
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px" }}>
           {tones.map((t) => (
-            <button
-              type="button"
-              key={t.value}
-              onClick={() => setTone(t.value)}
-              className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                tone === t.value
-                  ? "bg-purple-500 text-white shadow-md"
-                  : "bg-white text-gray-700 hover:bg-purple-100"
-              }`}>
-              <span>{t.emoji}</span>
-              <span>{t.label}</span>
+            <button type="button" key={t.value} onClick={() => setTone(t.value)}
+              style={{
+                display: "flex", alignItems: "center", justifyContent: "center", gap: "6px",
+                padding: "7px 12px", borderRadius: "var(--nx-radius-sm)", fontSize: "12px", fontWeight: 600,
+                border: tone === t.value ? "1.5px solid rgba(124,58,237,0.5)" : "1.5px solid var(--nx-border)",
+                background: tone === t.value ? "rgba(124,58,237,0.12)" : "var(--nx-surface)",
+                color: tone === t.value ? "#7c3aed" : "var(--nx-text-muted)",
+                cursor: "pointer", transition: "all var(--nx-transition)",
+              }}>
+              <span>{t.emoji}</span><span>{t.label}</span>
             </button>
           ))}
         </div>
       </div>
 
       {/* Generate Button */}
-      <button
-        type="button"
-        onClick={handleGenerate}
-        disabled={loading}
-        className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-4 py-2 rounded-lg flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+      <button type="button" onClick={handleGenerate} disabled={loading}
+        style={{
+          width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
+          padding: "8px 16px", background: "linear-gradient(135deg,#7c3aed,#06b6d4)",
+          color: "#fff", border: "none", borderRadius: "var(--nx-radius-sm)",
+          fontSize: "13px", fontWeight: 600, cursor: loading ? "not-allowed" : "pointer",
+          opacity: loading ? 0.7 : 1, transition: "opacity var(--nx-transition)",
+        }}>
         {loading ? (
           <>
-            <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-                fill="none"
-              />
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              />
-            </svg>
+            <div style={{ width: "14px", height: "14px", border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
             <span>Generazione in corso...</span>
           </>
         ) : (
           <>
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"
-              />
+            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
             </svg>
             <span>Genera Caption</span>
           </>
@@ -167,32 +144,32 @@ function AICaptionGenerator({ onCaptionGenerated, imageUrls = [] }) {
 
       {/* Suggestion Display */}
       {showSuggestion && (
-        <div className="mt-4 animate-fade-in">
-          <div className="bg-white rounded-lg p-4 border border-purple-200">
-            <p className="text-gray-800 mb-3">{suggestion}</p>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={handleUse}
-                className="flex-1 bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg transition-colors font-medium">
+        <div style={{ marginTop: "12px" }}>
+          <div style={{
+            background: "var(--nx-surface)", border: "1px solid var(--nx-border)",
+            borderRadius: "var(--nx-radius)", padding: "12px 14px",
+          }}>
+            <p style={{ fontSize: "13px", color: "var(--nx-text)", marginBottom: "10px", lineHeight: 1.5 }}>{suggestion}</p>
+            <div style={{ display: "flex", gap: "8px" }}>
+              <button type="button" onClick={handleUse}
+                style={{
+                  flex: 1, padding: "7px 12px", background: "linear-gradient(135deg,#7c3aed,#06b6d4)",
+                  color: "#fff", border: "none", borderRadius: "var(--nx-radius-sm)",
+                  fontSize: "12px", fontWeight: 600, cursor: "pointer",
+                }}>
                 ✓ Usa questa caption
               </button>
-              <button
-                type="button"
-                onClick={handleGenerate}
-                disabled={loading}
-                className="flex items-center gap-2 bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg transition-colors font-medium disabled:opacity-50">
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                  />
+              <button type="button" onClick={handleGenerate} disabled={loading}
+                style={{
+                  display: "flex", alignItems: "center", gap: "6px",
+                  padding: "7px 12px", background: "var(--nx-surface-2)",
+                  color: "var(--nx-text-muted)", border: "1px solid var(--nx-border)",
+                  borderRadius: "var(--nx-radius-sm)", fontSize: "12px", fontWeight: 600,
+                  cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.5 : 1,
+                }}>
+                <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
                 Rigenera
               </button>
