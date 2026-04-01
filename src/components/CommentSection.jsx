@@ -90,15 +90,20 @@ function ReactionButton({ comment, onReact, disabled }) {
       {/* Bottone Mi piace */}
       <button
         onClick={handleClick}
-        onMouseEnter={handleButtonMouseEnter}
-        onMouseLeave={handleButtonMouseLeave}
+        onMouseEnter={e => { handleButtonMouseEnter(); e.currentTarget.style.background = "rgba(124,58,237,0.08)"; e.currentTarget.style.color = "#7c3aed"; }}
+        onMouseLeave={e => { handleButtonMouseLeave(); e.currentTarget.style.background = "none"; e.currentTarget.style.color = isLiked ? "#7c3aed" : "var(--nx-text-muted)"; }}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
         disabled={disabled}
-        className={`flex items-center space-x-1 text-xs font-semibold px-2 py-1 rounded-lg transition hover:bg-gray-100 disabled:opacity-50 ${
-          isLiked ? "text-blue-500" : "text-gray-500"
-        }`}>
-        <span className="text-sm">{myReaction || "👍"}</span>
+        style={{
+          display: "flex", alignItems: "center", gap: "4px",
+          fontSize: "11px", fontWeight: 700, padding: "3px 8px",
+          borderRadius: "var(--nx-radius-sm)", border: "none", cursor: "pointer",
+          background: "none", transition: "all var(--nx-transition)",
+          color: isLiked ? "#7c3aed" : "var(--nx-text-muted)",
+          opacity: disabled ? 0.5 : 1,
+        }}>
+        <span style={{ fontSize: "13px" }}>{myReaction || "👍"}</span>
         <span>{label}</span>
       </button>
     </div>
