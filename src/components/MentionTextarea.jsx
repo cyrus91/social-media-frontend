@@ -118,6 +118,7 @@ function MentionTextarea({ value, onChange, placeholder, rows = 1, disabled, cla
           width: "100%",
           resize: "none",
           color: "transparent",
+          WebkitTextFillColor: "transparent",
           caretColor: "var(--nx-text)",
           background: "transparent",
           outline: "none",
