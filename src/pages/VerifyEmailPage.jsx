@@ -9,72 +9,36 @@ function VerifyEmailPage() {
 
   useEffect(() => {
     if (!token) return;
-
-    verifyEmail(token).then((result) => {
-      if (result.success) {
-        setStatus("success");
-      } else if (result.expired) {
-        setStatus("expired");
-      } else {
-        setStatus("error");
-      }
+    verifyEmail(token).then(result => {
+      if (result.success) setStatus("success");
+      else if (result.expired) setStatus("expired");
+      else setStatus("error");
     });
   }, [token]);
 
+  const STATES = {
+    loading: { emoji: "⏳", title: "Verifica in corso...", text: "", btnLabel: null, btnStyle: null },
+    success: { emoji: "🎉", title: "Email verificata!", text: "Il tuo account è attivo. Puoi ora accedere al social.", btnLabel: "Vai al Login", btnStyle: "linear-gradient(135deg,#7c3aed,#06b6d4)" },
+    expired: { emoji: "⏰", title: "Link scaduto", text: "Il link di verifica è scaduto. Accedi e richiedi un nuovo link.", btnLabel: "Vai al Login", btnStyle: "linear-gradient(135deg,#f97316,#ef4444)" },
+    error:   { emoji: "❌", title: "Link non valido", text: "Il link di verifica non è valido o è già stato usato.", btnLabel: "Vai al Login", btnStyle: "linear-gradient(135deg,#6b7280,#4b5563)" },
+  };
+
+  const s = STATES[status] || STATES.error;
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-500 to-purple-600 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md text-center">
-
-        {status === "loading" && (
-          <>
-            <div className="animate-spin text-5xl mb-4">⏳</div>
-            <h2 className="text-xl font-bold text-gray-800">Verifica in corso...</h2>
-          </>
-        )}
-
-        {status === "success" && (
-          <>
-            <div className="text-6xl mb-4">🎉</div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-3">Email verificata!</h2>
-            <p className="text-gray-600 mb-6">
-              Il tuo account è attivo. Puoi ora accedere al social.
-            </p>
-            <Link
-              to="/login"
-              className="inline-block w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold py-3 rounded-lg transition hover:opacity-90">
-              Vai al Login
-            </Link>
-          </>
-        )}
-
-        {status === "expired" && (
-          <>
-            <div className="text-6xl mb-4">⏰</div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-3">Link scaduto</h2>
-            <p className="text-gray-600 mb-6">
-              Il link di verifica è scaduto. Accedi e richiedi un nuovo link.
-            </p>
-            <Link
-              to="/login"
-              className="inline-block w-full bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-3 rounded-lg transition">
-              Vai al Login
-            </Link>
-          </>
-        )}
-
-        {status === "error" && (
-          <>
-            <div className="text-6xl mb-4">❌</div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-3">Link non valido</h2>
-            <p className="text-gray-600 mb-6">
-              Il link di verifica non è valido o è già stato usato.
-            </p>
-            <Link
-              to="/login"
-              className="inline-block w-full bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 rounded-lg transition">
-              Vai al Login
-            </Link>
-          </>
+    <div style={{ minHeight: "100dvh", background: "var(--nx-grad-brand)", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}>
+      <div style={{ background: "var(--nx-surface)", border: "1px solid var(--nx-border)", borderRadius: "var(--nx-radius-xl)", boxShadow: "var(--nx-shadow-lg)", padding: "40px 32px", maxWidth: "420px", width: "100%", textAlign: "center" }}>
+        <div style={{ fontSize: status === "loading" ? "48px" : "56px", marginBottom: "16px", animation: status === "loading" ? "spin 1.5s linear infinite" : "none", display: "inline-block" }}>
+          {s.emoji}
+        </div>
+        <h2 style={{ fontWeight: 800, fontSize: "22px", color: "var(--nx-text)", marginBottom: "10px" }}>{s.title}</h2>
+        {s.text && <p style={{ fontSize: "14px", color: "var(--nx-text-muted)", marginBottom: "24px", lineHeight: 1.6 }}>{s.text}</p>}
+        {s.btnLabel && (
+          <Link to="/login" style={{ display: "block", width: "100%", background: s.btnStyle, color: "#fff", borderRadius: "var(--nx-radius-full)", padding: "12px 0", fontSize: "14px", fontWeight: 600, textDecoration: "none", transition: "opacity var(--nx-transition)" }}
+            onMouseEnter={e => e.currentTarget.style.opacity = "0.85"}
+            onMouseLeave={e => e.currentTarget.style.opacity = "1"}>
+            {s.btnLabel}
+          </Link>
         )}
       </div>
     </div>

@@ -4,8 +4,12 @@ import api from "../services/api";
 import toast from "react-hot-toast";
 import useAuthStore from "../store/authStore";
 
+const SPINNER = (
+  <div style={{ width: "22px", height: "22px", border: "3px solid rgba(124,58,237,0.2)", borderTopColor: "#7c3aed", borderRadius: "50%", animation: "spin 0.7s linear infinite", margin: "0 auto" }} />
+);
+
 function AdminPage() {
-  const currentUser = useAuthStore((state) => state.user);
+  const currentUser = useAuthStore(s => s.user);
   const [activeTab, setActiveTab] = useState("stats");
   const [stats, setStats] = useState(null);
   const [users, setUsers] = useState([]);
@@ -13,37 +17,26 @@ function AdminPage() {
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
 
-  useEffect(() => {
-    fetchStats();
-  }, []);
-
+  useEffect(() => { fetchStats(); }, []);
   useEffect(() => {
     if (activeTab === "users") fetchUsers();
     if (activeTab === "posts") fetchPosts();
   }, [activeTab]);
 
   const fetchStats = async () => {
-    try {
-      const res = await api.get("/admin/stats");
-      setStats(res.data);
-    } catch { toast.error("Errore caricamento statistiche"); }
+    try { const res = await api.get("/admin/stats"); setStats(res.data); }
+    catch { toast.error("Errore caricamento statistiche"); }
   };
-
   const fetchUsers = async () => {
     setLoading(true);
-    try {
-      const res = await api.get("/admin/users");
-      setUsers(res.data);
-    } catch { toast.error("Errore caricamento utenti"); }
+    try { const res = await api.get("/admin/users"); setUsers(res.data); }
+    catch { toast.error("Errore caricamento utenti"); }
     finally { setLoading(false); }
   };
-
   const fetchPosts = async () => {
     setLoading(true);
-    try {
-      const res = await api.get("/admin/posts");
-      setPosts(res.data);
-    } catch { toast.error("Errore caricamento post"); }
+    try { const res = await api.get("/admin/posts"); setPosts(res.data); }
+    catch { toast.error("Errore caricamento post"); }
     finally { setLoading(false); }
   };
 
@@ -51,77 +44,76 @@ function AdminPage() {
     if (!confirm(`${banned ? "Sbanna" : "Banna"} @${username}?`)) return;
     try {
       const res = await api.put(`/admin/users/${userId}/ban`);
-      setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, banned: res.data.banned } : u));
+      setUsers(prev => prev.map(u => u.id === userId ? { ...u, banned: res.data.banned } : u));
       toast.success(`@${username} ${res.data.banned ? "bannato" : "sbannato"}`);
     } catch (e) { toast.error(e.response?.data?.message || "Errore"); }
   };
-
   const handleRole = async (userId, username, currentRole) => {
     const newRole = currentRole === "ADMIN" ? "USER" : "ADMIN";
     if (!confirm(`Cambia ruolo di @${username} a ${newRole}?`)) return;
     try {
       const res = await api.put(`/admin/users/${userId}/role`, null, { params: { role: newRole } });
-      setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, role: res.data.role } : u));
+      setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: res.data.role } : u));
       toast.success(`Ruolo di @${username} aggiornato a ${newRole}`);
     } catch (e) { toast.error(e.response?.data?.message || "Errore"); }
   };
-
   const handleDeleteUser = async (userId, username) => {
     if (!confirm(`Elimina definitivamente @${username}? Questa azione è irreversibile.`)) return;
-    try {
-      await api.delete(`/admin/users/${userId}`);
-      setUsers((prev) => prev.filter((u) => u.id !== userId));
-      toast.success(`@${username} eliminato`);
-      fetchStats();
-    } catch (e) { toast.error(e.response?.data?.message || "Errore"); }
+    try { await api.delete(`/admin/users/${userId}`); setUsers(prev => prev.filter(u => u.id !== userId)); toast.success(`@${username} eliminato`); fetchStats(); }
+    catch (e) { toast.error(e.response?.data?.message || "Errore"); }
   };
-
   const handleDeletePost = async (postId) => {
     if (!confirm("Elimina questo post?")) return;
-    try {
-      await api.delete(`/admin/posts/${postId}`);
-      setPosts((prev) => prev.filter((p) => p.id !== postId));
-      toast.success("Post eliminato");
-      fetchStats();
-    } catch (e) { toast.error(e.response?.data?.message || "Errore"); }
+    try { await api.delete(`/admin/posts/${postId}`); setPosts(prev => prev.filter(p => p.id !== postId)); toast.success("Post eliminato"); fetchStats(); }
+    catch (e) { toast.error(e.response?.data?.message || "Errore"); }
   };
 
-  const filteredUsers = users.filter((u) =>
+  const filteredUsers = users.filter(u =>
     u.username.toLowerCase().includes(search.toLowerCase()) ||
     u.email.toLowerCase().includes(search.toLowerCase())
   );
 
-  const StatCard = ({ label, value, color }) => (
-    <div className={`bg-white rounded-xl shadow-sm p-6 border-l-4 ${color}`}>
-      <p className="text-sm text-gray-500 font-medium">{label}</p>
-      <p className="text-3xl font-bold text-gray-800 mt-1">{value ?? "..."}</p>
-    </div>
-  );
+  const STAT_COLORS = [
+    { label: "Utenti totali", key: "totalUsers", accent: "#7c3aed" },
+    { label: "Post totali", key: "totalPosts", accent: "#0891b2" },
+    { label: "Commenti totali", key: "totalComments", accent: "#f59e0b" },
+    { label: "Utenti bannati", key: "bannedUsers", accent: "#ef4444" },
+    { label: "Admin", key: "adminUsers", accent: "#8b5cf6" },
+  ];
 
-  const tabs = [
+  const TABS = [
     { id: "stats", label: "📊 Statistiche" },
     { id: "users", label: "👥 Utenti" },
     { id: "posts", label: "📝 Post" },
   ];
 
+  const TH = ({ children, center }) => (
+    <th style={{ padding: "10px 14px", textAlign: center ? "center" : "left", fontSize: "11px", fontWeight: 700, color: "var(--nx-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", background: "var(--nx-surface-2)", borderBottom: "1px solid var(--nx-border)" }}>
+      {children}
+    </th>
+  );
+  const TD = ({ children, center, muted }) => (
+    <td style={{ padding: "12px 14px", textAlign: center ? "center" : "left", fontSize: "13px", color: muted ? "var(--nx-text-muted)" : "var(--nx-text)", borderBottom: "1px solid var(--nx-border)" }}>
+      {children}
+    </td>
+  );
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="nx-page">
       <Navbar />
-      <div className="max-w-6xl mx-auto px-4 py-6">
+      <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "24px 16px 60px" }}>
 
         {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">🛡️ Pannello Admin</h1>
-          <p className="text-sm text-gray-500 mt-1">Gestisci utenti, contenuti e monitora le statistiche</p>
+        <div style={{ marginBottom: "20px" }}>
+          <h1 style={{ fontWeight: 800, fontSize: "22px", color: "var(--nx-text)" }}>🛡️ Pannello Admin</h1>
+          <p style={{ fontSize: "13px", color: "var(--nx-text-muted)", marginTop: "4px" }}>Gestisci utenti, contenuti e monitora le statistiche</p>
         </div>
 
         {/* Tabs */}
-        <div className="flex space-x-1 bg-white rounded-xl shadow-sm p-1 mb-6 w-fit">
-          {tabs.map((tab) => (
+        <div style={{ display: "flex", gap: "4px", background: "var(--nx-surface)", border: "1px solid var(--nx-border)", borderRadius: "var(--nx-radius-lg)", padding: "4px", marginBottom: "20px", width: "fit-content", boxShadow: "var(--nx-shadow-sm)" }}>
+          {TABS.map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
-                activeTab === tab.id ? "bg-blue-500 text-white shadow" : "text-gray-600 hover:bg-gray-100"
-              }`}>
+              style={{ padding: "7px 16px", borderRadius: "var(--nx-radius-sm)", fontSize: "13px", fontWeight: 600, border: "none", cursor: "pointer", transition: "all var(--nx-transition)", background: activeTab === tab.id ? "linear-gradient(135deg,#7c3aed,#06b6d4)" : "none", color: activeTab === tab.id ? "#fff" : "var(--nx-text-muted)" }}>
               {tab.label}
             </button>
           ))}
@@ -129,107 +121,91 @@ function AdminPage() {
 
         {/* STATS */}
         {activeTab === "stats" && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-            <StatCard label="Utenti totali" value={stats?.totalUsers} color="border-blue-500" />
-            <StatCard label="Post totali" value={stats?.totalPosts} color="border-green-500" />
-            <StatCard label="Commenti totali" value={stats?.totalComments} color="border-yellow-500" />
-            <StatCard label="Utenti bannati" value={stats?.bannedUsers} color="border-red-500" />
-            <StatCard label="Admin" value={stats?.adminUsers} color="border-purple-500" />
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "12px" }}>
+            {STAT_COLORS.map(({ label, key, accent }) => (
+              <div key={key} style={{ background: "var(--nx-surface)", border: "1px solid var(--nx-border)", borderRadius: "var(--nx-radius-lg)", padding: "20px 16px", borderLeft: `4px solid ${accent}`, boxShadow: "var(--nx-shadow-sm)" }}>
+                <p style={{ fontSize: "11px", fontWeight: 700, color: "var(--nx-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "6px" }}>{label}</p>
+                <p style={{ fontSize: "28px", fontWeight: 800, color: "var(--nx-text)" }}>{stats?.[key] ?? "..."}</p>
+              </div>
+            ))}
           </div>
         )}
 
         {/* USERS */}
         {activeTab === "users" && (
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-            <div className="p-4 border-b border-gray-100">
-              <input
-                type="text"
-                placeholder="Cerca per username o email..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full sm:w-80 px-4 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            {loading ? (
-              <div className="flex justify-center py-12">
-                <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          <div style={{ background: "var(--nx-surface)", border: "1px solid var(--nx-border)", borderRadius: "var(--nx-radius-lg)", overflow: "hidden", boxShadow: "var(--nx-shadow-sm)" }}>
+            <div style={{ padding: "14px 16px", borderBottom: "1px solid var(--nx-border)" }}>
+              <div style={{ position: "relative", display: "inline-block" }}>
+                <svg width="14" height="14" fill="none" stroke="var(--nx-text-subtle)" viewBox="0 0 24 24" style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}>
+                  <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input type="text" placeholder="Cerca per username o email..." value={search} onChange={e => setSearch(e.target.value)}
+                  style={{ paddingLeft: "30px", paddingRight: "12px", paddingTop: "7px", paddingBottom: "7px", width: "280px", background: "var(--nx-surface-2)", border: "1.5px solid var(--nx-border)", borderRadius: "var(--nx-radius-full)", fontSize: "13px", color: "var(--nx-text)", outline: "none", transition: "border-color var(--nx-transition)" }}
+                  onFocus={e => e.target.style.borderColor = "rgba(124,58,237,0.5)"}
+                  onBlur={e => e.target.style.borderColor = "var(--nx-border)"} />
               </div>
+            </div>
+            {loading ? (
+              <div style={{ padding: "48px 0", display: "flex", justifyContent: "center" }}>{SPINNER}</div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="bg-gray-50 text-gray-600 text-xs uppercase">
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <thead>
                     <tr>
-                      <th className="px-4 py-3 text-left">Utente</th>
-                      <th className="px-4 py-3 text-left">Email</th>
-                      <th className="px-4 py-3 text-center">Post</th>
-                      <th className="px-4 py-3 text-center">Ruolo</th>
-                      <th className="px-4 py-3 text-center">Stato</th>
-                      <th className="px-4 py-3 text-center">Azioni</th>
+                      <TH>Utente</TH><TH>Email</TH><TH center>Post</TH><TH center>Ruolo</TH><TH center>Stato</TH><TH center>Azioni</TH>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {filteredUsers.map((user) => (
-                      <tr key={user.id} className={`hover:bg-gray-50 transition ${user.banned ? "opacity-60" : ""}`}>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center space-x-2">
+                  <tbody>
+                    {filteredUsers.map(user => (
+                      <tr key={user.id} style={{ opacity: user.banned ? 0.6 : 1, transition: "background var(--nx-transition)" }}
+                        onMouseEnter={e => e.currentTarget.style.background = "rgba(124,58,237,0.03)"}
+                        onMouseLeave={e => e.currentTarget.style.background = "none"}>
+                        <TD>
+                          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                             {user.avatarUrl ? (
-                              <img src={user.avatarUrl} alt={user.username}
-                                className="w-8 h-8 rounded-full object-cover" />
+                              <img src={user.avatarUrl} alt={user.username} style={{ width: "30px", height: "30px", borderRadius: "50%", objectFit: "cover" }} />
                             ) : (
-                              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-xs">
+                              <div className="nx-avatar-gradient" style={{ width: "30px", height: "30px", fontSize: "11px" }}>
                                 {user.username?.charAt(0).toUpperCase()}
                               </div>
                             )}
-                            <span className="font-medium text-gray-800">@{user.username}</span>
+                            <span style={{ fontWeight: 600 }}>@{user.username}</span>
                           </div>
-                        </td>
-                        <td className="px-4 py-3 text-gray-500">{user.email}</td>
-                        <td className="px-4 py-3 text-center text-gray-600">{user.postCount || 0}</td>
-                        <td className="px-4 py-3 text-center">
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
-                            user.role === "ADMIN" ? "bg-purple-100 text-purple-700" : "bg-gray-100 text-gray-600"
-                          }`}>
+                        </TD>
+                        <TD muted>{user.email}</TD>
+                        <TD center muted>{user.postCount || 0}</TD>
+                        <TD center>
+                          <span style={{ padding: "2px 8px", borderRadius: "var(--nx-radius-full)", fontSize: "11px", fontWeight: 700, background: user.role === "ADMIN" ? "rgba(124,58,237,0.12)" : "var(--nx-surface-2)", color: user.role === "ADMIN" ? "#7c3aed" : "var(--nx-text-muted)", border: `1px solid ${user.role === "ADMIN" ? "rgba(124,58,237,0.3)" : "var(--nx-border)"}` }}>
                             {user.role || "USER"}
                           </span>
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
-                            user.banned
-                              ? "bg-red-100 text-red-700"
-                              : !user.emailVerified
-                              ? "bg-yellow-100 text-yellow-700"
-                              : "bg-green-100 text-green-700"
-                          }`}>
-                            {user.banned ? "Bannato" : !user.emailVerified ? "In attesa conferma" : "Attivo"}
+                        </TD>
+                        <TD center>
+                          <span style={{ padding: "2px 8px", borderRadius: "var(--nx-radius-full)", fontSize: "11px", fontWeight: 700, background: user.banned ? "rgba(239,68,68,0.1)" : !user.emailVerified ? "rgba(245,158,11,0.1)" : "rgba(34,197,94,0.1)", color: user.banned ? "#ef4444" : !user.emailVerified ? "#f59e0b" : "#16a34a", border: `1px solid ${user.banned ? "rgba(239,68,68,0.25)" : !user.emailVerified ? "rgba(245,158,11,0.25)" : "rgba(34,197,94,0.25)"}` }}>
+                            {user.banned ? "Bannato" : !user.emailVerified ? "In attesa" : "Attivo"}
                           </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center justify-center space-x-2">
-                            {user.id !== currentUser?.id && (
-                              <>
-                                <button onClick={() => handleBan(user.id, user.username, user.banned)}
-                                  className={`px-2 py-1 rounded text-xs font-semibold transition ${
-                                    user.banned
-                                      ? "bg-green-100 text-green-700 hover:bg-green-200"
-                                      : "bg-yellow-100 text-yellow-700 hover:bg-yellow-200"
-                                  }`}>
-                                  {user.banned ? "Sbanna" : "Banna"}
-                                </button>
-                                <button onClick={() => handleRole(user.id, user.username, user.role)}
-                                  className="px-2 py-1 rounded text-xs font-semibold bg-purple-100 text-purple-700 hover:bg-purple-200 transition">
-                                  {user.role === "ADMIN" ? "→ USER" : "→ ADMIN"}
-                                </button>
-                                <button onClick={() => handleDeleteUser(user.id, user.username)}
-                                  className="px-2 py-1 rounded text-xs font-semibold bg-red-100 text-red-700 hover:bg-red-200 transition">
-                                  Elimina
-                                </button>
-                              </>
-                            )}
-                            {user.id === currentUser?.id && (
-                              <span className="text-xs text-gray-400 italic">Tu</span>
-                            )}
-                          </div>
+                        </TD>
+                        <td style={{ padding: "12px 14px", textAlign: "center", borderBottom: "1px solid var(--nx-border)" }}>
+                          {user.id !== currentUser?.id ? (
+                            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+                              <button onClick={() => handleBan(user.id, user.username, user.banned)}
+                                style={{ padding: "3px 10px", borderRadius: "var(--nx-radius-sm)", fontSize: "11px", fontWeight: 700, cursor: "pointer", border: "none", background: user.banned ? "rgba(34,197,94,0.12)" : "rgba(245,158,11,0.12)", color: user.banned ? "#16a34a" : "#d97706", transition: "opacity var(--nx-transition)" }}
+                                onMouseEnter={e => e.currentTarget.style.opacity = "0.75"} onMouseLeave={e => e.currentTarget.style.opacity = "1"}>
+                                {user.banned ? "Sbanna" : "Banna"}
+                              </button>
+                              <button onClick={() => handleRole(user.id, user.username, user.role)}
+                                style={{ padding: "3px 10px", borderRadius: "var(--nx-radius-sm)", fontSize: "11px", fontWeight: 700, cursor: "pointer", border: "none", background: "rgba(124,58,237,0.1)", color: "#7c3aed", transition: "opacity var(--nx-transition)" }}
+                                onMouseEnter={e => e.currentTarget.style.opacity = "0.75"} onMouseLeave={e => e.currentTarget.style.opacity = "1"}>
+                                {user.role === "ADMIN" ? "→ USER" : "→ ADMIN"}
+                              </button>
+                              <button onClick={() => handleDeleteUser(user.id, user.username)}
+                                style={{ padding: "3px 10px", borderRadius: "var(--nx-radius-sm)", fontSize: "11px", fontWeight: 700, cursor: "pointer", border: "none", background: "rgba(239,68,68,0.1)", color: "#ef4444", transition: "opacity var(--nx-transition)" }}
+                                onMouseEnter={e => e.currentTarget.style.opacity = "0.75"} onMouseLeave={e => e.currentTarget.style.opacity = "1"}>
+                                Elimina
+                              </button>
+                            </div>
+                          ) : (
+                            <span style={{ fontSize: "11px", color: "var(--nx-text-subtle)", fontStyle: "italic" }}>Tu</span>
+                          )}
                         </td>
                       </tr>
                     ))}
@@ -242,35 +218,32 @@ function AdminPage() {
 
         {/* POSTS */}
         {activeTab === "posts" && (
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          <div style={{ background: "var(--nx-surface)", border: "1px solid var(--nx-border)", borderRadius: "var(--nx-radius-lg)", overflow: "hidden", boxShadow: "var(--nx-shadow-sm)" }}>
             {loading ? (
-              <div className="flex justify-center py-12">
-                <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-              </div>
+              <div style={{ padding: "48px 0", display: "flex", justifyContent: "center" }}>{SPINNER}</div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="bg-gray-50 text-gray-600 text-xs uppercase">
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <thead>
                     <tr>
-                      <th className="px-4 py-3 text-left">Autore</th>
-                      <th className="px-4 py-3 text-left">Contenuto</th>
-                      <th className="px-4 py-3 text-center">Commenti</th>
-                      <th className="px-4 py-3 text-center">Data</th>
-                      <th className="px-4 py-3 text-center">Azioni</th>
+                      <TH>Autore</TH><TH>Contenuto</TH><TH center>Commenti</TH><TH center>Data</TH><TH center>Azioni</TH>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {posts.map((post) => (
-                      <tr key={post.id} className="hover:bg-gray-50 transition">
-                        <td className="px-4 py-3 font-medium text-gray-800">@{post.authorUsername}</td>
-                        <td className="px-4 py-3 text-gray-600 max-w-xs truncate">{post.content || "—"}</td>
-                        <td className="px-4 py-3 text-center text-gray-600">{post.commentCount || 0}</td>
-                        <td className="px-4 py-3 text-center text-gray-500 text-xs">
-                          {new Date(post.createdAt).toLocaleDateString("it-IT")}
+                  <tbody>
+                    {posts.map(post => (
+                      <tr key={post.id} style={{ transition: "background var(--nx-transition)" }}
+                        onMouseEnter={e => e.currentTarget.style.background = "rgba(124,58,237,0.03)"}
+                        onMouseLeave={e => e.currentTarget.style.background = "none"}>
+                        <TD><span style={{ fontWeight: 600 }}>@{post.authorUsername}</span></TD>
+                        <td style={{ padding: "12px 14px", fontSize: "13px", color: "var(--nx-text-muted)", maxWidth: "300px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", borderBottom: "1px solid var(--nx-border)" }}>
+                          {post.content || "—"}
                         </td>
-                        <td className="px-4 py-3 text-center">
+                        <TD center muted>{post.commentCount || 0}</TD>
+                        <TD center muted>{new Date(post.createdAt).toLocaleDateString("it-IT")}</TD>
+                        <td style={{ padding: "12px 14px", textAlign: "center", borderBottom: "1px solid var(--nx-border)" }}>
                           <button onClick={() => handleDeletePost(post.id)}
-                            className="px-2 py-1 rounded text-xs font-semibold bg-red-100 text-red-700 hover:bg-red-200 transition">
+                            style={{ padding: "3px 10px", borderRadius: "var(--nx-radius-sm)", fontSize: "11px", fontWeight: 700, cursor: "pointer", border: "none", background: "rgba(239,68,68,0.1)", color: "#ef4444", transition: "opacity var(--nx-transition)" }}
+                            onMouseEnter={e => e.currentTarget.style.opacity = "0.75"} onMouseLeave={e => e.currentTarget.style.opacity = "1"}>
                             Elimina
                           </button>
                         </td>

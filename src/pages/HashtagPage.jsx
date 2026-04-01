@@ -17,107 +17,66 @@ function HashtagPage() {
   const fetchPosts = async (pageNum = 0, reset = false) => {
     setLoading(true);
     try {
-      const response = await api.get(`/posts/hashtag/${tag}`, {
-        params: { page: pageNum, size: 20 },
-      });
-      const data = response.data;
+      const res = await api.get(`/posts/hashtag/${tag}`, { params: { page: pageNum, size: 20 } });
+      const data = res.data;
       const newPosts = data.content || [];
-
-      if (reset) {
-        setPosts(newPosts);
-      } else {
-        setPosts((prev) => [...prev, ...newPosts]);
-      }
-
+      if (reset) setPosts(newPosts); else setPosts(prev => [...prev, ...newPosts]);
       setHasMore(!data.last);
       setTotalElements(data.totalElements || 0);
       setPage(pageNum);
-    } catch (err) {
-      console.error("Errore ricerca hashtag:", err);
-    } finally {
-      setLoading(false);
-    }
+    } catch (err) { console.error("Errore ricerca hashtag:", err); }
+    finally { setLoading(false); }
   };
 
-  useEffect(() => {
-    setPosts([]);
-    setPage(0);
-    setHasMore(true);
-    fetchPosts(0, true);
-  }, [tag]);
+  useEffect(() => { setPosts([]); setPage(0); setHasMore(true); fetchPosts(0, true); }, [tag]);
 
-  const handleLikeUpdate = (postId, isLiked) => {
-    setPosts((prev) =>
-      prev.map((p) =>
-        p.id === postId
-          ? { ...p, liked: isLiked, likeCount: isLiked ? p.likeCount + 1 : p.likeCount - 1 }
-          : p
-      )
-    );
-  };
-
-  const handlePostDeleted = (postId) => {
-    setPosts((prev) => prev.filter((p) => p.id !== postId));
-    setTotalElements((prev) => prev - 1);
-  };
-
-  const handlePostUpdated = (postId, updatedData) => {
-    setPosts((prev) =>
-      prev.map((p) => (p.id === postId ? { ...p, ...updatedData } : p))
-    );
-  };
+  const handleLikeUpdate = (postId, isLiked) =>
+    setPosts(prev => prev.map(p => p.id === postId ? { ...p, liked: isLiked, likeCount: isLiked ? p.likeCount + 1 : p.likeCount - 1 } : p));
+  const handlePostDeleted = (postId) => { setPosts(prev => prev.filter(p => p.id !== postId)); setTotalElements(prev => prev - 1); };
+  const handlePostUpdated = (postId, updatedData) =>
+    setPosts(prev => prev.map(p => p.id === postId ? { ...p, ...updatedData } : p));
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="nx-page">
       <Navbar />
-      <div className="max-w-2xl mx-auto px-4 py-6">
+      <div style={{ maxWidth: "680px", margin: "0 auto", padding: "20px 16px 60px" }}>
 
         {/* Header */}
-        <div className="bg-white rounded-xl shadow-sm p-5 mb-6 flex items-center space-x-4">
-          <button
-            onClick={() => navigate(-1)}
-            className="text-gray-400 hover:text-gray-600 transition p-1 rounded-full hover:bg-gray-100">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div style={{ background: "var(--nx-surface)", border: "1px solid var(--nx-border)", borderRadius: "var(--nx-radius-lg)", padding: "14px 16px", marginBottom: "16px", display: "flex", alignItems: "center", gap: "12px", boxShadow: "var(--nx-shadow-sm)" }}>
+          <button onClick={() => navigate(-1)}
+            style={{ padding: "6px", borderRadius: "50%", background: "none", border: "none", cursor: "pointer", color: "var(--nx-text-muted)", display: "flex", transition: "all var(--nx-transition)" }}
+            onMouseEnter={e => { e.currentTarget.style.background = "rgba(124,58,237,0.08)"; e.currentTarget.style.color = "#7c3aed"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "none"; e.currentTarget.style.color = "var(--nx-text-muted)"; }}>
+            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </button>
           <div>
-            <h1 className="text-xl font-bold text-gray-900">#{tag}</h1>
-            {!loading && (
-              <p className="text-sm text-gray-500">
-                {totalElements} {totalElements === 1 ? "post" : "post"}
-              </p>
-            )}
+            <h1 style={{ fontWeight: 800, fontSize: "18px", color: "var(--nx-text)" }}>#{tag}</h1>
+            {!loading && <p style={{ fontSize: "12px", color: "var(--nx-text-muted)" }}>{totalElements} post</p>}
           </div>
         </div>
 
         {/* Posts */}
         {loading && posts.length === 0 ? (
-          <div className="flex justify-center py-12"><LoadingSpinner /></div>
+          <div style={{ display: "flex", justifyContent: "center", padding: "48px 0" }}><LoadingSpinner /></div>
         ) : posts.length === 0 ? (
-          <div className="bg-white rounded-xl shadow-sm p-12 text-center">
-            <div className="text-5xl mb-4">#️⃣</div>
-            <h2 className="text-xl font-bold text-gray-800 mb-2">Nessun post trovato</h2>
-            <p className="text-gray-500">Nessun post contiene l'hashtag #{tag}</p>
+          <div style={{ background: "var(--nx-surface)", border: "1px solid var(--nx-border)", borderRadius: "var(--nx-radius-lg)", padding: "48px 24px", textAlign: "center" }}>
+            <div style={{ fontSize: "40px", marginBottom: "12px" }}>#️⃣</div>
+            <h2 style={{ fontWeight: 700, fontSize: "16px", color: "var(--nx-text)", marginBottom: "6px" }}>Nessun post trovato</h2>
+            <p style={{ fontSize: "13px", color: "var(--nx-text-muted)" }}>Nessun post contiene l'hashtag #{tag}</p>
           </div>
         ) : (
-          <div className="space-y-4">
-            {posts.map((post) => (
-              <PostCard
-                key={post.id}
-                post={post}
-                onLikeUpdate={handleLikeUpdate}
-                onPostDeleted={handlePostDeleted}
-                onPostUpdated={handlePostUpdated}
-              />
+          <div style={{ display: "flex", flexDirection: "column", gap: "0" }}>
+            {posts.map(post => (
+              <PostCard key={post.id} post={post} onLikeUpdate={handleLikeUpdate} onPostDeleted={handlePostDeleted} onPostUpdated={handlePostUpdated} />
             ))}
-
             {hasMore && (
-              <div className="flex justify-center pt-2">
-                <button
-                  onClick={() => fetchPosts(page + 1)}
-                  disabled={loading}
-                  className="bg-white border border-gray-300 text-gray-700 px-6 py-2 rounded-full text-sm font-semibold hover:bg-gray-50 transition disabled:opacity-50">
+              <div style={{ display: "flex", justifyContent: "center", paddingTop: "16px" }}>
+                <button onClick={() => fetchPosts(page + 1)} disabled={loading}
+                  style={{ background: "var(--nx-surface)", border: "1.5px solid var(--nx-border)", color: "var(--nx-text-muted)", padding: "8px 24px", borderRadius: "var(--nx-radius-full)", fontSize: "13px", fontWeight: 600, cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.5 : 1, transition: "all var(--nx-transition)" }}
+                  onMouseEnter={e => { if (!loading) { e.currentTarget.style.borderColor = "rgba(124,58,237,0.4)"; e.currentTarget.style.color = "#7c3aed"; } }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--nx-border)"; e.currentTarget.style.color = "var(--nx-text-muted)"; }}>
                   {loading ? "Caricamento..." : "Carica altri"}
                 </button>
               </div>
