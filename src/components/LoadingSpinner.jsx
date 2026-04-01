@@ -1,26 +1,25 @@
-function LoadingSpinner({ size = 'md', text = 'Caricamento...' }) {
-  // Dimensioni dello spinner
-  const sizes = {
-    sm: 'w-6 h-6 border-2',
-    md: 'w-10 h-10 border-3',
-    lg: 'w-16 h-16 border-4',
-  }
-  
+function LoadingSpinner({ size = "md", text = "Caricamento..." }) {
+  const sizeMap = { sm: 24, md: 40, lg: 56 };
+  const borderMap = { sm: 2, md: 3, lg: 4 };
+  const px = sizeMap[size] ?? 40;
+  const bw = borderMap[size] ?? 3;
+
   return (
-    <div className="flex flex-col items-center justify-center p-8">
-      {/* Spinner circolare */}
-      <div
-        className={`${sizes[size]} border-blue-500 border-t-transparent rounded-full animate-spin`}
-      />
-      
-      {/* Testo sotto lo spinner */}
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "32px" }}>
+      <div style={{
+        width: px, height: px,
+        border: `${bw}px solid rgba(124,58,237,0.2)`,
+        borderTopColor: "#7c3aed",
+        borderRadius: "50%",
+        animation: "spin 0.7s linear infinite",
+      }} />
       {text && (
-        <p className="mt-4 text-gray-500 text-sm font-medium">
+        <p style={{ marginTop: "12px", fontSize: "13px", fontWeight: 500, color: "var(--nx-text-muted)" }}>
           {text}
         </p>
       )}
     </div>
-  )
+  );
 }
 
-export default LoadingSpinner
+export default LoadingSpinner;

@@ -1,9 +1,5 @@
 import { Link } from "react-router-dom";
 
-/**
- * Renderizza testo con @mention e #hashtag come link cliccabili.
- * Usato in CommentSection per il testo dei commenti.
- */
 export function renderTextWithMentions(text) {
   if (!text) return null;
   const parts = text.split(/(#\w+|@[\w.]+)/g);
@@ -11,7 +7,9 @@ export function renderTextWithMentions(text) {
     if (part.match(/^@[\w.]+$/)) {
       return (
         <Link key={i} to={`/profile/${part.slice(1)}`}
-          className="text-blue-500 hover:underline font-medium"
+          style={{ color: "#7c3aed", fontWeight: 600, textDecoration: "none" }}
+          onMouseEnter={e => e.currentTarget.style.textDecoration = "underline"}
+          onMouseLeave={e => e.currentTarget.style.textDecoration = "none"}
           onClick={e => e.stopPropagation()}>
           {part}
         </Link>
@@ -19,7 +17,9 @@ export function renderTextWithMentions(text) {
     }
     if (part.match(/^#\w+$/)) {
       return (
-        <span key={i} className="text-blue-500 hover:underline cursor-pointer font-medium">
+        <span key={i} style={{ color: "#0891b2", fontWeight: 600, cursor: "pointer" }}
+          onMouseEnter={e => e.currentTarget.style.textDecoration = "underline"}
+          onMouseLeave={e => e.currentTarget.style.textDecoration = "none"}>
           {part}
         </span>
       );

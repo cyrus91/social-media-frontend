@@ -21,7 +21,7 @@ function ImageCarousel({ images, onImageClick }) {
           - Mobile: 4:3 (più verticale, risparmia scroll)
           - Desktop: 16:9 (più orizzontale, usa spazio schermo)
         */}
-        <div className="relative w-full aspect-[4/3] md:aspect-video overflow-hidden bg-gray-900">
+        <div className="relative w-full aspect-4/3 md:aspect-video overflow-hidden bg-black/95">
           <img
             src={images[0]}
             alt="Post"
@@ -42,7 +42,7 @@ function ImageCarousel({ images, onImageClick }) {
         - Mobile: 4:3 (compatto ma leggibile)
         - Desktop: 16:9 (cinematografico)
       */}
-      <div className="relative w-full aspect-[4/3] md:aspect-video overflow-hidden bg-gray-900">
+      <div className="relative w-full aspect-4/3 md:aspect-video overflow-hidden bg-black/95">
         <Swiper
           modules={[Navigation, Pagination, Keyboard]}
           navigation={{
