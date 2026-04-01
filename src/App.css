@@ -389,17 +389,6 @@
   color: var(--nx-text-subtle);
   opacity: 1;
 }
-
-/* MentionTextarea — testo visibile durante la selezione (fix overlay mirror) */
-.mention-textarea-input::selection {
-  color: var(--nx-text);
-  -webkit-text-fill-color: var(--nx-text);
-  background: rgba(124, 58, 237, 0.25);
-}
-.mention-textarea-input::-moz-selection {
-  color: var(--nx-text);
-  background: rgba(124, 58, 237, 0.25);
-}
 /* ============================================
    NEXUS BRAND GUIDE — Exact Component Classes
    ============================================ */

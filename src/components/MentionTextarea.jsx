@@ -1,10 +1,7 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const MENTION_REGEX = /(#\w+|@[\w.]+)/g;
 
-/**
- * Escape HTML speciale per evitare XSS nell'overlay.
- */
 function escapeHtml(text) {
   return text
     .replace(/&/g, "&amp;")
@@ -12,14 +9,8 @@ function escapeHtml(text) {
     .replace(/>/g, "&gt;");
 }
 
-/**
- * Genera HTML per l'overlay: @mention e #hashtag evidenziati in blu,
- * il resto del testo è trasparente (occupa spazio ma non si vede).
- */
 function buildHighlightHtml(text) {
   if (!text) return '<span style="opacity:0">.</span>';
-
-  // Splitta sulle newline prima, poi applica regex su ogni riga
   const lines = text.split("\n");
   return lines
     .map((line) => {
@@ -27,44 +18,39 @@ function buildHighlightHtml(text) {
       const escaped = escapeHtml(line);
       return escaped.replace(
         MENTION_REGEX,
-        '<mark style="color:#3b82f6;background:transparent;font-weight:500">$1</mark>'
+        (match) => match.startsWith("#")
+          ? `<mark style="color:#0891b2;background:transparent;font-weight:600">${match}</mark>`
+          : `<mark style="color:#7c3aed;background:transparent;font-weight:600">${match}</mark>`
       );
     })
     .join("<br>");
 }
 
-/**
- * Stili condivisi tra textarea e overlay — DEVONO essere identici
- * per garantire allineamento pixel-perfect del testo.
- */
 const SHARED_STYLES = {
-  fontFamily: 'inherit',
-  fontSize: 'inherit',
-  lineHeight: 'inherit',
-  letterSpacing: 'inherit',
-  wordBreak: 'break-word',
-  whiteSpace: 'pre-wrap',
-  overflowWrap: 'break-word',
-  boxSizing: 'border-box',
-  padding: '2px 0',
-  border: 'none',
+  fontFamily: "inherit",
+  fontSize: "inherit",
+  lineHeight: "inherit",
+  letterSpacing: "inherit",
+  wordBreak: "break-word",
+  whiteSpace: "pre-wrap",
+  overflowWrap: "break-word",
+  boxSizing: "border-box",
+  padding: "2px 0",
+  border: "none",
   margin: 0,
 };
 
 /**
- * MentionTextarea — textarea con @mention e #hashtag evidenziati in blu durante la digitazione.
- *
- * Tecnica "overlay mirror" (usata da Facebook, Twitter, Slack):
- * - Un div overlay renderizza il testo con le menzioni colorate
- * - Una textarea trasparente sovrapposta gestisce l'input e il caret
- * - Lo scroll è sincronizzato tra i due
+ * MentionTextarea — overlay mirror approach.
+ * Quando la textarea è in focus: overlay nascosto, testo visibile → selezione e caret normali.
+ * Quando non in focus: overlay visibile con hashtag/mention colorati.
  */
 function MentionTextarea({ value, onChange, placeholder, rows = 1, disabled, className = "", textareaRef }) {
   const overlayRef = useRef(null);
   const localRef = useRef(null);
   const ref = textareaRef || localRef;
+  const [focused, setFocused] = useState(false);
 
-  // Sincronizza scroll dell'overlay con la textarea
   const syncScroll = () => {
     if (ref.current && overlayRef.current) {
       overlayRef.current.scrollTop = ref.current.scrollTop;
@@ -72,21 +58,17 @@ function MentionTextarea({ value, onChange, placeholder, rows = 1, disabled, cla
     }
   };
 
-  // Aggiorna HTML dell'overlay ogni volta che il valore cambia
   useEffect(() => {
     if (overlayRef.current) {
       overlayRef.current.innerHTML = buildHighlightHtml(value);
     }
   }, [value]);
 
-  // Sincronizza scroll iniziale
-  useEffect(() => {
-    syncScroll();
-  }, [value, syncScroll]);
+  useEffect(() => { syncScroll(); }, [value]);
 
   return (
     <div className={`mention-textarea-wrapper ${className}`} style={{ position: "relative", minHeight: "1.5em" }}>
-      {/* Overlay colorato — non interattivo, sotto la textarea */}
+      {/* Overlay colorato — visibile solo quando la textarea NON è in focus */}
       <div
         ref={overlayRef}
         aria-hidden="true"
@@ -96,17 +78,22 @@ function MentionTextarea({ value, onChange, placeholder, rows = 1, disabled, cla
           position: "absolute",
           inset: 0,
           pointerEvents: "none",
-          color: "inherit",
+          color: "var(--nx-text)",
           overflow: "hidden",
           zIndex: 1,
+          // Nascosto quando in focus → niente doppio testo né caret sfasato
+          opacity: focused ? 0 : 1,
         }}
       />
-      {/* Textarea reale — testo trasparente, caret visibile */}
+      {/* Textarea — testo trasparente quando non in focus (mostra overlay),
+          testo visibile quando in focus (selezione e caret corretti) */}
       <textarea
         ref={ref}
         value={value}
         onChange={onChange}
         onScroll={syncScroll}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
         placeholder={placeholder}
         rows={rows}
         disabled={disabled}
@@ -117,8 +104,9 @@ function MentionTextarea({ value, onChange, placeholder, rows = 1, disabled, cla
           display: "block",
           width: "100%",
           resize: "none",
-          color: "transparent",
-          WebkitTextFillColor: "transparent",
+          // Testo visibile in focus, trasparente fuori focus
+          color: focused ? "var(--nx-text)" : "transparent",
+          WebkitTextFillColor: focused ? "var(--nx-text)" : "transparent",
           caretColor: "var(--nx-text)",
           background: "transparent",
           outline: "none",
