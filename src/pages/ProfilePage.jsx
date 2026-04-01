@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import PostCard from "../components/PostCard";
@@ -26,30 +26,23 @@ function ProfilePage() {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [likedPosts, setLikedPosts] = useState([]);
   const [likedLoading, setLikedLoading] = useState(false);
-  const [showFollowModal, setShowFollowModal] = useState(null); // "followers" | "following" | null
+  const [showFollowModal, setShowFollowModal] = useState(null);
 
   const isMyProfile = currentUser?.username === username;
 
-  const fetchPostCount = async (userId) => {
+  const fetchPostCount = useCallback(async (userId) => {
     try {
-      console.log("📊 Fetching post count for user:", userId);
       const response = await api.get(`/posts/author/${userId}/count`);
-      console.log(" Post count ricevuto:", response.data.count);
-      setProfile((prev) => ({
-        ...prev,
-        postCount: response.data.count,
-      }));
+      setProfile((prev) => ({ ...prev, postCount: response.data.count }));
     } catch (error) {
-      console.error("❌ Errore nel caricamento del post count:", error);
+      console.error("Errore nel caricamento del post count:", error);
     }
-  };
+  }, []);
 
-  const loadProfile = async () => {
+  const loadProfile = useCallback(async () => {
     setLoading(true);
     setError(null);
-
     const result = await fetchUserProfile(username);
-
     if (result.success) {
       setProfile(result.data);
       fetchPostCount(result.data.id);
@@ -58,494 +51,283 @@ function ProfilePage() {
       toast.error("Utente non trovato");
     }
     setLoading(false);
-  };
+  }, [username, fetchPostCount]);
 
   useEffect(() => {
     let ignore = false;
-
-    async function doLoadProfile() {
-      await loadProfile();
-    }
-
-    if (!ignore) {
-      doLoadProfile();
-    }
-
-    return () => {
-      ignore = true;
-    };
-  }, [username]);
+    if (!ignore) loadProfile();
+    return () => { ignore = true; };
+  }, [loadProfile]);
 
   useEffect(() => {
     if (!profile) return;
     let ignore = false;
-
-    async function doLoadPosts() {
+    async function fetchPosts() {
       setPostsLoading(true);
-
-      //  USA ENDPOINT SPECIFICO PER UTENTE!
       try {
-        const response = await api.get(`/posts/author/${profile.id}`, {
-          params: { page: 0, size: 100 }, // Carica molti post (o usa infinite scroll dopo)
-        });
-
-        if (!ignore) {
-          setPosts(response.data.content || []);
-          setPostsLoading(false);
-        }
-      } catch (error) {
-        console.error("❌ Errore caricamento post utente:", error);
-        if (!ignore) {
-          setPosts([]);
-          setPostsLoading(false);
-        }
+        const res = await api.get(`/posts/author/${profile.id}`, { params: { page: 0, size: 100 } });
+        if (!ignore) { setPosts(res.data.content || []); setPostsLoading(false); }
+      } catch {
+        if (!ignore) { setPosts([]); setPostsLoading(false); }
       }
     }
+    fetchPosts();
+    return () => { ignore = true; };
+  }, [profile]);
 
-    doLoadPosts();
-    return () => {
-      ignore = true;
-    };
-  }, [profile, activeTab, profile?.id, username]);
-
-  // Carica i post piaciuti quando la tab è "likes"
   useEffect(() => {
     if (!profile || activeTab !== "likes") return;
     let ignore = false;
-
-    async function doLoadLikedPosts() {
+    async function fetchLikedPosts() {
       setLikedLoading(true);
       try {
-        const response = await api.get(`/likes/user/${profile.id}`, {
-          params: { page: 0, size: 100 },
-        });
-        if (!ignore) setLikedPosts(response.data.content || []);
-      } catch (error) {
-        console.error("❌ Errore caricamento post piaciuti:", error);
+        const res = await api.get(`/likes/user/${profile.id}`, { params: { page: 0, size: 100 } });
+        if (!ignore) setLikedPosts(res.data.content || []);
+      } catch {
         if (!ignore) setLikedPosts([]);
       } finally {
         if (!ignore) setLikedLoading(false);
       }
     }
-
-    doLoadLikedPosts();
+    fetchLikedPosts();
     return () => { ignore = true; };
   }, [profile, activeTab]);
 
-  const handleLikeUpdate = (postId, isLiked) => {
-    setPosts((prevPosts) =>
-      prevPosts.map((post) =>
-        post.id === postId
-          ? {
-              ...post,
-              liked: isLiked,
-              likeCount: isLiked ? post.likeCount + 1 : post.likeCount - 1,
-            }
-          : post,
-      ),
-    );
-  };
+  const handleLikeUpdate = (postId, isLiked) =>
+    setPosts(prev => prev.map(p => p.id === postId ? { ...p, liked: isLiked, likeCount: isLiked ? p.likeCount + 1 : p.likeCount - 1 } : p));
 
   const handlePostDeleted = (postId) => {
-    console.log(`🗑️ Post ${postId} eliminato`);
-    setPosts((prevPosts) => prevPosts.filter((post) => post.id !== postId));
-    if (profile?.id) {
-      fetchPostCount(profile.id);
-    }
+    setPosts(prev => prev.filter(p => p.id !== postId));
+    if (profile?.id) fetchPostCount(profile.id);
   };
 
-  const handlePostUpdated = (postId, updatedData) => {
-    setPosts((prevPosts) =>
-      prevPosts.map((post) =>
-        post.id === postId ? { ...post, ...updatedData } : post
-      )
-    );
-  };
+  const handlePostUpdated = (postId, updatedData) =>
+    setPosts(prev => prev.map(p => p.id === postId ? { ...p, ...updatedData } : p));
 
-  const formatJoinDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("it-IT", {
-      month: "long",
-      year: "numeric",
-    });
-  };
+  const formatJoinDate = (dateString) =>
+    new Date(dateString).toLocaleDateString("it-IT", { month: "long", year: "numeric" });
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-100">
-        <Navbar />
-        <div className="flex items-center justify-center h-screen">
-          <LoadingSpinner size="lg" text="Caricamento profilo..." />
+  const TAB_STYLE = (active) => ({
+    flex: 1, padding: "12px 16px", fontSize: "13px", fontWeight: 700,
+    background: "none", border: "none", cursor: "pointer",
+    color: active ? "#7c3aed" : "var(--nx-text-muted)",
+    borderBottom: active ? "2px solid #7c3aed" : "2px solid transparent",
+    transition: "all var(--nx-transition)",
+  });
+
+  const EMPTY_CARD = (emoji, title, subtitle) => (
+    <div style={{ background: "var(--nx-surface)", border: "1px solid var(--nx-border)", borderRadius: "var(--nx-radius-lg)", padding: "48px 24px", textAlign: "center" }}>
+      <div style={{ fontSize: "48px", marginBottom: "12px" }}>{emoji}</div>
+      <h2 style={{ fontWeight: 700, fontSize: "16px", color: "var(--nx-text)", marginBottom: "6px" }}>{title}</h2>
+      <p style={{ fontSize: "13px", color: "var(--nx-text-muted)" }}>{subtitle}</p>
+    </div>
+  );
+
+  if (loading) return (
+    <div className="nx-page">
+      <Navbar />
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh" }}>
+        <LoadingSpinner size="lg" text="Caricamento profilo..." />
+      </div>
+    </div>
+  );
+
+  if (error || !profile) return (
+    <div className="nx-page">
+      <Navbar />
+      <div style={{ maxWidth: "600px", margin: "40px auto", padding: "0 16px" }}>
+        {EMPTY_CARD("😕", "Utente non trovato", `L'utente @${username} non esiste o è stato eliminato.`)}
+        <div style={{ textAlign: "center", marginTop: "16px" }}>
+          <button onClick={() => navigate("/feed")} style={{
+            background: "linear-gradient(135deg,#7c3aed,#06b6d4)", color: "#fff",
+            border: "none", borderRadius: "var(--nx-radius-full)", padding: "10px 24px",
+            fontSize: "13px", fontWeight: 600, cursor: "pointer",
+          }}>Torna al Feed</button>
         </div>
       </div>
-    );
-  }
-
-  if (error || !profile) {
-    return (
-      <div className="min-h-screen bg-gray-100">
-        <Navbar />
-        <div className="max-w-2xl mx-auto px-4 sm:px-6 p-4 mt-8 sm:mt-20">
-          <div className="bg-white rounded-lg shadow p-8 sm:p-12 text-center">
-            <div className="text-5xl sm:text-6xl mb-4">😕</div>
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2">
-              Utente non trovato
-            </h2>
-            <p className="text-sm sm:text-base text-gray-600 mb-6">
-              L'utente @{username} non esiste o è stato eliminato.
-            </p>
-            <button
-              onClick={() => navigate("/feed")}
-              className="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-6 py-3 rounded-lg transition text-sm sm:text-base">
-              Torna al Feed
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="nx-page">
       <Navbar />
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
-        {/* Profile Header -  RESPONSIVE + LEGGIBILE! */}
-        <div className="bg-white rounded-lg shadow overflow-hidden mb-4 sm:mb-6">
-          {/* Cover Photo */}
-          <div className="h-24 sm:h-32 md:h-48 bg-gradient-to-r from-blue-500 to-purple-500"></div>
+      <div style={{ maxWidth: "680px", margin: "0 auto", padding: "20px 16px 60px" }}>
 
-          {/* Profile Info */}
-          <div className="px-4 sm:px-6 pb-4 sm:pb-6">
-            <div className="flex flex-col sm:flex-row sm:items-end sm:space-x-5 -mt-12 sm:-mt-16">
+        {/* Profile Header Card */}
+        <div style={{ background: "var(--nx-surface)", border: "1px solid var(--nx-border)", borderRadius: "var(--nx-radius-lg)", overflow: "hidden", marginBottom: "16px", boxShadow: "var(--nx-shadow-sm)" }}>
+
+          {/* Cover */}
+          <div style={{ height: "120px", background: "var(--nx-grad-brand)", position: "relative" }} />
+
+          {/* Info section */}
+          <div style={{ padding: "0 20px 20px" }}>
+            <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginTop: "-40px", marginBottom: "12px" }}>
               {/* Avatar */}
-              <div className="flex justify-center sm:justify-start">
-                {profile.avatarUrl ? (
-                  <img
-                    src={profile.avatarUrl}
-                    alt={profile.username}
-                    className="w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32 rounded-full object-cover border-4 border-white shadow-lg"
-                  />
-                ) : (
-                  <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-3xl sm:text-4xl md:text-5xl font-bold border-4 border-white shadow-lg">
-                    {profile.username?.charAt(0).toUpperCase()}
-                  </div>
+              {profile.avatarUrl ? (
+                <img src={profile.avatarUrl} alt={profile.username}
+                  style={{ width: "80px", height: "80px", borderRadius: "50%", objectFit: "cover", border: "3px solid var(--nx-surface)", boxShadow: "var(--nx-shadow)" }} />
+              ) : (
+                <div className="nx-avatar-gradient" style={{ width: "80px", height: "80px", fontSize: "28px", border: "3px solid var(--nx-surface)", boxShadow: "var(--nx-shadow)" }}>
+                  {profile.username?.charAt(0).toUpperCase()}
+                </div>
+              )}
+
+              {/* Action buttons */}
+              <div style={{ display: "flex", gap: "8px", paddingBottom: "4px" }}>
+                {isMyProfile ? (
+                  <button onClick={() => setEditModalOpen(true)} style={{
+                    display: "flex", alignItems: "center", gap: "6px",
+                    padding: "7px 14px", fontSize: "12px", fontWeight: 600,
+                    background: "var(--nx-surface-2)", border: "1.5px solid var(--nx-border)",
+                    borderRadius: "var(--nx-radius-full)", cursor: "pointer", color: "var(--nx-text)",
+                    transition: "all var(--nx-transition)",
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(124,58,237,0.4)"}
+                  onMouseLeave={e => e.currentTarget.style.borderColor = "var(--nx-border)"}>
+                    <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                    Modifica profilo
+                  </button>
+                ) : profile.id && (
+                  <>
+                    <FollowButton userId={profile.id} username={profile.username} onFollowChange={loadProfile} />
+                    <button onClick={async () => {
+                      try {
+                        const conv = await messagingService.getOrCreateConversation(profile.id);
+                        navigate(`/messages/${conv.id}`);
+                      } catch { toast.error("Errore nell'apertura della chat"); }
+                    }} style={{
+                      display: "flex", alignItems: "center", gap: "6px",
+                      padding: "7px 14px", fontSize: "12px", fontWeight: 600,
+                      background: "var(--nx-surface-2)", border: "1.5px solid var(--nx-border)",
+                      borderRadius: "var(--nx-radius-full)", cursor: "pointer", color: "var(--nx-text)",
+                      transition: "all var(--nx-transition)",
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(124,58,237,0.4)"}
+                    onMouseLeave={e => e.currentTarget.style.borderColor = "var(--nx-border)"}>
+                      <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M21 16V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2h3l3 3 3-3h3a2 2 0 002-2z" />
+                      </svg>
+                      Messaggio
+                    </button>
+                  </>
                 )}
               </div>
+            </div>
 
-              {/* Name & Actions */}
-              <div className="flex-1 mt-4 sm:mt-0 text-center sm:text-left">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    {/*  NOME E USERNAME LEGGIBILI (NERO SU BIANCO)! */}
-                    <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
-                      {profile.username}
-                    </h1>
-                    <p className="text-xs sm:text-sm text-gray-600">
-                      @{profile.username}
-                    </p>
-                  </div>
+            {/* Name */}
+            <h1 style={{ fontWeight: 800, fontSize: "20px", color: "var(--nx-text)", marginBottom: "2px" }}>{profile.username}</h1>
+            <p style={{ fontSize: "12px", color: "var(--nx-text-muted)", marginBottom: "10px" }}>@{profile.username}</p>
 
-                  {/* Action Buttons */}
-                  <div className="mt-3 sm:mt-0">
-                    {isMyProfile ? (
-                      <button
-                        onClick={() => setEditModalOpen(true)}
-                        className="flex items-center justify-center space-x-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold px-4 sm:px-6 py-2 rounded-lg transition text-sm sm:text-base w-full sm:w-auto">
-                        <svg
-                          className="w-4 h-4 sm:w-5 sm:h-5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24">
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                          />
+            {/* Bio */}
+            {profile.bio && (
+              <p style={{ fontSize: "14px", color: "var(--nx-text)", marginBottom: "10px", lineHeight: 1.5 }}>{profile.bio}</p>
+            )}
+
+            {/* Join date */}
+            <div style={{ display: "flex", alignItems: "center", gap: "5px", color: "var(--nx-text-muted)", fontSize: "12px", marginBottom: "16px" }}>
+              <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              Membro da {formatJoinDate(profile.createdAt)}
+            </div>
+
+            {/* Stats */}
+            <div style={{ display: "flex", gap: "24px" }}>
+              {[
+                { value: profile.postCount || 0, label: "Post", onClick: null },
+                { value: profile.followerCount || 0, label: "Followers", onClick: () => setShowFollowModal("followers") },
+                { value: profile.followingCount || 0, label: "Following", onClick: () => setShowFollowModal("following") },
+              ].map(({ value, label, onClick }) => (
+                <div key={label}
+                  onClick={onClick}
+                  style={{ cursor: onClick ? "pointer" : "default", textAlign: "center" }}
+                  onMouseEnter={e => { if (onClick) e.currentTarget.style.opacity = "0.7"; }}
+                  onMouseLeave={e => { if (onClick) e.currentTarget.style.opacity = "1"; }}>
+                  <p style={{ fontWeight: 800, fontSize: "18px", color: "var(--nx-text)" }}>{value}</p>
+                  <p style={{ fontSize: "11px", color: "var(--nx-text-muted)" }}>{label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div style={{ background: "var(--nx-surface)", border: "1px solid var(--nx-border)", borderRadius: "var(--nx-radius-lg)", marginBottom: "16px", display: "flex", boxShadow: "var(--nx-shadow-sm)" }}>
+          {["posts", "likes", "media"].map(tab => (
+            <button key={tab} onClick={() => setActiveTab(tab)} style={TAB_STYLE(activeTab === tab)}>
+              {{ posts: "Post", likes: "Mi piace", media: "Media" }[tab]}
+            </button>
+          ))}
+        </div>
+
+        {/* Posts Tab */}
+        {activeTab === "posts" && (
+          postsLoading ? (
+            <div style={{ display: "flex", justifyContent: "center", padding: "48px 0" }}><LoadingSpinner /></div>
+          ) : posts.length === 0 ? EMPTY_CARD("📭", "Nessun post", isMyProfile ? "Non hai ancora pubblicato nulla!" : `${profile.username} non ha ancora pubblicato nulla.`)
+          : posts.map(post => (
+            <PostCard key={post.id} post={post} onLikeUpdate={handleLikeUpdate} onPostDeleted={handlePostDeleted} />
+          ))
+        )}
+
+        {/* Likes Tab */}
+        {activeTab === "likes" && (
+          likedLoading ? (
+            <div style={{ display: "flex", justifyContent: "center", padding: "48px 0" }}><LoadingSpinner /></div>
+          ) : likedPosts.length === 0 ? EMPTY_CARD("❤️", "Nessun post piaciuto", isMyProfile ? "Non hai ancora messo like a nessun post" : "Questo utente non ha ancora messo like a nessun post")
+          : likedPosts.map(post => (
+            <PostCard key={post.id} post={post} onLikeUpdate={handleLikeUpdate} onPostDeleted={handlePostDeleted} onPostUpdated={handlePostUpdated} />
+          ))
+        )}
+
+        {/* Media Tab */}
+        {activeTab === "media" && (() => {
+          const mediaPosts = posts.filter(p => p.imageUrls?.length > 0);
+          if (mediaPosts.length === 0) return EMPTY_CARD("🖼️", "Nessun media", isMyProfile ? "Non hai ancora pubblicato post con immagini" : "Questo utente non ha ancora pubblicato immagini");
+          return (
+            <div style={{ background: "var(--nx-surface)", border: "1px solid var(--nx-border)", borderRadius: "var(--nx-radius-lg)", overflow: "hidden", boxShadow: "var(--nx-shadow-sm)" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "2px" }}>
+                {mediaPosts.flatMap(post => post.imageUrls.map((url, i) => (
+                  <div key={`${post.id}-${i}`}
+                    onClick={() => navigate(`/post/${post.id}`)}
+                    style={{ position: "relative", cursor: "pointer", aspectRatio: "1", overflow: "hidden" }}>
+                    <img src={url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.3s ease" }}
+                      onMouseEnter={e => e.currentTarget.style.transform = "scale(1.05)"}
+                      onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"} />
+                    <div style={{ position: "absolute", inset: 0, background: "transparent", transition: "background 0.3s", display: "flex", alignItems: "center", justifyContent: "center", gap: "16px" }}
+                      onMouseEnter={e => { e.currentTarget.style.background = "rgba(0,0,0,0.35)"; e.currentTarget.querySelector(".media-stats").style.opacity = "1"; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.querySelector(".media-stats").style.opacity = "0"; }}>
+                      <div className="media-stats" style={{ opacity: 0, display: "flex", gap: "14px", transition: "opacity 0.3s", color: "#fff", fontWeight: 700, fontSize: "13px", textShadow: "0 1px 4px rgba(0,0,0,0.8)" }}>
+                        <span>❤️ {post.likeCount || 0}</span>
+                        <span>💬 {post.commentCount || 0}</span>
+                      </div>
+                    </div>
+                    {post.imageUrls.length > 1 && i === 0 && (
+                      <div style={{ position: "absolute", top: "6px", right: "6px" }}>
+                        <svg width="16" height="16" fill="white" viewBox="0 0 24 24" style={{ filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.5))" }}>
+                          <path d="M2 6a2 2 0 012-2h12a2 2 0 012 2v12a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM4 6v12h12V6H4zm14-2a2 2 0 012 2v12a2 2 0 01-2 2v-2h2V8h-2V4z"/>
                         </svg>
-                        <span className="hidden sm:inline">
-                          Modifica profilo
-                        </span>
-                        <span className="sm:hidden">Modifica</span>
-                      </button>
-                    ) : (
-                      profile.id && (
-                        <div className="flex items-center space-x-2">
-                          <FollowButton
-                            userId={profile.id}
-                            username={profile.username}
-                            onFollowChange={async () => {
-                              console.log(
-                                "🔄 Follow cambiato - ricarico profilo...",
-                              );
-                              await loadProfile();
-                            }}
-                          />
-                          <button
-                            onClick={async () => {
-                              try {
-                                const conv = await messagingService.getOrCreateConversation(profile.id);
-                                navigate(`/messages/${conv.id}`);
-                              } catch (e) {
-                                toast.error("Errore nell'apertura della chat",e);
-                              }
-                            }}
-                            className="flex items-center space-x-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold px-4 py-2 rounded-lg transition text-sm">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                                d="M8 10h.01M12 10h.01M16 10h.01M21 16V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2h3l3 3 3-3h3a2 2 0 002-2z" />
-                            </svg>
-                            <span className="hidden sm:inline">Messaggio</span>
-                          </button>
-                        </div>
-                      )
+                      </div>
                     )}
                   </div>
-                </div>
-
-                {/* Bio */}
-                {profile.bio && (
-                  <p className="text-sm sm:text-base text-gray-700 mt-3 sm:mt-4">
-                    {profile.bio}
-                  </p>
-                )}
-
-                {/* Join date */}
-                <div className="flex items-center justify-center sm:justify-start space-x-2 text-gray-500 text-xs sm:text-sm mt-3 sm:mt-4">
-                  <svg
-                    className="w-3 h-3 sm:w-4 sm:h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                    />
-                  </svg>
-                  <span>Membro da {formatJoinDate(profile.createdAt)}</span>
-                </div>
-
-                {/*  STATS - COUNTER PRESENTI! */}
-                <div className="flex justify-center sm:justify-start space-x-4 sm:space-x-6 md:space-x-8 mt-3 sm:mt-4">
-                  <div className="text-center">
-                    <p className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800">
-                      {profile.postCount || 0}
-                    </p>
-                    <p className="text-xs sm:text-sm text-gray-500">Post</p>
-                  </div>
-
-                  <button
-                    onClick={() => setShowFollowModal("followers")}
-                    className="text-center hover:opacity-80 transition">
-                    <p className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800">
-                      {profile.followerCount || 0}
-                    </p>
-                    <p className="text-xs sm:text-sm text-gray-500">
-                      Followers
-                    </p>
-                  </button>
-
-                  <button
-                    onClick={() => setShowFollowModal("following")}
-                    className="text-center hover:opacity-80 transition">
-                    <p className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800">
-                      {profile.followingCount || 0}
-                    </p>
-                    <p className="text-xs sm:text-sm text-gray-500">
-                      Following
-                    </p>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Tabs -  RESPONSIVE! */}
-        <div className="bg-white rounded-lg shadow mb-4 sm:mb-6">
-          <div className="flex border-b border-gray-200">
-            <button
-              onClick={() => setActiveTab("posts")}
-              className={`flex-1 py-3 sm:py-4 px-3 sm:px-6 font-semibold transition text-sm sm:text-base ${
-                activeTab === "posts"
-                  ? "text-blue-500 border-b-2 border-blue-500"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}>
-              Post
-            </button>
-
-            <button
-              onClick={() => setActiveTab("likes")}
-              className={`flex-1 py-3 sm:py-4 px-3 sm:px-6 font-semibold transition text-sm sm:text-base ${
-                activeTab === "likes"
-                  ? "text-blue-500 border-b-2 border-blue-500"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}>
-              Mi piace
-            </button>
-
-            <button
-              onClick={() => setActiveTab("media")}
-              className={`flex-1 py-3 sm:py-4 px-3 sm:px-6 font-semibold transition text-sm sm:text-base ${
-                activeTab === "media"
-                  ? "text-blue-500 border-b-2 border-blue-500"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}>
-              Media
-            </button>
-          </div>
-        </div>
-
-        {/* Posts section */}
-        {activeTab === "posts" && (
-          <div>
-            {postsLoading && (
-              <div className="flex justify-center py-8">
-                <LoadingSpinner size="lg" text="Caricamento post..." />
-              </div>
-            )}
-
-            {!postsLoading && posts.length === 0 && (
-              <div className="bg-white rounded-lg shadow p-8 sm:p-12 text-center">
-                <div className="text-5xl sm:text-6xl mb-4">📭</div>
-                <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2">
-                  Nessun post
-                </h2>
-                <p className="text-sm sm:text-base text-gray-600">
-                  {isMyProfile
-                    ? "Non hai ancora pubblicato nulla!"
-                    : `${profile.username} non ha ancora pubblicato nulla.`}
-                </p>
-              </div>
-            )}
-
-            {!postsLoading && posts.length > 0 && (
-              <div className="space-y-4">
-                {posts.map((post) => (
-                  <PostCard
-                    key={post.id}
-                    post={post}
-                    onLikeUpdate={handleLikeUpdate}
-                    onPostDeleted={handlePostDeleted}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Likes section */}
-        {activeTab === "likes" && (
-          <div>
-            {likedLoading ? (
-              <div className="flex justify-center py-12"><LoadingSpinner /></div>
-            ) : likedPosts.length === 0 ? (
-              <div className="bg-white rounded-lg shadow p-8 sm:p-12 text-center">
-                <div className="text-5xl sm:text-6xl mb-4">❤️</div>
-                <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2">
-                  Nessun post piaciuto
-                </h2>
-                <p className="text-sm sm:text-base text-gray-600">
-                  {isMyProfile ? "Non hai ancora messo like a nessun post" : "Questo utente non ha ancora messo like a nessun post"}
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {likedPosts.map((post) => (
-                  <PostCard
-                    key={post.id}
-                    post={post}
-                    onLikeUpdate={handleLikeUpdate}
-                    onPostDeleted={handlePostDeleted}
-                    onPostUpdated={handlePostUpdated}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Media section */}
-        {activeTab === "media" && (() => {
-          const mediaPosts = posts.filter(p => p.imageUrls && p.imageUrls.length > 0);
-          return mediaPosts.length === 0 ? (
-            <div className="bg-white rounded-lg shadow p-8 sm:p-12 text-center">
-              <div className="text-5xl sm:text-6xl mb-4">🖼️</div>
-              <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2">
-                Nessun media
-              </h2>
-              <p className="text-sm sm:text-base text-gray-600">
-                {isMyProfile ? "Non hai ancora pubblicato post con immagini" : "Questo utente non ha ancora pubblicato immagini"}
-              </p>
-            </div>
-          ) : (
-            <div className="bg-white rounded-lg shadow overflow-hidden">
-              <div className="grid grid-cols-3 gap-0.5">
-                {mediaPosts.flatMap((post) =>
-                  post.imageUrls.map((url, imgIndex) => (
-                    <div
-                      key={`${post.id}-${imgIndex}`}
-                      className="relative cursor-pointer group overflow-hidden aspect-square"
-                      onClick={() => navigate(`/post/${post.id}`)}>
-                      <img
-                        src={url}
-                        alt={`Media ${post.id}`}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                      {/* Overlay hover */}
-                      <div className="absolute inset-0 bg-transparent group-hover:bg-black/30 transition-all duration-300 flex items-center justify-center">
-                        <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center space-x-3 text-white" style={{ textShadow: "0 1px 4px rgba(0,0,0,0.8)" }}>
-                          <span className="flex items-center space-x-1 font-semibold">
-                            <span>❤️</span>
-                            <span>{post.likeCount || 0}</span>
-                          </span>
-                          <span className="flex items-center space-x-1 font-semibold">
-                            <span>💬</span>
-                            <span>{post.commentCount || 0}</span>
-                          </span>
-                        </div>
-                      </div>
-                      {/* Badge se ha più immagini */}
-                      {post.imageUrls.length > 1 && imgIndex === 0 && (
-                        <div className="absolute top-2 right-2">
-                          <svg className="w-5 h-5 text-white drop-shadow" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M2 6a2 2 0 012-2h12a2 2 0 012 2v12a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM4 6v12h12V6H4zm14-2a2 2 0 012 2v12a2 2 0 01-2 2v-2h2V8h-2V4z"/>
-                          </svg>
-                        </div>
-                      )}
-                    </div>
-                  ))
-                )}
+                )))}
               </div>
             </div>
           );
         })()}
       </div>
 
-      {/* Edit Profile Modal */}
       {isMyProfile && (
-        <EditProfileModal
-          isOpen={editModalOpen}
-          onClose={() => setEditModalOpen(false)}
-          currentProfile={profile}
-          onProfileUpdated={async () => {
-            await loadProfile();
-            setEditModalOpen(false);
-          }}
-        />
+        <EditProfileModal isOpen={editModalOpen} onClose={() => setEditModalOpen(false)}
+          currentProfile={profile} onProfileUpdated={async () => { await loadProfile(); setEditModalOpen(false); }} />
       )}
 
       {showFollowModal && profile && (
-        <FollowListModal
-          isOpen={true}
-          userId={profile.id}
-          username={profile.username}
-          type={showFollowModal}
-          onClose={() => setShowFollowModal(null)}
-        />
+        <FollowListModal isOpen userId={profile.id} username={profile.username}
+          type={showFollowModal} onClose={() => setShowFollowModal(null)} />
       )}
     </div>
   );
