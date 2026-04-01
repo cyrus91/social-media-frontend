@@ -6,6 +6,7 @@ import { renderTextWithMentions } from "../utils/renderTextWithMentions";
 import { Link } from "react-router-dom";
 import EmojiPickerButton from "./EmojiPickerButton";
 import AvatarZoom from "./AvatarZoom";
+import { aiService } from "../services/aiService";
 import {
   fetchCommentsByPost,
   createComment,
@@ -505,6 +506,7 @@ function CommentSection({ postId, initialCommentCount = 0, defaultExpanded = fal
   const [loading, setLoading] = useState(false);
   const [commentText, setCommentText] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [improvingComment, setImprovingComment] = useState(false);
   const [commentCount, setCommentCount] = useState(initialCommentCount);
   const textareaRef = useRef(null);
   const imageInputRef = useRef(null);
@@ -665,6 +667,36 @@ function CommentSection({ postId, initialCommentCount = 0, defaultExpanded = fal
                               d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                           </svg>
                         </button>
+                        {commentText.trim() && (
+                          <button type="button"
+                            onClick={async () => {
+                              if (!commentText.trim()) return;
+                              setImprovingComment(true);
+                              try {
+                                const result = await aiService.improveText(commentText.trim());
+                                setCommentText(result.suggestion || result.result || result);
+                                toast.success("Testo migliorato ✨");
+                              } catch { toast.error("Errore AI"); }
+                              finally { setImprovingComment(false); }
+                            }}
+                            disabled={improvingComment}
+                            title="Migliora con AI"
+                            style={{
+                              display: "flex", alignItems: "center", gap: "3px",
+                              padding: "3px 8px", fontSize: "11px", fontWeight: 600,
+                              color: "#7c3aed", background: "rgba(124,58,237,0.08)",
+                              border: "1px solid rgba(124,58,237,0.2)",
+                              borderRadius: "var(--nx-radius-full)", cursor: "pointer",
+                              opacity: improvingComment ? 0.6 : 1, transition: "all var(--nx-transition)",
+                            }}
+                            onMouseEnter={e => e.currentTarget.style.background = "rgba(124,58,237,0.14)"}
+                            onMouseLeave={e => e.currentTarget.style.background = "rgba(124,58,237,0.08)"}>
+                            {improvingComment
+                              ? <><div style={{ width: "9px", height: "9px", border: "1.5px solid rgba(124,58,237,0.3)", borderTopColor: "#7c3aed", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} /><span>...</span></>
+                              : <><span>✨</span><span>Migliora</span></>
+                            }
+                          </button>
+                        )}
                       </div>
                       <button type="submit" disabled={submitting || (!commentText.trim() && !imageFile)}
                         style={{
