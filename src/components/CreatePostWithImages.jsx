@@ -155,13 +155,24 @@ function CreatePostWithImages({ onPostCreated }) {
             {/* Textarea row */}
             <div style={{ display: "flex", alignItems: "center", padding: hasContent ? "10px 12px 4px" : "6px 12px", gap: "8px" }}>
               {!hasContent && (
-                <div style={{ flexShrink: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "2px", flexShrink: 0 }}>
                   <EmojiPickerButton
                     onEmojiSelect={(emoji) => {
                       setContent((prev) => prev + emoji);
                       textareaRef.current?.focus();
                     }}
                   />
+                  <button type="button" onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                    title="Aggiungi foto"
+                    style={{ padding: "4px", color: "var(--nx-text-subtle)", background: "none", border: "none", cursor: "pointer", display: "flex", borderRadius: "50%", transition: "color var(--nx-transition)" }}
+                    onMouseEnter={e => e.currentTarget.style.color = "#7c3aed"}
+                    onMouseLeave={e => e.currentTarget.style.color = "var(--nx-text-subtle)"}>
+                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </button>
                 </div>
               )}
               <MentionTextarea
@@ -190,9 +201,7 @@ function CreatePostWithImages({ onPostCreated }) {
                           borderRadius: "50%", width: "18px", height: "18px",
                           display: "flex", alignItems: "center", justifyContent: "center",
                           fontSize: "10px", border: "none", cursor: "pointer",
-                          opacity: 0, transition: "opacity var(--nx-transition)",
-                        }}
-                        className="group-hover:opacity-100">✕</button>
+                        }}>✕</button>
                       <div style={{
                         position: "absolute", bottom: "3px", left: "3px",
                         background: "rgba(0,0,0,0.6)", color: "#fff",
@@ -275,28 +284,6 @@ function CreatePostWithImages({ onPostCreated }) {
           </div>
         </div>
 
-        {/* Bottone foto — senza contenuto */}
-        {!hasContent && (
-          <div style={{ display: "flex", alignItems: "center", marginTop: "8px", paddingLeft: "4px" }}>
-            <button type="button" onClick={() => fileInputRef.current?.click()}
-              disabled={uploading}
-              style={{
-                display: "flex", alignItems: "center", gap: "6px",
-                fontSize: "13px", fontWeight: 500, color: "var(--nx-text-muted)",
-                background: "none", border: "none", cursor: "pointer",
-                padding: "4px 8px", borderRadius: "var(--nx-radius-sm)",
-                transition: "all var(--nx-transition)",
-              }}
-              onMouseEnter={e => { e.currentTarget.style.color = "#7c3aed"; e.currentTarget.style.background = "rgba(124,58,237,0.06)"; }}
-              onMouseLeave={e => { e.currentTarget.style.color = "var(--nx-text-muted)"; e.currentTarget.style.background = "none"; }}>
-              <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-              Foto
-            </button>
-          </div>
-        )}
 
         <input ref={fileInputRef} type="file" accept="image/*" multiple
           style={{ display: "none" }} onChange={handleFileSelect} disabled={uploading} />
