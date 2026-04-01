@@ -123,8 +123,8 @@ function Navbar() {
               )}
             </Link>
 
-            {/* Avatar + dropdown */}
-            <div ref={dropdownRef} style={{ position: "relative" }}>
+            {/* Avatar + dropdown — solo desktop */}
+            <div ref={dropdownRef} className="hidden md:block" style={{ position: "relative" }}>
               <button
                 onClick={() => setShowDropdown(!showDropdown)}
                 style={{
