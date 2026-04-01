@@ -139,7 +139,7 @@ function ProfilePage() {
         {EMPTY_CARD("😕", "Utente non trovato", `L'utente @${username} non esiste o è stato eliminato.`)}
         <div style={{ textAlign: "center", marginTop: "16px" }}>
           <button onClick={() => navigate("/feed")} style={{
-            background: "linear-gradient(135deg,#7c3aed,#06b6d4)", color: "#fff",
+            background: "var(--nx-grad-btn)", color: "#fff",
             border: "none", borderRadius: "var(--nx-radius-full)", padding: "10px 24px",
             fontSize: "13px", fontWeight: 600, cursor: "pointer",
           }}>Torna al Feed</button>
@@ -179,7 +179,7 @@ function ProfilePage() {
                   <button onClick={() => setEditModalOpen(true)} style={{
                     display: "flex", alignItems: "center", gap: "6px",
                     padding: "7px 14px", fontSize: "12px", fontWeight: 600,
-                    background: "var(--nx-surface-2)", border: "1.5px solid var(--nx-border)",
+                    background: "rgba(124,58,237,0.08)", border: "1.5px solid rgba(124,58,237,0.2)",
                     borderRadius: "var(--nx-radius-full)", cursor: "pointer", color: "var(--nx-text)",
                     transition: "all var(--nx-transition)",
                   }}
@@ -201,7 +201,7 @@ function ProfilePage() {
                     }} style={{
                       display: "flex", alignItems: "center", gap: "6px",
                       padding: "7px 14px", fontSize: "12px", fontWeight: 600,
-                      background: "var(--nx-surface-2)", border: "1.5px solid var(--nx-border)",
+                      background: "rgba(124,58,237,0.08)", border: "1.5px solid rgba(124,58,237,0.2)",
                       borderRadius: "var(--nx-radius-full)", cursor: "pointer", color: "var(--nx-text)",
                       transition: "all var(--nx-transition)",
                     }}

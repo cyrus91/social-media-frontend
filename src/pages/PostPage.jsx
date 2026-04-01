@@ -56,7 +56,7 @@ function PostPage() {
           <div style={{ fontSize: "48px", marginBottom: "12px" }}>😕</div>
           <h2 style={{ fontWeight: 700, fontSize: "18px", color: "var(--nx-text)", marginBottom: "6px" }}>Post non trovato</h2>
           <p style={{ fontSize: "13px", color: "var(--nx-text-muted)", marginBottom: "20px" }}>Questo post potrebbe essere stato eliminato o non esiste.</p>
-          <button onClick={() => navigate("/feed")} style={{ background: "linear-gradient(135deg,#7c3aed,#06b6d4)", color: "#fff", border: "none", borderRadius: "var(--nx-radius-full)", padding: "10px 24px", fontSize: "13px", fontWeight: 600, cursor: "pointer" }}>
+          <button onClick={() => navigate("/feed")} style={{ background: "var(--nx-grad-btn)", color: "#fff", border: "none", borderRadius: "var(--nx-radius-full)", padding: "10px 24px", fontSize: "13px", fontWeight: 600, cursor: "pointer" }}>
             Torna al Feed
           </button>
         </div>

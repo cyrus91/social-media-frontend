@@ -150,7 +150,7 @@ function CreatePostWithImages({ onPostCreated }) {
             borderRadius: "var(--nx-radius-lg)",
             transition: "border-color var(--nx-transition), box-shadow var(--nx-transition)",
             boxShadow: hasContent ? "0 0 0 3px rgba(124,58,237,0.08)" : "none",
-            background: "var(--nx-surface-2)",
+            background: "var(--nx-input-bg)",
           }}>
             {/* Textarea row */}
             <div style={{ display: "flex", alignItems: "center", padding: hasContent ? "10px 12px 4px" : "6px 12px", gap: "8px" }}>
@@ -165,10 +165,14 @@ function CreatePostWithImages({ onPostCreated }) {
                   <button type="button" onClick={() => fileInputRef.current?.click()}
                     disabled={uploading}
                     title="Aggiungi foto"
-                    style={{ padding: "4px", color: "var(--nx-text-subtle)", background: "none", border: "none", cursor: "pointer", display: "flex", borderRadius: "50%", transition: "color var(--nx-transition)" }}
-                    onMouseEnter={e => e.currentTarget.style.color = "#7c3aed"}
-                    onMouseLeave={e => e.currentTarget.style.color = "var(--nx-text-subtle)"}>
-                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    style={{
+                      padding: "6px", border: "none", background: "none", cursor: "pointer",
+                      color: "var(--nx-text-muted)", borderRadius: "var(--nx-radius-sm)",
+                      transition: "all var(--nx-transition)", display: "flex",
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.background = "rgba(124,58,237,0.08)"; e.currentTarget.style.color = "#7c3aed"; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = "none"; e.currentTarget.style.color = "var(--nx-text-muted)"; }}>
+                    <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                         d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
@@ -269,7 +273,7 @@ function CreatePostWithImages({ onPostCreated }) {
                   style={{
                     display: "flex", alignItems: "center", gap: "6px",
                     padding: "6px 16px", fontSize: "13px", fontWeight: 600,
-                    background: "linear-gradient(135deg,#7c3aed,#06b6d4)",
+                    background: "var(--nx-grad-btn)",
                     color: "#fff", border: "none", borderRadius: "var(--nx-radius-full)",
                     cursor: uploading || !hasContent ? "not-allowed" : "pointer",
                     opacity: !hasContent ? 0.5 : 1,
@@ -283,7 +287,6 @@ function CreatePostWithImages({ onPostCreated }) {
             )}
           </div>
         </div>
-
 
         <input ref={fileInputRef} type="file" accept="image/*" multiple
           style={{ display: "none" }} onChange={handleFileSelect} disabled={uploading} />

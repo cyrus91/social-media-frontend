@@ -112,7 +112,7 @@ function Navbar() {
               {unreadMessages > 0 && (
                 <span style={{
                   position: "absolute", top: "2px", right: "2px",
-                  background: "linear-gradient(135deg,#7c3aed,#06b6d4)",
+                  background: "var(--nx-grad-btn)",
                   color: "#fff", fontSize: "10px", fontWeight: 700,
                   width: "16px", height: "16px", borderRadius: "50%",
                   display: "flex", alignItems: "center", justifyContent: "center",
@@ -188,7 +188,7 @@ function Navbar() {
                         {item.label}
                       </div>
                       {item.badge > 0 && (
-                        <span style={{ background: "linear-gradient(135deg,#7c3aed,#06b6d4)", color: "#fff", fontSize: "10px", fontWeight: 700, padding: "2px 7px", borderRadius: "99px" }}>
+                        <span style={{ background: "var(--nx-grad-btn)", color: "#fff", fontSize: "10px", fontWeight: 700, padding: "2px 7px", borderRadius: "99px" }}>
                           {item.badge}
                         </span>
                       )}
@@ -269,7 +269,7 @@ function Navbar() {
                 }}>
                 {item.label}
                 {item.badge > 0 && (
-                  <span style={{ background: "linear-gradient(135deg,#7c3aed,#06b6d4)", color: "#fff", fontSize: "10px", fontWeight: 700, padding: "2px 7px", borderRadius: "99px" }}>
+                  <span style={{ background: "var(--nx-grad-btn)", color: "#fff", fontSize: "10px", fontWeight: 700, padding: "2px 7px", borderRadius: "99px" }}>
                     {item.badge}
                   </span>
                 )}

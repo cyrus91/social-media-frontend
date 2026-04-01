@@ -265,7 +265,7 @@ function NotificationBell(props) {
             top: props.isMobile ? "50%" : "2px",
             right: props.isMobile ? "8px" : "2px",
             transform: props.isMobile ? "translateY(-50%)" : undefined,
-            background: "linear-gradient(135deg,#7c3aed,#06b6d4)",
+            background: "var(--nx-grad-btn)",
             color: "#fff", fontSize: "10px", fontWeight: 700,
             width: "16px", height: "16px", borderRadius: "50%",
             display: "flex", alignItems: "center", justifyContent: "center",

@@ -113,7 +113,7 @@ function AdminPage() {
         <div style={{ display: "flex", gap: "4px", background: "var(--nx-surface)", border: "1px solid var(--nx-border)", borderRadius: "var(--nx-radius-lg)", padding: "4px", marginBottom: "20px", width: "fit-content", boxShadow: "var(--nx-shadow-sm)" }}>
           {TABS.map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-              style={{ padding: "7px 16px", borderRadius: "var(--nx-radius-sm)", fontSize: "13px", fontWeight: 600, border: "none", cursor: "pointer", transition: "all var(--nx-transition)", background: activeTab === tab.id ? "linear-gradient(135deg,#7c3aed,#06b6d4)" : "none", color: activeTab === tab.id ? "#fff" : "var(--nx-text-muted)" }}>
+              style={{ padding: "7px 16px", borderRadius: "var(--nx-radius-sm)", fontSize: "13px", fontWeight: 600, border: "none", cursor: "pointer", transition: "all var(--nx-transition)", background: activeTab === tab.id ? "var(--nx-grad-btn)" : "none", color: activeTab === tab.id ? "#fff" : "var(--nx-text-muted)" }}>
               {tab.label}
             </button>
           ))}
@@ -140,7 +140,7 @@ function AdminPage() {
                   <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
                 </svg>
                 <input type="text" placeholder="Cerca per username o email..." value={search} onChange={e => setSearch(e.target.value)}
-                  style={{ paddingLeft: "30px", paddingRight: "12px", paddingTop: "7px", paddingBottom: "7px", width: "280px", background: "var(--nx-surface-2)", border: "1.5px solid var(--nx-border)", borderRadius: "var(--nx-radius-full)", fontSize: "13px", color: "var(--nx-text)", outline: "none", transition: "border-color var(--nx-transition)" }}
+                  style={{ paddingLeft: "30px", paddingRight: "12px", paddingTop: "7px", paddingBottom: "7px", width: "280px", background: "var(--nx-input-bg)", border: "1.5px solid var(--nx-input-border)", borderRadius: "var(--nx-radius-full)", fontSize: "13px", color: "var(--nx-text)", outline: "none", transition: "border-color var(--nx-transition)" }}
                   onFocus={e => e.target.style.borderColor = "rgba(124,58,237,0.5)"}
                   onBlur={e => e.target.style.borderColor = "var(--nx-border)"} />
               </div>

@@ -18,7 +18,7 @@ function VerifyEmailPage() {
 
   const STATES = {
     loading: { emoji: "⏳", title: "Verifica in corso...", text: "", btnLabel: null, btnStyle: null },
-    success: { emoji: "🎉", title: "Email verificata!", text: "Il tuo account è attivo. Puoi ora accedere al social.", btnLabel: "Vai al Login", btnStyle: "linear-gradient(135deg,#7c3aed,#06b6d4)" },
+    success: { emoji: "🎉", title: "Email verificata!", text: "Il tuo account è attivo. Puoi ora accedere al social.", btnLabel: "Vai al Login", btnStyle: "var(--nx-grad-btn)" },
     expired: { emoji: "⏰", title: "Link scaduto", text: "Il link di verifica è scaduto. Accedi e richiedi un nuovo link.", btnLabel: "Vai al Login", btnStyle: "linear-gradient(135deg,#f97316,#ef4444)" },
     error:   { emoji: "❌", title: "Link non valido", text: "Il link di verifica non è valido o è già stato usato.", btnLabel: "Vai al Login", btnStyle: "linear-gradient(135deg,#6b7280,#4b5563)" },
   };

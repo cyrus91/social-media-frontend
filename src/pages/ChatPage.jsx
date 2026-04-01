@@ -335,7 +335,7 @@ function ChatPage() {
                           🚫 Messaggio eliminato
                         </div>
                       ) : msg.audioUrl ? (
-                        <div style={{ padding: "8px 12px", borderRadius: mine ? "16px 4px 16px 16px" : "4px 16px 16px 16px", background: mine ? "linear-gradient(135deg,#7c3aed,#06b6d4)" : "var(--nx-surface-2)", border: mine ? "none" : "1px solid var(--nx-border)" }}>
+                        <div style={{ padding: "8px 12px", borderRadius: mine ? "16px 4px 16px 16px" : "4px 16px 16px 16px", background: mine ? "var(--nx-grad-btn)" : "var(--nx-surface-2)", border: mine ? "none" : "1px solid var(--nx-border)" }}>
                           <audio controls src={msg.audioUrl} style={{ maxWidth: "200px", height: "32px" }} />
                         </div>
                       ) : msg.imageUrl ? (
@@ -346,7 +346,7 @@ function ChatPage() {
                         <div style={{
                           padding: "9px 14px", fontSize: "13px", lineHeight: 1.45, wordBreak: "break-words",
                           borderRadius: mine ? "16px 4px 16px 16px" : "4px 16px 16px 16px",
-                          background: mine ? "linear-gradient(135deg,#7c3aed,#0891b2)" : "var(--nx-surface-2)",
+                          background: mine ? "var(--nx-grad-btn)" : "var(--nx-surface-2)",
                           border: mine ? "none" : "1px solid var(--nx-border)",
                           color: mine ? "#fff" : "var(--nx-text)",
                         }}>
@@ -521,7 +521,7 @@ function ChatPage() {
                 const r = new FileReader(); r.onload = () => setImagePreview(r.result); r.readAsDataURL(f); e.target.value = "";
               }} />
 
-            <div style={{ flex: 1, background: "var(--nx-surface-2)", border: "1.5px solid var(--nx-border)", borderRadius: "var(--nx-radius-lg)", transition: "border-color var(--nx-transition), box-shadow var(--nx-transition)" }}
+            <div style={{ flex: 1, background: "var(--nx-input-bg)", border: "1.5px solid var(--nx-input-border)", borderRadius: "var(--nx-radius-lg)", transition: "border-color var(--nx-transition), box-shadow var(--nx-transition)" }}
               onFocusCapture={e => { e.currentTarget.style.borderColor = "rgba(124,58,237,0.5)"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(124,58,237,0.08)"; }}
               onBlurCapture={e => { e.currentTarget.style.borderColor = "var(--nx-border)"; e.currentTarget.style.boxShadow = "none"; }}>
               <textarea value={text} onChange={handleTextChange}
@@ -536,7 +536,7 @@ function ChatPage() {
 
             {text.trim() || imageFile ? (
               <button onClick={handleSend} disabled={sending}
-                style={{ padding: "9px", background: "linear-gradient(135deg,#7c3aed,#06b6d4)", color: "#fff", border: "none", borderRadius: "50%", cursor: sending ? "not-allowed" : "pointer", display: "flex", flexShrink: 0, opacity: sending ? 0.6 : 1, transition: "opacity var(--nx-transition)" }}>
+                style={{ padding: "9px", background: "var(--nx-grad-btn)", color: "#fff", border: "none", borderRadius: "50%", cursor: sending ? "not-allowed" : "pointer", display: "flex", flexShrink: 0, opacity: sending ? 0.6 : 1, transition: "opacity var(--nx-transition)" }}>
                 {sending
                   ? <div style={{ width: "18px", height: "18px", border: "2px solid rgba(255,255,255,0.4)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
                   : <svg width="18" height="18" style={{ transform: "rotate(45deg)" }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>}

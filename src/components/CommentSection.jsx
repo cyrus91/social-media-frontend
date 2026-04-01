@@ -262,7 +262,7 @@ function CommentItem({ comment, user, postId, onReact, onReplyCreated, depth = 0
                 rows={2} autoFocus />
               <div style={{ display: "flex", gap: "6px", marginTop: "4px" }}>
                 <button onClick={handleEditSave}
-                  style={{ fontSize: "11px", background: "linear-gradient(135deg,#7c3aed,#06b6d4)", color: "#fff", padding: "3px 10px", borderRadius: "var(--nx-radius-sm)", border: "none", cursor: "pointer" }}>
+                  style={{ fontSize: "11px", background: "var(--nx-grad-btn)", color: "#fff", padding: "3px 10px", borderRadius: "var(--nx-radius-sm)", border: "none", cursor: "pointer" }}>
                   Salva
                 </button>
                 <button onClick={() => setEditMode(false)}
@@ -391,7 +391,7 @@ function CommentItem({ comment, user, postId, onReact, onReplyCreated, depth = 0
                       {user?.username?.charAt(0).toUpperCase()}
                     </div>}
               </div>
-              <div style={{ flex: 1, background: "var(--nx-surface-2)", border: "1px solid var(--nx-border)", borderRadius: "var(--nx-radius-lg)", padding: "6px 12px", position: "relative" }}>
+              <div style={{ flex: 1, background: "var(--nx-input-bg)", border: "1px solid var(--nx-input-border)", borderRadius: "var(--nx-radius-lg)", padding: "6px 12px", position: "relative" }}>
                 <MentionSuggestions
                   suggestions={replySuggestions}
                   visible={showReplySuggestions}
@@ -601,9 +601,9 @@ function CommentSection({ postId, initialCommentCount = 0, defaultExpanded = fal
               <div style={{ flex: 1, position: "relative" }}>
                 <MentionSuggestions suggestions={mainSuggestions} visible={showMainSuggestions} onSelect={(u) => selectMainMention(u, textareaRef)} anchorRef={textareaRef} />
                 <div style={{
-                  border: `1.5px solid ${commentText ? "rgba(124,58,237,0.4)" : "var(--nx-border)"}`,
+                  border: `1.5px solid ${commentText ? "rgba(124,58,237,0.4)" : "var(--nx-input-border)"}`,
                   borderRadius: "var(--nx-radius-lg)",
-                  background: "var(--nx-surface-2)",
+                  background: "var(--nx-input-bg)",
                   boxShadow: commentText ? "0 0 0 3px rgba(124,58,237,0.08)" : "none",
                   transition: "border-color var(--nx-transition), box-shadow var(--nx-transition)",
                 }}>
@@ -668,7 +668,7 @@ function CommentSection({ postId, initialCommentCount = 0, defaultExpanded = fal
                       </div>
                       <button type="submit" disabled={submitting || (!commentText.trim() && !imageFile)}
                         style={{
-                          background: "linear-gradient(135deg,#7c3aed,#06b6d4)", color: "#fff",
+                          background: "var(--nx-grad-btn)", color: "#fff",
                           fontSize: "11px", fontWeight: 600, padding: "4px 14px",
                           borderRadius: "var(--nx-radius-full)", border: "none", cursor: "pointer",
                           opacity: submitting || (!commentText.trim() && !imageFile) ? 0.5 : 1,

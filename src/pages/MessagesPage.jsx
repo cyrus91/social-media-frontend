@@ -475,7 +475,7 @@ function MessagesPage() {
                               marginLeft: "8px",
                               flexShrink: 0,
                               background:
-                                "linear-gradient(135deg,#7c3aed,#06b6d4)",
+                                "var(--nx-grad-btn)",
                               color: "#fff",
                               fontSize: "10px",
                               fontWeight: 700,

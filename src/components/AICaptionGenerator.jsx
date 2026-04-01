@@ -121,7 +121,7 @@ function AICaptionGenerator({ onCaptionGenerated, imageUrls = [] }) {
       <button type="button" onClick={handleGenerate} disabled={loading}
         style={{
           width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
-          padding: "8px 16px", background: "linear-gradient(135deg,#7c3aed,#06b6d4)",
+          padding: "8px 16px", background: "var(--nx-grad-btn)",
           color: "#fff", border: "none", borderRadius: "var(--nx-radius-sm)",
           fontSize: "13px", fontWeight: 600, cursor: loading ? "not-allowed" : "pointer",
           opacity: loading ? 0.7 : 1, transition: "opacity var(--nx-transition)",
@@ -153,7 +153,7 @@ function AICaptionGenerator({ onCaptionGenerated, imageUrls = [] }) {
             <div style={{ display: "flex", gap: "8px" }}>
               <button type="button" onClick={handleUse}
                 style={{
-                  flex: 1, padding: "7px 12px", background: "linear-gradient(135deg,#7c3aed,#06b6d4)",
+                  flex: 1, padding: "7px 12px", background: "var(--nx-grad-btn)",
                   color: "#fff", border: "none", borderRadius: "var(--nx-radius-sm)",
                   fontSize: "12px", fontWeight: 600, cursor: "pointer",
                 }}>
@@ -162,8 +162,8 @@ function AICaptionGenerator({ onCaptionGenerated, imageUrls = [] }) {
               <button type="button" onClick={handleGenerate} disabled={loading}
                 style={{
                   display: "flex", alignItems: "center", gap: "6px",
-                  padding: "7px 12px", background: "var(--nx-surface-2)",
-                  color: "var(--nx-text-muted)", border: "1px solid var(--nx-border)",
+                  padding: "7px 12px", background: "rgba(124,58,237,0.08)",
+                  color: "#8b5cf6", border: "1px solid rgba(124,58,237,0.2)",
                   borderRadius: "var(--nx-radius-sm)", fontSize: "12px", fontWeight: 600,
                   cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.5 : 1,
                 }}>

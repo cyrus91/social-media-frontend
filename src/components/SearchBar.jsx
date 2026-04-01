@@ -95,8 +95,8 @@ function SearchBar() {
           onKeyDown={handleKeyDown}
           style={{
             width: "100%",
-            background: "var(--nx-surface-2)",
-            border: "1.5px solid var(--nx-border)",
+            background: "var(--nx-input-bg)",
+            border: "1.5px solid var(--nx-input-border)",
             borderRadius: "var(--nx-radius-full)",
             padding: "7px 36px 7px 32px",
             fontSize: "13px",
