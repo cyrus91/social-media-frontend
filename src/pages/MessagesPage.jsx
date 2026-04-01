@@ -90,6 +90,12 @@ function MessagesPage() {
 
   return (
     <div className="nx-page">
+      <style>{`
+        @keyframes nx-bounce {
+          0%, 100% { transform: translateY(0); opacity: 0.5; }
+          50% { transform: translateY(-4px); opacity: 1; }
+        }
+      `}</style>
       <Navbar />
 
       <div
@@ -446,7 +452,7 @@ function MessagesPage() {
                                     height: "4px",
                                     background: "#7c3aed",
                                     borderRadius: "50%",
-                                    animation: "bounce 1s infinite",
+                                    animation: "nx-bounce 1s ease-in-out infinite",
                                     animationDelay: `${delay}ms`,
                                   }}
                                 />

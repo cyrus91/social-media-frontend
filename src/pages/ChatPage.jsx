@@ -17,13 +17,19 @@ const REACTIONS = ["❤️", "👍", "😂", "😮", "😢", "🙏"];
 function TypingIndicator() {
   return (
     <div style={{ display: "flex", justifyContent: "flex-start", marginBottom: "4px" }}>
+      <style>{`
+        @keyframes nx-bounce {
+          0%, 100% { transform: translateY(0); opacity: 0.5; }
+          50% { transform: translateY(-4px); opacity: 1; }
+        }
+      `}</style>
       <div style={{
         background: "var(--nx-surface-2)", border: "1px solid var(--nx-border)",
         borderRadius: "4px 16px 16px 16px", padding: "10px 14px",
         display: "flex", alignItems: "center", gap: "4px",
       }}>
         {[0, 150, 300].map(d => (
-          <span key={d} style={{ width: "6px", height: "6px", background: "var(--nx-text-subtle)", borderRadius: "50%", animation: "bounce 1s infinite", animationDelay: `${d}ms`, display: "block" }} />
+          <span key={d} style={{ width: "6px", height: "6px", background: "var(--nx-text-muted)", borderRadius: "50%", display: "block", animation: `nx-bounce 1s ease-in-out infinite`, animationDelay: `${d}ms` }} />
         ))}
       </div>
     </div>
@@ -344,7 +350,8 @@ function ChatPage() {
                           onClick={() => window.open(msg.imageUrl, "_blank")} />
                       ) : msg.content ? (
                         <div style={{
-                          padding: "9px 14px", fontSize: "13px", lineHeight: 1.45, wordBreak: "break-words",
+                          padding: "9px 14px", fontSize: "13px", lineHeight: 1.45,
+                          wordBreak: "break-word", overflowWrap: "break-word", whiteSpace: "pre-wrap",
                           borderRadius: mine ? "16px 4px 16px 16px" : "4px 16px 16px 16px",
                           background: mine ? "var(--nx-grad-btn)" : "var(--nx-surface-2)",
                           border: mine ? "none" : "1px solid var(--nx-border)",
