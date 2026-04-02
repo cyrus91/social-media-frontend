@@ -387,6 +387,7 @@
 /* MentionTextarea — placeholder visibile con colore Nexus */
 .mention-textarea-input::placeholder {
   color: var(--nx-text-subtle);
+  -webkit-text-fill-color: var(--nx-text-subtle);
   opacity: 1;
 }
 /* Evita che il testo diventi visibile durante la selezione nella MentionTextarea */
