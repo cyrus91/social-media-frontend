@@ -19,8 +19,8 @@ function buildHighlightHtml(text) {
       return escaped.replace(
         MENTION_REGEX,
         (match) => match.startsWith("#")
-          ? `<mark style="color:#0891b2;background:transparent;font-weight:600">${match}</mark>`
-          : `<mark style="color:#7c3aed;background:transparent;font-weight:600">${match}</mark>`
+          ? `<mark style="color:#0891b2;background:transparent;">${match}</mark>`
+          : `<mark style="color:#7c3aed;background:transparent;">${match}</mark>`
       );
     })
     .join("<br>");
