@@ -391,9 +391,9 @@
 }
 /* Evita che il testo diventi visibile durante la selezione nella MentionTextarea */
 .mention-textarea-input::selection {
-  background: rgba(124, 58, 237, 0.25);
-  color: transparent;
-  -webkit-text-fill-color: transparent;
+  background: rgba(124, 58, 237, 0.25) !important;
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
 }
 /* ============================================
    NEXUS BRAND GUIDE — Exact Component Classes
