@@ -103,7 +103,6 @@ function MentionTextarea({ value, onChange, placeholder, rows = 1, disabled, cla
             resize: "none",
             // Il testo normale deve rimanere invisibile per far vedere l'overlay sotto!
             color: "transparent",
-            WebkitTextFillColor: "transparent",
             caretColor: "var(--nx-text)",
           background: "transparent",
           outline: "none",
