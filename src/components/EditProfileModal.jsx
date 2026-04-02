@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { updateBio, uploadAvatar, deleteAvatar, deleteAccount } from "../services/userService";
+import { changePassword } from "../services/authService";
 import useAuthStore from "../store/authStore";
 import toast from "react-hot-toast";
 
@@ -17,6 +18,14 @@ function EditProfileModal({ isOpen, onClose, currentProfile, onProfileUpdated })
   const [loading, setLoading] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  // Cambia password
+  const [currentPwd, setCurrentPwd] = useState("");
+  const [newPwd, setNewPwd] = useState("");
+  const [confirmPwd, setConfirmPwd] = useState("");
+  const [changingPwd, setChangingPwd] = useState(false);
+  const [showPwdSection, setShowPwdSection] = useState(false);
+  const isOAuthUser = currentProfile?.passwordHash?.startsWith?.("OAUTH2_NO_PASSWORD_") ||
+    !currentProfile?.passwordHash;
 
   if (!isOpen) return null;
 
@@ -131,6 +140,72 @@ function EditProfileModal({ isOpen, onClose, currentProfile, onProfileUpdated })
               onBlur={e => e.target.style.borderColor = "var(--nx-input-border)"} />
             <p style={{ fontSize: "11px", color: "var(--nx-text-subtle)", textAlign: "right", marginTop: "4px" }}>{bio.length}/500</p>
           </div>
+
+          {/* Cambia Password */}
+          {!isOAuthUser && (
+            <div style={{ borderTop: "1px solid var(--nx-border)", paddingTop: "16px" }}>
+              <button onClick={() => setShowPwdSection(!showPwdSection)}
+                style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", background: "none", border: "none", cursor: "pointer", padding: 0 }}>
+                <h3 style={{ fontWeight: 700, fontSize: "13px", color: "var(--nx-text)", display: "flex", alignItems: "center", gap: "6px" }}>
+                  <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                  </svg>
+                  Cambia password
+                </h3>
+                <svg width="14" height="14" fill="none" stroke="var(--nx-text-muted)" viewBox="0 0 24 24"
+                  style={{ transform: showPwdSection ? "rotate(180deg)" : "none", transition: "transform var(--nx-transition)" }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              {showPwdSection && (
+                <div style={{ marginTop: "14px", display: "flex", flexDirection: "column", gap: "12px" }}>
+                  {[
+                    { label: "Password attuale", value: currentPwd, setter: setCurrentPwd, placeholder: "La tua password corrente" },
+                    { label: "Nuova password", value: newPwd, setter: setNewPwd, placeholder: "Almeno 6 caratteri" },
+                    { label: "Conferma nuova password", value: confirmPwd, setter: setConfirmPwd, placeholder: "Ripeti la nuova password" },
+                  ].map(({ label, value, setter, placeholder }) => (
+                    <div key={label}>
+                      <label style={LABEL}>{label}</label>
+                      <input type="password" value={value} onChange={e => setter(e.target.value)}
+                        placeholder={placeholder} disabled={changingPwd}
+                        style={{ ...INPUT_STYLE }}
+                        onFocus={e => e.target.style.borderColor = "rgba(124,58,237,0.5)"}
+                        onBlur={e => e.target.style.borderColor = "var(--nx-input-border)"} />
+                    </div>
+                  ))}
+                  <button disabled={changingPwd || !currentPwd || !newPwd || !confirmPwd}
+                    onClick={async () => {
+                      if (newPwd.length < 6) { toast.error("La password deve essere di almeno 6 caratteri"); return; }
+                      if (newPwd !== confirmPwd) { toast.error("Le password non coincidono"); return; }
+                      setChangingPwd(true);
+                      const result = await changePassword(currentPwd, newPwd);
+                      setChangingPwd(false);
+                      if (result.success) {
+                        toast.success("Password aggiornata!");
+                        setCurrentPwd(""); setNewPwd(""); setConfirmPwd("");
+                        setShowPwdSection(false);
+                      } else if (result.wrongPassword) {
+                        toast.error("Password attuale non corretta.");
+                      } else {
+                        toast.error(result.error || "Errore nel cambio password");
+                      }
+                    }}
+                    style={{
+                      display: "flex", alignItems: "center", justifyContent: "center", gap: "6px",
+                      padding: "9px 18px", fontSize: "13px", fontWeight: 600,
+                      background: "var(--nx-grad-btn)", color: "#fff", border: "none",
+                      borderRadius: "var(--nx-radius-full)", cursor: changingPwd || !currentPwd || !newPwd || !confirmPwd ? "not-allowed" : "pointer",
+                      opacity: changingPwd || !currentPwd || !newPwd || !confirmPwd ? 0.6 : 1,
+                    }}>
+                    {changingPwd
+                      ? <>{SPINNER(14)}<span>Aggiornamento...</span></>
+                      : "Aggiorna password"}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Danger zone */}
           <div style={{ borderTop: "2px solid rgba(239,68,68,0.2)", paddingTop: "16px" }}>

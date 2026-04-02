@@ -95,10 +95,17 @@ function LoginPage() {
             </div>
 
             {/* Password */}
-            <div style={{ marginBottom: "20px" }}>
-              <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "var(--nx-text-muted)", marginBottom: "6px" }}>
-                Password
-              </label>
+            <div style={{ marginBottom: "8px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                <label style={{ fontSize: "13px", fontWeight: 600, color: "var(--nx-text-muted)" }}>
+                  Password
+                </label>
+                <Link to="/forgot-password" style={{ fontSize: "12px", color: "#7c3aed", textDecoration: "none", fontWeight: 500 }}
+                  onMouseEnter={e => e.currentTarget.style.textDecoration = "underline"}
+                  onMouseLeave={e => e.currentTarget.style.textDecoration = "none"}>
+                  Password dimenticata?
+                </Link>
+              </div>
               <div style={{ position: "relative" }}>
                 <input
                   type={showPassword ? "text" : "password"}
@@ -127,8 +134,6 @@ function LoginPage() {
                 </button>
               </div>
             </div>
-
-            {/* Email not verified banner */}
             {emailNotVerified && (
               <div style={{
                 background: "rgba(234,179,8,0.08)", border: "1px solid rgba(234,179,8,0.25)",
@@ -176,7 +181,6 @@ function LoginPage() {
             <div className="nx-divider" style={{ flex: 1 }} />
           </div>
 
-          {/* Google OAuth placeholder — verrà implementato */}
           <button
             type="button"
             style={{
@@ -187,7 +191,10 @@ function LoginPage() {
             }}
             onMouseEnter={e => e.currentTarget.style.borderColor = "var(--nx-border-hover)"}
             onMouseLeave={e => e.currentTarget.style.borderColor = "var(--nx-border)"}
-            onClick={() => toast("Google login — coming soon!", { icon: "🔜" })}>
+            onClick={() => {
+              const backendUrl = import.meta.env.VITE_API_URL?.replace("/api", "") || "http://localhost:8080";
+              window.location.href = `${backendUrl}/oauth2/authorization/google`;
+            }}>
             <svg width="18" height="18" viewBox="0 0 24 24">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
               <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>

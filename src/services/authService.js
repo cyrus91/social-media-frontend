@@ -104,7 +104,58 @@ export const logout = async () => {
   try {
     await api.post("/auth/logout");
     return { success: true };
-  } catch (error) {
+  } catch {
     return { success: false };
+  }
+};
+// ============================================
+// POST - Richiedi reset password
+// ============================================
+export const requestPasswordReset = async (email) => {
+  try {
+    const response = await api.post("/auth/forgot-password", { email });
+    return { success: true, message: response.data.message };
+  } catch (error) {
+    const errorData = error.response?.data;
+    return {
+      success: false,
+      oauthAccount: errorData?.error === "OAUTH2_ACCOUNT",
+      error: errorData?.message || "Errore nella richiesta di reset",
+    };
+  }
+};
+
+// ============================================
+// POST - Reimposta password con token
+// ============================================
+export const resetPassword = async (token, newPassword) => {
+  try {
+    await api.post("/auth/reset-password", { token, newPassword });
+    return { success: true };
+  } catch (error) {
+    const errorData = error.response?.data;
+    return {
+      success: false,
+      expired: error.response?.status === 410,
+      error: errorData?.error || "Token non valido o scaduto",
+    };
+  }
+};
+
+// ============================================
+// POST - Cambia password (autenticato)
+// ============================================
+export const changePassword = async (currentPassword, newPassword) => {
+  try {
+    await api.post("/auth/change-password", { currentPassword, newPassword });
+    return { success: true };
+  } catch (error) {
+    const errorData = error.response?.data;
+    return {
+      success: false,
+      wrongPassword: errorData?.error === "WRONG_PASSWORD",
+      oauthAccount: errorData?.error === "OAUTH2_ACCOUNT",
+      error: errorData?.message || errorData?.error || "Errore nel cambio password",
+    };
   }
 };

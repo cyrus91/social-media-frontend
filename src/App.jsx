@@ -14,6 +14,9 @@ import AdminPage from "./pages/AdminPage";
 import AdminRoute from "./components/AdminRoute";
 import MessagesPage from "./pages/MessagesPage";
 import ChatPage from "./pages/ChatPage";
+import OAuth2CallbackPage from "./pages/OAuth2CallbackPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import { useMessagingWebSocket, requestNotificationPermission } from "./hooks/useMessagingWebSocket";
 import useAuthStore from "./store/authStore";
 
@@ -41,6 +44,9 @@ function AppInner() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/verify-email" element={<VerifyEmailPage />} />
+      <Route path="/oauth2/callback" element={<OAuth2CallbackPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/feed" element={<ProtectedRoute><FeedPage /></ProtectedRoute>} />
       <Route path="/explore" element={<ProtectedRoute><ExplorePage /></ProtectedRoute>} />
       <Route path="/profile/:username" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />

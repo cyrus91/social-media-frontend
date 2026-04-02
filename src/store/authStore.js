@@ -1,14 +1,10 @@
 import { create } from "zustand";
+import api from "../services/api";
 
 const getCurrentUser = () => {
   const userStr = localStorage.getItem("user");
   if (userStr) {
-    try {
-      return JSON.parse(userStr);
-    } catch (e) {
-      console.error("Errore nel parsing user:", e);
-      return null;
-    }
+    try { return JSON.parse(userStr); } catch { return null; }
   }
   return null;
 };
@@ -19,47 +15,35 @@ const useAuthStore = create((set) => ({
   isAuthenticated: !!localStorage.getItem("token"),
 
   login: (user, token) => {
-    console.log("💾 Salvataggio user e token in localStorage");
-    console.log("👤 User:", user);
-    console.log("🔑 Token:", token);
-
-    // Salva in localStorage
     localStorage.setItem("user", JSON.stringify(user));
     localStorage.setItem("token", token);
+    set({ user, token, isAuthenticated: true });
+  },
 
-    console.log(" User salvato:", localStorage.getItem("user"));
-    console.log(" Token salvato:", localStorage.getItem("token"));
-
-    // Aggiorna state
-    set({
-      user,
-      token,
-      isAuthenticated: true,
+  // Usato dopo OAuth2 callback — salva token e carica profilo dal server
+  loginWithTokens: async (token, refreshToken) => {
+    localStorage.setItem("token", token);
+    if (refreshToken) localStorage.setItem("refreshToken", refreshToken);
+    const profileRes = await api.get("/users/me", {
+      headers: { Authorization: `Bearer ${token}` },
     });
+    const user = profileRes.data;
+    localStorage.setItem("user", JSON.stringify(user));
+    set({ user, token, isAuthenticated: true });
   },
 
   logout: () => {
-    console.log("🚪 Logout - Rimozione dati da localStorage");
-
     localStorage.removeItem("user");
     localStorage.removeItem("token");
-
-    set({
-      user: null,
-      token: null,
-      isAuthenticated: false,
-    });
+    localStorage.removeItem("refreshToken");
+    set({ user: null, token: null, isAuthenticated: false });
   },
 
   updateUser: (userData) => {
     const currentUser = getCurrentUser();
     const updatedUser = { ...currentUser, ...userData };
-
     localStorage.setItem("user", JSON.stringify(updatedUser));
-
-    set({
-      user: updatedUser,
-    });
+    set({ user: updatedUser });
   },
 }));
 
