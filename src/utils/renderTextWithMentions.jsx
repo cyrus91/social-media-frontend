@@ -17,11 +17,13 @@ export function renderTextWithMentions(text) {
     }
     if (part.match(/^#\w+$/)) {
       return (
-        <span key={i} style={{ color: "#0891b2", fontWeight: 600, cursor: "pointer" }}
+        <Link key={i} to={`/hashtag/${part.slice(1)}`}
+          style={{ color: "#0891b2", fontWeight: 600, textDecoration: "none" }}
+          onClick={e => e.stopPropagation()}
           onMouseEnter={e => e.currentTarget.style.textDecoration = "underline"}
           onMouseLeave={e => e.currentTarget.style.textDecoration = "none"}>
           {part}
-        </span>
+        </Link>
       );
     }
     return part;
