@@ -112,11 +112,12 @@ function ReactionButton({ comment, onReact, disabled }) {
 }
 
 // Componente singolo commento (usato sia per principali che per risposte)
-function CommentItem({ comment, user, postId, onReact, onReplyCreated, depth = 0 }) {
+function CommentItem({ comment, user, postId, onReact, onReplyCreated, depth = 0, rootId = null }) {
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [replyText, setReplyText] = useState("");
   const [replyImageFile, setReplyImageFile] = useState(null);
   const [replyImagePreview, setReplyImagePreview] = useState(null);
+  const [hovered, setHovered] = useState(false);
   const [submittingReply, setSubmittingReply] = useState(false);
   const replyImageInputRef = useRef(null);
   const replyInputRef = useRef(null);
@@ -161,12 +162,14 @@ function CommentItem({ comment, user, postId, onReact, onReplyCreated, depth = 0
     if (e?.preventDefault) e.preventDefault();
     if (!replyText.trim() && !replyImageFile) return;
     setSubmittingReply(true);
+    // Se siamo in una reply (depth>0), rispondiamo al commento root, non alla reply stessa
+    const targetParentId = depth > 0 && rootId ? rootId : comment.id;
     try {
       let result;
       if (replyImageFile) {
-        result = await createCommentWithImage({ postId, content: replyText.trim() || null, parentId: comment.id, imageFile: replyImageFile });
+        result = await createCommentWithImage({ postId, content: replyText.trim() || null, parentId: targetParentId, imageFile: replyImageFile });
       } else {
-        result = await createComment({ postId, content: replyText.trim(), parentId: comment.id });
+        result = await createComment({ postId, content: replyText.trim(), parentId: targetParentId });
       }
       if (result.success) {
         const newReply = {
@@ -248,7 +251,10 @@ function CommentItem({ comment, user, postId, onReact, onReplyCreated, depth = 0
 
       <div className="flex-1 min-w-0">
         {/* Bubble commento */}
-        <div style={{ background: "var(--nx-surface-2)", border: "1px solid var(--nx-border)", borderRadius: "var(--nx-radius-lg)", padding: "8px 12px", display: "inline-block", maxWidth: "100%", position: "relative" }} className="group/comment">
+        <div
+          onMouseEnter={() => setHovered(true)}
+          onMouseLeave={() => setHovered(false)}
+          style={{ background: "var(--nx-surface-2)", border: "1px solid var(--nx-border)", borderRadius: "var(--nx-radius-lg)", padding: "8px 12px", display: "inline-block", maxWidth: "100%", position: "relative" }}>
           <Link to={`/profile/${localComment.authorUsername}`}
             style={{ fontWeight: 700, fontSize: "12px", color: "var(--nx-text)", textDecoration: "none" }}
             onMouseEnter={e => e.currentTarget.style.textDecoration = "underline"}
@@ -301,7 +307,7 @@ function CommentItem({ comment, user, postId, onReact, onReplyCreated, depth = 0
 
           {/* Menu 3 punti — solo autore */}
           {user?.id === localComment.authorId && !editMode && (
-            <div style={{ position: "absolute", top: "4px", right: "4px", opacity: 0, transition: "opacity var(--nx-transition)" }} className="group-hover/comment:opacity-100">
+            <div style={{ position: "absolute", top: "4px", right: "4px", opacity: hovered ? 1 : 0, transition: "opacity var(--nx-transition)" }}>
               <div style={{ position: "relative" }}>
                 <button onClick={() => setShowMenu(v => !v)}
                   style={{ padding: "3px", borderRadius: "50%", background: "none", border: "none", cursor: "pointer", color: "var(--nx-text-subtle)", display: "flex" }}
@@ -357,7 +363,7 @@ function CommentItem({ comment, user, postId, onReact, onReplyCreated, depth = 0
         <div style={{ display: "flex", alignItems: "center", gap: "12px", marginTop: "4px", marginLeft: "4px" }}>
           <ReactionButton comment={localComment} onReact={handleReact} disabled={!user} />
 
-          {depth === 0 && user && (
+          {user && (
             <button onClick={() => setShowReplyForm(v => !v)}
               style={{ fontSize: "11px", fontWeight: 700, color: "var(--nx-text-muted)", background: "none", border: "none", cursor: "pointer", transition: "color var(--nx-transition)" }}
               onMouseEnter={e => e.currentTarget.style.color = "#7c3aed"}
@@ -403,7 +409,7 @@ function CommentItem({ comment, user, postId, onReact, onReplyCreated, depth = 0
                   textareaRef={replyInputRef}
                   value={replyText}
                   onChange={e => { setReplyText(e.target.value); handleReplyMentionChange(e); }}
-                  placeholder={`Rispondi a @${localComment.authorUsername}...`}
+                  placeholder={`Rispondi a @${depth > 0 ? localComment.authorUsername : localComment.authorUsername}...`}
                   rows={1}
                   className="w-full"
                 />
@@ -455,7 +461,8 @@ function CommentItem({ comment, user, postId, onReact, onReplyCreated, depth = 0
           <div className="mt-2 space-y-2">
             {localComment.replies.map(reply => (
               <CommentItem key={reply.id} comment={reply} user={user}
-                postId={postId} onReact={onReact} depth={1} />
+                postId={postId} onReact={onReact} depth={1}
+                rootId={comment.id} />
             ))}
           </div>
         )}
@@ -464,27 +471,27 @@ function CommentItem({ comment, user, postId, onReact, onReplyCreated, depth = 0
 
       {/* Modal conferma eliminazione commento */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-4"
+        <div style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 16px" }}
           onClick={() => setShowDeleteConfirm(false)}>
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
-          <div className="relative bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full"
+          <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }} />
+          <div style={{ position: "relative", background: "var(--nx-surface)", border: "1px solid var(--nx-border)", borderRadius: "var(--nx-radius-xl)", boxShadow: "var(--nx-shadow-lg)", padding: "24px", maxWidth: "360px", width: "100%" }}
             onClick={e => e.stopPropagation()}>
-            <div className="flex flex-col items-center text-center space-y-3">
-              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
-                <svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: "10px" }}>
+              <div style={{ width: "48px", height: "48px", background: "rgba(239,68,68,0.1)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <svg width="22" height="22" fill="none" stroke="#ef4444" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                     d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
               </div>
-              <h3 className="text-lg font-bold text-gray-800">Elimina commento</h3>
-              <p className="text-sm text-gray-500">Il commento verrà eliminato definitivamente.</p>
-              <div className="flex w-full space-x-3 pt-2">
+              <h3 style={{ fontWeight: 800, fontSize: "15px", color: "var(--nx-text)" }}>Elimina commento</h3>
+              <p style={{ fontSize: "13px", color: "var(--nx-text-muted)" }}>Il commento verrà eliminato definitivamente.</p>
+              <div style={{ display: "flex", width: "100%", gap: "10px", marginTop: "6px" }}>
                 <button onClick={() => setShowDeleteConfirm(false)}
-                  className="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-semibold text-sm hover:bg-gray-50 transition">
+                  style={{ flex: 1, padding: "9px", borderRadius: "var(--nx-radius-full)", border: "1px solid var(--nx-border)", background: "var(--nx-surface-2)", fontSize: "13px", fontWeight: 600, color: "var(--nx-text)", cursor: "pointer" }}>
                   Annulla
                 </button>
                 <button onClick={handleDelete}
-                  className="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white font-semibold text-sm transition">
+                  style={{ flex: 1, padding: "9px", borderRadius: "var(--nx-radius-full)", background: "#ef4444", border: "none", fontSize: "13px", fontWeight: 600, color: "#fff", cursor: "pointer" }}>
                   Elimina
                 </button>
               </div>
