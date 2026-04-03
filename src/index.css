@@ -468,3 +468,7 @@
 .nx-badge-green  { background: rgba(16,185,129,.12); color: #34d399; border: 1px solid rgba(16,185,129,.2); }
 .nx-badge-red    { background: rgba(239,68,68,.10);  color: #f87171; border: 1px solid rgba(239,68,68,.2); }
 .nx-badge-yellow { background: rgba(245,158,11,.12); color: #fbbf24; border: 1px solid rgba(245,158,11,.2); }
+
+/* StoriesBar — nasconde scrollbar orizzontale */
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }

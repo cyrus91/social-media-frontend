@@ -4,6 +4,7 @@ import PostCard from "../components/PostCard";
 import CreatePostWithImages from "../components/CreatePostWithImages";
 import LoadingSpinner from "../components/LoadingSpinner";
 import InfiniteScrollTrigger from "../components/InfiniteScrollTrigger";
+import StoriesBar from "../components/StoriesBar";
 import useInfiniteScroll from "../hooks/useInfiniteScroll";
 import { fetchFeed } from "../services/postService";
 
@@ -23,8 +24,13 @@ function FeedPage() {
       <div style={{ maxWidth: "680px", margin: "0 auto", padding: "20px 16px 60px" }}>
 
         {/* Create post */}
-        <div style={{ marginBottom: "16px" }}>
+        <div style={{ marginBottom: "8px" }}>
           <CreatePostWithImages onPostCreated={reset} />
+        </div>
+
+        {/* Stories */}
+        <div style={{ marginBottom: "16px", background: "var(--nx-surface)", border: "1px solid var(--nx-border)", borderRadius: "var(--nx-radius-lg)", padding: "0 16px" }}>
+          <StoriesBar />
         </div>
 
         {/* Feed */}
