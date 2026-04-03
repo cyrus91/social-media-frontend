@@ -112,7 +112,7 @@ function ReactionButton({ comment, onReact, disabled }) {
 }
 
 // Componente singolo commento (usato sia per principali che per risposte)
-function CommentItem({ comment, user, postId, onReact, onReplyCreated, depth = 0, rootId = null }) {
+function CommentItem({ comment, user, postId, onReact, onReplyCreated, depth = 0, rootId = null, onAddReplyToRoot = null }) {
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [replyText, setReplyText] = useState("");
   const [replyImageFile, setReplyImageFile] = useState(null);
@@ -179,10 +179,15 @@ function CommentItem({ comment, user, postId, onReact, onReplyCreated, depth = 0
           myReaction: null,
           replies: [],
         };
-        setLocalComment(prev => ({
-          ...prev,
-          replies: [...(prev.replies || []), newReply]
-        }));
+        if (depth > 0 && onAddReplyToRoot) {
+          // Aggiungi al commento root, non alla reply — mantiene un solo livello
+          onAddReplyToRoot(newReply);
+        } else {
+          setLocalComment(prev => ({
+            ...prev,
+            replies: [...(prev.replies || []), newReply]
+          }));
+        }
         setReplyText("");
         setReplyImageFile(null);
         setReplyImagePreview(null);
@@ -254,7 +259,12 @@ function CommentItem({ comment, user, postId, onReact, onReplyCreated, depth = 0
         <div
           onMouseEnter={() => setHovered(true)}
           onMouseLeave={() => setHovered(false)}
-          style={{ background: "var(--nx-surface-2)", border: "1px solid var(--nx-border)", borderRadius: "var(--nx-radius-lg)", padding: "8px 12px", display: "inline-block", maxWidth: "100%", position: "relative" }}>
+          style={{
+            background: "var(--nx-surface-2)", border: "1px solid var(--nx-border)",
+            borderRadius: "var(--nx-radius-lg)", padding: "8px 12px",
+            paddingRight: user?.id === localComment.authorId ? "28px" : "12px",
+            display: "inline-block", maxWidth: "100%", position: "relative"
+          }}>
           <Link to={`/profile/${localComment.authorUsername}`}
             style={{ fontWeight: 700, fontSize: "12px", color: "var(--nx-text)", textDecoration: "none" }}
             onMouseEnter={e => e.currentTarget.style.textDecoration = "underline"}
@@ -462,7 +472,13 @@ function CommentItem({ comment, user, postId, onReact, onReplyCreated, depth = 0
             {localComment.replies.map(reply => (
               <CommentItem key={reply.id} comment={reply} user={user}
                 postId={postId} onReact={onReact} depth={1}
-                rootId={comment.id} />
+                rootId={comment.id}
+                onAddReplyToRoot={(newReply) => {
+                  setLocalComment(prev => ({
+                    ...prev,
+                    replies: [...(prev.replies || []), newReply]
+                  }));
+                }} />
             ))}
           </div>
         )}
