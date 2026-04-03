@@ -15,6 +15,7 @@ function StoryViewer({ groups, initialGroupIndex = 0, onClose, onStoryDeleted })
   const [storyIndex, setStoryIndex] = useState(0);
   const [progress, setProgress] = useState(0);
   const [paused, setPaused] = useState(false);
+  const [viewedIds] = useState(() => new Set()); // useRef-like, no re-render needed
   const [showViewers, setShowViewers] = useState(false);
   const [viewers, setViewers] = useState([]);
   const [loadingViewers, setLoadingViewers] = useState(false);
@@ -23,20 +24,19 @@ function StoryViewer({ groups, initialGroupIndex = 0, onClose, onStoryDeleted })
   const startTimeRef = useRef(null);
   const pausedAtRef = useRef(0);
   const videoRef = useRef(null);
-  const viewedStoriesRef = useRef(new Set());
 
   const currentGroup = groups[groupIndex];
   const currentStory = currentGroup?.stories[storyIndex];
   const isOwn = currentGroup?.authorId === user?.id;
   const isVideo = currentStory?.mediaType === "VIDEO";
 
-  // Segna come vista
+  // Segna come vista — usa Set stabile (no setState = no warning React 19)
   useEffect(() => {
-    if (currentStory && !currentStory.viewed && !viewedStoriesRef.current.has(currentStory.id)) {
+    if (currentStory && !viewedIds.has(currentStory.id)) {
+      viewedIds.add(currentStory.id);
       markStoryViewed(currentStory.id);
-      viewedStoriesRef.current.add(currentStory.id);
     }
-  }, [currentStory]);
+  }, [currentStory?.id]);
 
   // Avanza alla storia successiva
   const goNext = useCallback(() => {
@@ -86,7 +86,7 @@ function StoryViewer({ groups, initialGroupIndex = 0, onClose, onStoryDeleted })
     };
     progressRef.current = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(progressRef.current);
-  }, [currentStory, paused, isVideo, goNext]);
+  }, [currentStory?.id, paused, isVideo, goNext]);
 
   // Video: avanza quando finisce
   const handleVideoEnded = () => { setProgress(1); goNext(); };
@@ -144,14 +144,14 @@ function StoryViewer({ groups, initialGroupIndex = 0, onClose, onStoryDeleted })
       onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
 
       {/* Media */}
-      <div style={{ position: "relative", width: "100%", height: "100%", maxWidth: "420px", margin: "0 auto" }}>
+      <div style={{ position: "relative", width: "100%", height: "100%", maxWidth: "420px", margin: "0 auto", overflow: "hidden" }}>
         {isVideo ? (
           <video ref={videoRef} src={currentStory.mediaUrl} autoPlay playsInline
             onEnded={handleVideoEnded} onTimeUpdate={handleVideoTimeUpdate}
-            style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} />
         ) : (
           <img src={currentStory.mediaUrl} alt="storia"
-            style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} />
         )}
 
         {/* Gradient top */}
@@ -218,7 +218,7 @@ function StoryViewer({ groups, initialGroupIndex = 0, onClose, onStoryDeleted })
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
               </svg>
-              {currentStory.viewCount} visualizzazioni
+              {showViewers ? viewers.length : currentStory.viewCount} visualizzazioni
             </button>
             <button onClick={handleDelete}
               style={{ background: "rgba(239,68,68,0.7)", border: "none", borderRadius: "var(--nx-radius-full)", padding: "7px 14px", color: "#fff", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}>
@@ -297,7 +297,10 @@ function StoryViewer({ groups, initialGroupIndex = 0, onClose, onStoryDeleted })
 }
 
 function formatTimeLeft(expiresAt) {
-  const diff = new Date(expiresAt) - new Date();
+  // LocalDateTime da Java non ha 'Z' — il browser la interpreta come ora locale.
+  // Appendiamo 'Z' per forzare la lettura come UTC e avere il diff corretto.
+  const iso = expiresAt?.endsWith("Z") ? expiresAt : expiresAt + "Z";
+  const diff = new Date(iso) - new Date();
   if (diff <= 0) return "Scaduta";
   const h = Math.floor(diff / 3600000);
   const m = Math.floor((diff % 3600000) / 60000);
@@ -306,7 +309,8 @@ function formatTimeLeft(expiresAt) {
 }
 
 function formatViewedAt(viewedAt) {
-  const diff = new Date() - new Date(viewedAt);
+  const iso = viewedAt?.endsWith("Z") ? viewedAt : viewedAt + "Z";
+  const diff = new Date() - new Date(iso);
   const m = Math.floor(diff / 60000);
   const h = Math.floor(m / 60);
   if (h > 0) return `${h}h fa`;
