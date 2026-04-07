@@ -3,6 +3,7 @@ import { getMyBookmarks } from "../services/bookmarkService";
 import PostCard from "../components/PostCard";
 import LoadingSpinner from "../components/LoadingSpinner";
 import Navbar from "../components/Navbar";
+import { useNavigate } from "react-router-dom";
 
 export default function BookmarksPage() {
   const [posts, setPosts] = useState([]);
@@ -11,6 +12,7 @@ export default function BookmarksPage() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [, startTransition] = useTransition();
+  const navigate = useNavigate();
 
   const loadBookmarks = useCallback(async (pageNum = 0, replace = false) => {
     startTransition(() => {
@@ -40,144 +42,81 @@ export default function BookmarksPage() {
   return (
     <>
       <Navbar />
-      <div
-        style={{
-          maxWidth: "680px",
-          margin: "0 auto",
-          padding: "24px 16px",
-        }}></div>
-      <div
-        style={{ maxWidth: "680px", margin: "0 auto", padding: "24px 16px" }}>
-        {/* Header */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "12px",
-            marginBottom: "24px",
-          }}>
-          <div
-            style={{
-              width: "40px",
-              height: "40px",
-              borderRadius: "50%",
-              background: "rgba(124,58,237,0.1)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}>
-            <svg width="20" height="20" fill="#7c3aed" viewBox="0 0 24 24">
-              <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z" />
+      <div style={{ maxWidth: "680px", margin: "0 auto", padding: "24px 16px" }}>
+      {/* Header */}
+      <div style={{ background: "var(--nx-surface)", border: "1px solid var(--nx-border)", borderRadius: "var(--nx-radius-lg)", padding: "14px 16px", marginBottom: "24px", display: "flex", alignItems: "center", gap: "12px", boxShadow: "var(--nx-shadow-sm)" }}>
+        <button onClick={() => navigate(-1)}
+          style={{ padding: "6px", borderRadius: "50%", background: "none", border: "none", cursor: "pointer", color: "var(--nx-text-muted)", display: "flex", transition: "all var(--nx-transition)" }}
+          onMouseEnter={e => { e.currentTarget.style.background = "rgba(124,58,237,0.08)"; e.currentTarget.style.color = "#7c3aed"; }}
+          onMouseLeave={e => { e.currentTarget.style.background = "none"; e.currentTarget.style.color = "var(--nx-text-muted)"; }}>
+          <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"/>
+          </svg>
+        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <div style={{ width: "36px", height: "36px", borderRadius: "50%", background: "rgba(124,58,237,0.1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <svg width="18" height="18" fill="#7c3aed" viewBox="0 0 24 24">
+              <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/>
             </svg>
           </div>
           <div>
-            <h1
-              style={{
-                margin: 0,
-                fontSize: "20px",
-                fontWeight: 800,
-                color: "var(--nx-text)",
-              }}>
-              Salvati
-            </h1>
-            <p
-              style={{
-                margin: 0,
-                fontSize: "13px",
-                color: "var(--nx-text-muted)",
-              }}>
-              I post che hai salvato
-            </p>
+            <h1 style={{ margin: 0, fontSize: "17px", fontWeight: 800, color: "var(--nx-text)" }}>Salvati</h1>
+            <p style={{ margin: 0, fontSize: "12px", color: "var(--nx-text-muted)" }}>I post che hai salvato</p>
           </div>
         </div>
-
-        {/* Content */}
-        {loading ? (
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "center",
-              padding: "60px 0",
-            }}>
-            <LoadingSpinner />
-          </div>
-        ) : posts.length === 0 ? (
-          <div
-            style={{
-              textAlign: "center",
-              padding: "60px 20px",
-              background: "var(--nx-surface)",
-              border: "1px solid var(--nx-border)",
-              borderRadius: "var(--nx-radius-lg)",
-            }}>
-            <svg
-              width="48"
-              height="48"
-              fill="none"
-              stroke="var(--nx-text-subtle)"
-              viewBox="0 0 24 24"
-              style={{ margin: "0 auto 16px", display: "block" }}>
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.5}
-                d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"
-              />
-            </svg>
-            <p
-              style={{
-                margin: 0,
-                fontSize: "16px",
-                fontWeight: 600,
-                color: "var(--nx-text)",
-              }}>
-              Nessun post salvato
-            </p>
-            <p
-              style={{
-                margin: "6px 0 0",
-                fontSize: "13px",
-                color: "var(--nx-text-muted)",
-              }}>
-              Salva i post che vuoi ritrovare facilmente
-            </p>
-          </div>
-        ) : (
-          <>
-            {posts.map((post) => (
-              <PostCard
-                key={post.id}
-                post={post}
-                onPostDeleted={handlePostDeleted}
-              />
-            ))}
-
-            {hasMore && (
-              <div style={{ textAlign: "center", marginTop: "16px" }}>
-                <button
-                  onClick={() => {
-                    const next = page + 1;
-                    setPage(next);
-                    loadBookmarks(next);
-                  }}
-                  disabled={loadingMore}
-                  style={{
-                    padding: "10px 28px",
-                    borderRadius: "999px",
-                    border: "1px solid var(--nx-border)",
-                    background: "var(--nx-surface)",
-                    color: "var(--nx-text)",
-                    fontWeight: 600,
-                    fontSize: "14px",
-                    cursor: "pointer",
-                  }}>
-                  {loadingMore ? "Caricamento..." : "Carica altri"}
-                </button>
-              </div>
-            )}
-          </>
-        )}
       </div>
+ 
+      {/* Content */}
+      {loading ? (
+        <div style={{ display: "flex", justifyContent: "center", padding: "60px 0" }}>
+          <LoadingSpinner />
+        </div>
+      ) : posts.length === 0 ? (
+        <div style={{
+          textAlign: "center", padding: "60px 20px",
+          background: "var(--nx-surface)", border: "1px solid var(--nx-border)",
+          borderRadius: "var(--nx-radius-lg)"
+        }}>
+          <svg width="48" height="48" fill="none" stroke="var(--nx-text-subtle)" viewBox="0 0 24 24"
+            style={{ margin: "0 auto 16px", display: "block" }}>
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+              d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/>
+          </svg>
+          <p style={{ margin: 0, fontSize: "16px", fontWeight: 600, color: "var(--nx-text)" }}>
+            Nessun post salvato
+          </p>
+          <p style={{ margin: "6px 0 0", fontSize: "13px", color: "var(--nx-text-muted)" }}>
+            Salva i post che vuoi ritrovare facilmente
+          </p>
+        </div>
+      ) : (
+        <>
+          {posts.map(post => (
+            <PostCard
+              key={post.id}
+              post={post}
+              onPostDeleted={handlePostDeleted}
+            />
+          ))}
+ 
+          {hasMore && (
+            <div style={{ textAlign: "center", marginTop: "16px" }}>
+              <button
+                onClick={() => { const next = page + 1; setPage(next); loadBookmarks(next); }}
+                disabled={loadingMore}
+                style={{
+                  padding: "10px 28px", borderRadius: "999px",
+                  border: "1px solid var(--nx-border)",
+                  background: "var(--nx-surface)", color: "var(--nx-text)",
+                  fontWeight: 600, fontSize: "14px", cursor: "pointer"
+                }}>
+                {loadingMore ? "Caricamento..." : "Carica altri"}
+              </button>
+            </div>
+          )}
+        </>
+      )}
+    </div>
     </>
   );
 }
