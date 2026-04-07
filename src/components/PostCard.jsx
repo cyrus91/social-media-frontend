@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { renderTextWithHashtags } from "../utils/hashtagUtils";
 import { toggleLike, deletePost, viewPost } from "../services/postService";
+import { toggleBookmark } from "../services/bookmarkService";
 import toast from "react-hot-toast";
 import CommentSection from "./CommentSection";
 import useAuthStore from "../store/authStore";
@@ -28,6 +29,8 @@ function PostCard({ post, onLikeUpdate, onPostDeleted }) {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [viewCount, setViewCount] = useState(post.viewCount ?? 0);
+  const [isBookmarked, setIsBookmarked] = useState(post.bookmarked || false);
+  const [isBookmarking, setIsBookmarking] = useState(false);
   const cardRef = useRef(null);
   const menuRef = useRef(null);
   const isMyPost = currentUser?.username === post.authorUsername;
@@ -117,6 +120,20 @@ function PostCard({ post, onLikeUpdate, onPostDeleted }) {
       setLikeCount(isLiked ? likeCount + 1 : likeCount - 1);
     } else if (onLikeUpdate) onLikeUpdate(post.id, !isLiked);
     setIsLiking(false);
+  };
+
+  const handleBookmark = async () => {
+    if (isBookmarking) return;
+    setIsBookmarking(true);
+    const newState = !isBookmarked;
+    setIsBookmarked(newState);
+    const result = await toggleBookmark(post.id);
+    if (!result.success) {
+      setIsBookmarked(!newState);
+    } else {
+      toast.success(newState ? "Salvato nei bookmark" : "Rimosso dai bookmark");
+    }
+    setIsBookmarking(false);
   };
 
   const handleDeletePost = async () => {
@@ -328,6 +345,20 @@ function PostCard({ post, onLikeUpdate, onPostDeleted }) {
 
           {/* Spacer */}
           <div style={{ flex: 1 }} />
+
+          {/* Bookmark */}
+          <button
+            onClick={handleBookmark}
+            disabled={isBookmarking}
+            style={actionBtnStyle(isBookmarked)}
+            onMouseEnter={e => { if (!isBookmarked) { e.currentTarget.style.color = "#7c3aed"; e.currentTarget.style.background = "rgba(124,58,237,0.07)"; } }}
+            onMouseLeave={e => { if (!isBookmarked) { e.currentTarget.style.color = "var(--nx-text-muted)"; e.currentTarget.style.background = "none"; } }}>
+            <svg width="17" height="17" viewBox="0 0 24 24"
+              fill={isBookmarked ? "#7c3aed" : "none"}
+              stroke={isBookmarked ? "#7c3aed" : "currentColor"} strokeWidth="2">
+              <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/>
+            </svg>
+          </button>
 
           {/* Share */}
           <button

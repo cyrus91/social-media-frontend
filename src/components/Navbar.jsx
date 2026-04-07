@@ -92,6 +92,13 @@ function Navbar() {
               </svg>
               Esplora
             </NxNavLink>
+            <NxNavLink to="/bookmarks">
+              <svg width="16" height="16" viewBox="0 0 24 24"
+                fill={isActive("/bookmarks") ? "#7c3aed" : "none"} stroke="currentColor" strokeWidth="2">
+                <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/>
+              </svg>
+              Salvati
+            </NxNavLink>
           </div>
 
           {/* Right side actions */}
@@ -255,6 +262,7 @@ function Navbar() {
             {[
               { to: "/feed", label: "Home" },
               { to: "/explore", label: "Esplora" },
+              { to: "/bookmarks", label: "Salvati" },
               { to: "/messages", label: "Messaggi", badge: unreadMessages },
               { to: `/profile/${user?.username}`, label: "Profilo" },
               ...(user?.role === "ADMIN" ? [{ to: "/admin", label: "Admin Panel", admin: true }] : []),

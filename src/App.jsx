@@ -17,6 +17,7 @@ import ChatPage from "./pages/ChatPage";
 import OAuth2CallbackPage from "./pages/OAuth2CallbackPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
+import BookmarksPage from "./pages/BookmarksPage";
 import { useMessagingWebSocket, requestNotificationPermission } from "./hooks/useMessagingWebSocket";
 import useAuthStore from "./store/authStore";
 
@@ -55,6 +56,7 @@ function AppInner() {
       <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
       <Route path="/messages" element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />
       <Route path="/messages/:conversationId" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
+      <Route path="/bookmarks" element={<ProtectedRoute><BookmarksPage /></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   );
