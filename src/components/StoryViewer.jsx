@@ -18,6 +18,7 @@ function StoryViewer({ groups, initialGroupIndex = 0, onClose, onStoryDeleted })
   const [showViewers, setShowViewers] = useState(false);
   const [viewers, setViewers] = useState([]);
   const [loadingViewers, setLoadingViewers] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const progressRef = useRef(null);
   const startTimeRef = useRef(null);
@@ -106,10 +107,16 @@ function StoryViewer({ groups, initialGroupIndex = 0, onClose, onStoryDeleted })
     setViewers(res.data || []); setLoadingViewers(false);
   };
 
-  const handleDelete = async () => {
-    if (!window.confirm("Eliminare questa storia?")) return;
+  const handleDelete = () => {
+    setPaused(true);
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    setShowDeleteModal(false);
     const res = await deleteStory(currentStory.id);
     if (res.success) { toast.success("Storia eliminata"); onStoryDeleted?.(currentStory.id); goNext(); }
+    else setPaused(false);
   };
 
   if (!currentGroup || !currentStory) return null;
@@ -287,6 +294,37 @@ function StoryViewer({ groups, initialGroupIndex = 0, onClose, onStoryDeleted })
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
         </button>
+      )}
+
+      {/* Modale conferma eliminazione */}
+      {showDeleteModal && (
+        <div style={{ position: "absolute", inset: 0, zIndex: 300, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }}>
+          <div style={{ background: "var(--nx-surface)", border: "1px solid var(--nx-border)", borderRadius: "var(--nx-radius-lg)", padding: "28px 24px", width: "min(320px, 90vw)", display: "flex", flexDirection: "column", gap: "12px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <div style={{ width: "36px", height: "36px", borderRadius: "50%", background: "rgba(239,68,68,0.12)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <svg width="18" height="18" fill="none" stroke="#ef4444" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </div>
+              <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 700, color: "var(--nx-text)" }}>Elimina storia</h3>
+            </div>
+            <p style={{ margin: 0, fontSize: "14px", color: "var(--nx-text-muted)", lineHeight: 1.5 }}>
+              Sei sicuro di voler eliminare questa storia? L'azione non può essere annullata.
+            </p>
+            <div style={{ display: "flex", gap: "10px", marginTop: "4px" }}>
+              <button
+                onClick={() => { setShowDeleteModal(false); setPaused(false); }}
+                style={{ flex: 1, padding: "9px", borderRadius: "var(--nx-radius)", background: "rgba(124,58,237,0.08)", border: "1px solid rgba(124,58,237,0.2)", color: "var(--nx-text)", fontWeight: 600, fontSize: "14px", cursor: "pointer" }}>
+                Annulla
+              </button>
+              <button
+                onClick={handleConfirmDelete}
+                style={{ flex: 1, padding: "9px", borderRadius: "var(--nx-radius)", background: "rgba(239,68,68,0.85)", border: "none", color: "#fff", fontWeight: 600, fontSize: "14px", cursor: "pointer" }}>
+                Elimina
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>,
     document.body
