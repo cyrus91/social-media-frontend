@@ -29,7 +29,6 @@ function PostCard({ post, onLikeUpdate, onPostDeleted }) {
   const [showComments, setShowComments] = useState(false);
   const [viewCount, setViewCount] = useState(post.viewCount ?? 0);
   const cardRef = useRef(null);
-  const viewedRef = useRef(false);
   const menuRef = useRef(null);
   const isMyPost = currentUser?.username === post.authorUsername;
 
@@ -41,18 +40,49 @@ function PostCard({ post, onLikeUpdate, onPostDeleted }) {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // View counter — incrementa una volta per mount quando il post è visibile per 1s
+  // View counter — una sola view per utente per post (persistita in localStorage 24h)
   useEffect(() => {
     if (!currentUser || isMyPost) return;
     const el = cardRef.current;
     if (!el) return;
+
+    const storageKey = `nx_viewed_${currentUser.id}`;
+    const getViewed = () => {
+      try {
+        const raw = localStorage.getItem(storageKey);
+        if (!raw) return {};
+        const parsed = JSON.parse(raw);
+        // Pulisce le entry scadute (> 24h)
+        const now = Date.now();
+        const cleaned = Object.fromEntries(
+          Object.entries(parsed).filter(([, ts]) => now - ts < 86400000)
+        );
+        return cleaned;
+      } catch { return {}; }
+    };
+
+    const alreadyViewed = () => {
+      const viewed = getViewed();
+      return !!viewed[post.id];
+    };
+
+    const markViewed = () => {
+      const viewed = getViewed();
+      viewed[post.id] = Date.now();
+      localStorage.setItem(storageKey, JSON.stringify(viewed));
+    };
+
+    if (alreadyViewed()) return; // già visto, non osservare
+
     let timer = null;
     const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting && !viewedRef.current) {
+      if (entry.isIntersecting) {
         timer = setTimeout(() => {
-          viewedRef.current = true;
-          viewPost(post.id);
-          setViewCount(c => c + 1);
+          if (!alreadyViewed()) {
+            markViewed();
+            viewPost(post.id);
+            setViewCount(c => c + 1);
+          }
         }, 1000);
       } else {
         clearTimeout(timer);
