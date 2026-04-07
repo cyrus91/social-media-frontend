@@ -102,7 +102,7 @@ function StoryViewer({ groups, initialGroupIndex = 0, onClose, onStoryDeleted })
   };
 
   const handleLoadViewers = async () => {
-    setShowViewers(true); setLoadingViewers(true);
+    setShowViewers(true); setLoadingViewers(true); setPaused(true);
     const res = await fetchStoryViewers(currentStory.id);
     setViewers(res.data || []); setLoadingViewers(false);
   };
@@ -244,12 +244,12 @@ function StoryViewer({ groups, initialGroupIndex = 0, onClose, onStoryDeleted })
       {/* Viewers panel */}
       {showViewers && (
         <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, zIndex: 20, background: "rgba(0,0,0,0.85)", display: "flex", flexDirection: "column" }}
-          onClick={() => setShowViewers(false)}>
+          onClick={() => { setShowViewers(false); setPaused(false); }}>
           <div style={{ marginTop: "auto", background: "var(--nx-surface)", borderRadius: "16px 16px 0 0", padding: "20px", maxHeight: "60vh", overflowY: "auto" }}
             onClick={e => e.stopPropagation()}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
               <h3 style={{ fontWeight: 800, fontSize: "15px", color: "var(--nx-text)" }}>Chi ha visto · {viewers.length}</h3>
-              <button onClick={() => setShowViewers(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--nx-text-muted)", fontSize: "18px" }}>✕</button>
+              <button onClick={() => { setShowViewers(false); setPaused(false); }} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--nx-text-muted)", fontSize: "18px" }}>✕</button>
             </div>
             {loadingViewers ? (
               <div style={{ textAlign: "center", padding: "20px" }}>
