@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useTransition } from "react";
 import { getMyBookmarks } from "../services/bookmarkService";
 import PostCard from "../components/PostCard";
 import LoadingSpinner from "../components/LoadingSpinner";
+import Navbar from "../components/Navbar";
 
 export default function BookmarksPage() {
   const [posts, setPosts] = useState([]);
