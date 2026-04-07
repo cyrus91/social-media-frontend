@@ -14,79 +14,112 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
-
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-
-    if (!config.headers["Content-Type"]) {
+    if (token) config.headers.Authorization = `Bearer ${token}`;
+    if (!config.headers["Content-Type"])
       config.headers["Content-Type"] = "application/json";
-    }
-
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  },
+  (error) => Promise.reject(error),
 );
 
 // ============================================
-// RESPONSE INTERCEPTOR - Gestisce errori 401
+// REFRESH TOKEN LOGIC
+// ============================================
+let isRefreshing = false;
+let failedQueue = []; // richieste in attesa durante il refresh
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach(({ resolve, reject }) => {
+    if (error) reject(error);
+    else resolve(token);
+  });
+  failedQueue = [];
+};
+
+const forceLogout = () => {
+  useAuthStore.getState().logout();
+  if (window.location.pathname !== "/login") {
+    window.location.href = "/login";
+  }
+};
+
+// ============================================
+// RESPONSE INTERCEPTOR - Refresh automatico
 // ============================================
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      const requestUrl = error.config?.url || "";
-      const requestMethod = error.config?.method?.toUpperCase() || "GET";
-      const currentPath = window.location.pathname;
+  async (error) => {
+    const originalRequest = error.config;
 
-      console.log("🔒 401 Unauthorized:", requestMethod, requestUrl);
+    // Ignora risorse statiche e Cloudinary
+    const requestUrl = originalRequest?.url || "";
+    if (
+      requestUrl.includes("/uploads/") ||
+      requestUrl.includes("cloudinary.com")
+    ) {
+      return Promise.reject(error);
+    }
 
-      // ============================================
-      // SKIP COMPLETAMENTE SE È UNA RISORSA STATICA
-      // ============================================
-      if (
-        requestUrl.includes("/uploads/") ||
-        requestUrl.includes("cloudinary.com")
-      ) {
-        console.log("⏩ SKIP - Risorsa statica");
+    // Non tentare il refresh se siamo già sull'endpoint di refresh/login
+    const isAuthEndpoint =
+      requestUrl.includes("/auth/refresh") ||
+      requestUrl.includes("/auth/login") ||
+      requestUrl.includes("/auth/register");
+
+    if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
+      const refreshToken = localStorage.getItem("refreshToken");
+
+      // Nessun refresh token disponibile → logout immediato
+      if (!refreshToken) {
+        forceLogout();
         return Promise.reject(error);
       }
 
-      // ============================================
-      // ENDPOINT PUBBLICI GET (NON FARE LOGOUT!)
-      // ============================================
-      const publicGetEndpoints = [
-        "/users",
-        "/posts",
-        "/comments",
-        "/follows", //  AGGIUNTO!
-      ];
+      // Se c'è già un refresh in corso, metti in coda
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then((newToken) => {
+            originalRequest.headers.Authorization = `Bearer ${newToken}`;
+            return api(originalRequest);
+          })
+          .catch((err) => Promise.reject(err));
+      }
 
-      const isPublicGetEndpoint =
-        requestMethod === "GET" &&
-        publicGetEndpoints.some((endpoint) => requestUrl.startsWith(endpoint));
+      // Tenta il refresh
+      originalRequest._retry = true;
+      isRefreshing = true;
 
-      const isAuthPage =
-        currentPath === "/login" || currentPath === "/register";
+      try {
+        const res = await axios.post(
+          `${API_BASE_URL}/auth/refresh`,
+          { refreshToken },
+          { headers: { "Content-Type": "application/json" } },
+        );
 
-      const shouldLogout = !isPublicGetEndpoint && !isAuthPage;
+        const newToken = res.data.accessToken;
+        const newRefreshToken = res.data.refreshToken;
 
-      console.log("📋 Is Public GET?", isPublicGetEndpoint);
-      console.log("🚪 Should Logout?", shouldLogout);
+        // Salva i nuovi token
+        localStorage.setItem("token", newToken);
+        if (newRefreshToken) localStorage.setItem("refreshToken", newRefreshToken);
+        useAuthStore.setState({ token: newToken });
 
-      if (shouldLogout) {
-        console.warn("🚪 Logout forzato");
-        useAuthStore.getState().logout();
+        // Aggiorna header default e sblocca la coda
+        api.defaults.headers.common.Authorization = `Bearer ${newToken}`;
+        processQueue(null, newToken);
 
-        if (!isAuthPage) {
-          setTimeout(() => {
-            window.location.href = "/login";
-          }, 100);
-        }
-      } else {
-        console.log(" 401 ignorato");
+        // Riprova la richiesta originale con il nuovo token
+        originalRequest.headers.Authorization = `Bearer ${newToken}`;
+        return api(originalRequest);
+      } catch (refreshError) {
+        // Refresh fallito → sessione scaduta, logout
+        processQueue(refreshError, null);
+        forceLogout();
+        return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
       }
     }
 
