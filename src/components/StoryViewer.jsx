@@ -149,7 +149,7 @@ function StoryViewer({ groups, initialGroupIndex = 0, onClose, onStoryDeleted })
       </div>
 
       {/* ── OVERLAY centrato max 420px ── */}
-      <div style={{ position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: "420px", height: "100%", pointerEvents: "none" }}>
+      <div style={{ position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: "420px", height: "100%", pointerEvents: "none", zIndex: 4 }}>
 
         {/* Gradient top */}
         <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "130px", background: "linear-gradient(to bottom, rgba(0,0,0,0.65), transparent)", zIndex: 1 }} />
