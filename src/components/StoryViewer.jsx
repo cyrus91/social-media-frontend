@@ -18,6 +18,7 @@ function StoryViewer({ groups, initialGroupIndex = 0, onClose, onStoryDeleted })
   const [showViewers, setShowViewers] = useState(false);
   const [viewers, setViewers] = useState([]);
   const [loadingViewers, setLoadingViewers] = useState(false);
+  const [liveViewCount, setLiveViewCount] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const progressRef = useRef(null);
@@ -39,6 +40,14 @@ function StoryViewer({ groups, initialGroupIndex = 0, onClose, onStoryDeleted })
       markStoryViewed(currentStory.id);
     }
   }, [currentStory?.id]);
+
+  // Aggiorna contatore visualizzazioni in background (solo se autore)
+  useEffect(() => {
+    if (!currentStory || !isOwn) return;
+    fetchStoryViewers(currentStory.id).then(res => {
+      setLiveViewCount(res.success ? res.data.length : null);
+    });
+  }, [currentStory?.id, isOwn]);
 
   const goNext = useCallback(() => {
     const group = groups[groupIndex];
@@ -219,7 +228,7 @@ function StoryViewer({ groups, initialGroupIndex = 0, onClose, onStoryDeleted })
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
               </svg>
-              {showViewers ? viewers.length : currentStory.viewCount} visualizzazioni
+              {viewers.length > 0 || showViewers ? viewers.length : (liveViewCount ?? currentStory.viewCount)} visualizzazioni
             </button>
             <button onClick={handleDelete}
               style={{ background: "rgba(239,68,68,0.7)", border: "none", borderRadius: "999px", padding: "7px 14px", color: "#fff", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}>
