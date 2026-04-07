@@ -283,3 +283,12 @@ export const createPostWithImages = async (content, images) => {
     };
   }
 };
+
+// ============================================
+// POST - Incrementa view count
+// ============================================
+export const viewPost = async (postId) => {
+  try {
+    await api.post(`/posts/${postId}/view`);
+  } catch { /* silenzioso — non blocca l'esperienza */ }
+};

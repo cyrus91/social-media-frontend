@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { renderTextWithHashtags } from "../utils/hashtagUtils";
-import { toggleLike, deletePost } from "../services/postService";
+import { toggleLike, deletePost, viewPost } from "../services/postService";
 import toast from "react-hot-toast";
 import CommentSection from "./CommentSection";
 import useAuthStore from "../store/authStore";
@@ -27,6 +27,9 @@ function PostCard({ post, onLikeUpdate, onPostDeleted }) {
   const [localPost, setLocalPost] = useState(post);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showComments, setShowComments] = useState(false);
+  const [viewCount, setViewCount] = useState(post.viewCount ?? 0);
+  const cardRef = useRef(null);
+  const viewedRef = useRef(false);
   const menuRef = useRef(null);
   const isMyPost = currentUser?.username === post.authorUsername;
 
@@ -37,6 +40,27 @@ function PostCard({ post, onLikeUpdate, onPostDeleted }) {
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
+
+  // View counter — incrementa una volta per mount quando il post è visibile per 1s
+  useEffect(() => {
+    if (!currentUser || isMyPost) return;
+    const el = cardRef.current;
+    if (!el) return;
+    let timer = null;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting && !viewedRef.current) {
+        timer = setTimeout(() => {
+          viewedRef.current = true;
+          viewPost(post.id);
+          setViewCount(c => c + 1);
+        }, 1000);
+      } else {
+        clearTimeout(timer);
+      }
+    }, { threshold: 0.5 });
+    observer.observe(el);
+    return () => { observer.disconnect(); clearTimeout(timer); };
+  }, [post.id, isMyPost, currentUser]);
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -103,7 +127,7 @@ function PostCard({ post, onLikeUpdate, onPostDeleted }) {
 
   return (
     <>
-      <article className="nx-card" style={{ marginBottom: "12px", transition: "border-color var(--nx-transition), box-shadow var(--nx-transition)" }}>
+      <article ref={cardRef} className="nx-card" style={{ marginBottom: "12px", transition: "border-color var(--nx-transition), box-shadow var(--nx-transition)" }}>
 
         {/* ── Header ── */}
         <div style={{ padding: "14px 16px 12px", display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid var(--nx-border)" }}>
@@ -262,6 +286,15 @@ function PostCard({ post, onLikeUpdate, onPostDeleted }) {
             </svg>
             {commentCount}
           </button>
+
+          {/* Views */}
+          <div style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "13px", color: "var(--nx-text-muted)", padding: "6px 8px" }}>
+            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+            </svg>
+            {viewCount}
+          </div>
 
           {/* Spacer */}
           <div style={{ flex: 1 }} />
