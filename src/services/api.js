@@ -1,5 +1,6 @@
 import axios from "axios";
 import useAuthStore from "../store/authStore";
+import toast from "react-hot-toast";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
 
@@ -38,9 +39,15 @@ const processQueue = (error, token = null) => {
 
 const forceLogout = () => {
   useAuthStore.getState().logout();
-  if (window.location.pathname !== "/login") {
-    window.location.href = "/login";
-  }
+  toast.error("Sessione scaduta. Effettua di nuovo il login.", {
+    duration: 4000,
+    id: "session-expired", // evita toast duplicati
+  });
+  setTimeout(() => {
+    if (window.location.pathname !== "/login") {
+      window.location.href = "/login";
+    }
+  }, 1500); // lascia il tempo al toast di essere letto
 };
 
 // ============================================
