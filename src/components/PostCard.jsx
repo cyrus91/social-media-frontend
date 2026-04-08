@@ -28,6 +28,8 @@ function PostCard({ post, onLikeUpdate, onPostDeleted }) {
   const [localPost, setLocalPost] = useState(post);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showComments, setShowComments] = useState(false);
+  const [showShareMenu, setShowShareMenu] = useState(false);
+  const shareRef = useRef(null);
   const [viewCount, setViewCount] = useState(post.viewCount ?? 0);
   const [isBookmarked, setIsBookmarked] = useState(post.bookmarked || false);
   const [isBookmarking, setIsBookmarking] = useState(false);
@@ -38,6 +40,7 @@ function PostCard({ post, onLikeUpdate, onPostDeleted }) {
   useEffect(() => {
     const handler = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) setShowMenu(false);
+      if (shareRef.current && !shareRef.current.contains(e.target)) setShowShareMenu(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
@@ -361,22 +364,74 @@ function PostCard({ post, onLikeUpdate, onPostDeleted }) {
           </button>
 
           {/* Share */}
-          <button
-            onClick={() => {
-              const url = `${window.location.origin}/post/${post.id}`;
-              navigator.clipboard.writeText(url)
-                .then(() => toast.success("Link copiato!"))
-                .catch(() => toast.error("Impossibile copiare"));
-            }}
-            style={actionBtnStyle(false)}
-            onMouseEnter={e => { e.currentTarget.style.color = "#0891b2"; e.currentTarget.style.background = "rgba(8,145,178,0.07)"; }}
-            onMouseLeave={e => { e.currentTarget.style.color = "var(--nx-text-muted)"; e.currentTarget.style.background = "none"; }}>
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
-              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
-            </svg>
-            Condividi
-          </button>
+          <div ref={shareRef} style={{ position: "relative" }}>
+            <button
+              onClick={() => {
+                const url = `${window.location.origin}/post/${post.id}`;
+                if (navigator.share) {
+                  navigator.share({ title: "Post su Nexus", text: post.content?.slice(0, 80) || "", url }).catch(() => {});
+                } else {
+                  setShowShareMenu(s => !s);
+                }
+              }}
+              style={actionBtnStyle(showShareMenu)}
+              onMouseEnter={e => { if (!showShareMenu) { e.currentTarget.style.color = "#0891b2"; e.currentTarget.style.background = "rgba(8,145,178,0.07)"; } }}
+              onMouseLeave={e => { if (!showShareMenu) { e.currentTarget.style.color = "var(--nx-text-muted)"; e.currentTarget.style.background = "none"; } }}>
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+              </svg>
+              Condividi
+            </button>
+
+            {showShareMenu && (
+              <div style={{
+                position: "absolute", bottom: "calc(100% + 8px)", right: 0,
+                background: "var(--nx-surface)", border: "1px solid var(--nx-border)",
+                borderRadius: "var(--nx-radius)", boxShadow: "var(--nx-shadow-lg)",
+                minWidth: "200px", overflow: "hidden", zIndex: 50
+              }}>
+                {[
+                  {
+                    label: "Copia link",
+                    icon: <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-4 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>,
+                    action: () => {
+                      navigator.clipboard.writeText(`${window.location.origin}/post/${post.id}`)
+                        .then(() => toast.success("Link copiato!"))
+                        .catch(() => toast.error("Impossibile copiare"));
+                      setShowShareMenu(false);
+                    }
+                  },
+                  {
+                    label: "WhatsApp",
+                    icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.533 5.857L0 24l6.335-1.521A11.933 11.933 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.885 0-3.655-.502-5.188-1.381l-.372-.213-3.763.904.951-3.668-.234-.386A9.946 9.946 0 012 12C2 6.478 6.478 2 12 2s10 4.478 10 10-4.478 10-10 10z"/></svg>,
+                    action: () => {
+                      window.open(`https://wa.me/?text=${encodeURIComponent(`${window.location.origin}/post/${post.id}`)}`, "_blank");
+                      setShowShareMenu(false);
+                    }
+                  },
+                  {
+                    label: "X (Twitter)",
+                    icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>,
+                    action: () => {
+                      const url = encodeURIComponent(`${window.location.origin}/post/${post.id}`);
+                      const text = encodeURIComponent(post.content?.slice(0, 100) || "Guarda questo post su Nexus");
+                      window.open(`https://twitter.com/intent/tweet?url=${url}&text=${text}`, "_blank");
+                      setShowShareMenu(false);
+                    }
+                  }
+                ].map(({ label, icon, action }) => (
+                  <button key={label} onClick={action}
+                    style={{ width: "100%", display: "flex", alignItems: "center", gap: "10px", padding: "10px 14px", background: "none", border: "none", cursor: "pointer", color: "var(--nx-text)", fontSize: "13px", fontWeight: 500, textAlign: "left" }}
+                    onMouseEnter={e => e.currentTarget.style.background = "rgba(124,58,237,0.06)"}
+                    onMouseLeave={e => e.currentTarget.style.background = "none"}>
+                    <span style={{ color: "var(--nx-text-muted)", display: "flex" }}>{icon}</span>
+                    {label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* ── Comments ── */}
