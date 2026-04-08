@@ -11,6 +11,7 @@ import Lightbox from "./Lightbox";
 import LikesDrawer from "./LikesDrawer";
 import EditPostModal from "./EditPostModal";
 import AvatarZoom from "./AvatarZoom";
+import ReportModal from "./ReportModal";
 
 function PostCard({ post, onLikeUpdate, onPostDeleted }) {
   const currentUser = useAuthStore((state) => state.user);
@@ -28,6 +29,7 @@ function PostCard({ post, onLikeUpdate, onPostDeleted }) {
   const [localPost, setLocalPost] = useState(post);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showComments, setShowComments] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
   const shareRef = useRef(null);
   const [viewCount, setViewCount] = useState(post.viewCount ?? 0);
@@ -156,7 +158,7 @@ function PostCard({ post, onLikeUpdate, onPostDeleted }) {
 
   const handleReportPost = () => {
     setShowMenu(false);
-    toast("Segnalazione — coming soon", { icon: "🚧" });
+    setShowReportModal(true);
   };
 
   // ─── Stili condivisi ───────────────────────────────────────
@@ -452,6 +454,7 @@ function PostCard({ post, onLikeUpdate, onPostDeleted }) {
 
       {/* Edit Modal */}
       <EditPostModal isOpen={showEditModal} onClose={() => setShowEditModal(false)} post={localPost} onPostUpdated={handlePostUpdated} />
+      {showReportModal && <ReportModal postId={post.id} onClose={() => setShowReportModal(false)} />}
 
       {/* Delete Confirm Modal */}
       {showDeleteConfirm && (

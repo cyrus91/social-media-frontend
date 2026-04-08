@@ -3,6 +3,7 @@ import Navbar from "../components/Navbar";
 import api from "../services/api";
 import toast from "react-hot-toast";
 import useAuthStore from "../store/authStore";
+import { getReports, updateReportStatus } from "../services/reportService";
 
 const SPINNER = (
   <div style={{ width: "22px", height: "22px", border: "3px solid rgba(124,58,237,0.2)", borderTopColor: "#7c3aed", borderRadius: "50%", animation: "spin 0.7s linear infinite", margin: "0 auto" }} />
@@ -16,16 +17,35 @@ function AdminPage() {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
+  const [reports, setReports] = useState([]);
+  const [reportFilter, setReportFilter] = useState("PENDING");
+  const [reportsLoading, setReportsLoading] = useState(false);
 
   useEffect(() => { fetchStats(); }, []);
   useEffect(() => {
     if (activeTab === "users") fetchUsers();
     if (activeTab === "posts") fetchPosts();
-  }, [activeTab]);
+    if (activeTab === "reports") fetchReports();
+  }, [activeTab, reportFilter]);
 
   const fetchStats = async () => {
     try { const res = await api.get("/admin/stats"); setStats(res.data); }
     catch { toast.error("Errore caricamento statistiche"); }
+  };
+
+  const fetchReports = async () => {
+    setReportsLoading(true);
+    const res = await getReports(reportFilter);
+    if (res.success) setReports(res.data?.content || []);
+    setReportsLoading(false);
+  };
+
+  const handleReportStatus = async (reportId, status) => {
+    const res = await updateReportStatus(reportId, status);
+    if (res.success) {
+      setReports(prev => prev.filter(r => r.id !== reportId));
+      toast.success(status === "REVIEWED" ? "Segnalazione accettata" : "Segnalazione respinta");
+    }
   };
   const fetchUsers = async () => {
     setLoading(true);
@@ -85,6 +105,7 @@ function AdminPage() {
     { id: "stats", label: "📊 Statistiche" },
     { id: "users", label: "👥 Utenti" },
     { id: "posts", label: "📝 Post" },
+    { id: "reports", label: "🚩 Segnalazioni" },
   ];
 
   const TH = ({ children, center }) => (
@@ -247,6 +268,76 @@ function AdminPage() {
                             Elimina
                           </button>
                         </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── REPORTS TAB ── */}
+        {activeTab === "reports" && (
+          <div style={{ background: "var(--nx-surface)", border: "1px solid var(--nx-border)", borderRadius: "var(--nx-radius-lg)", overflow: "hidden", boxShadow: "var(--nx-shadow-sm)" }}>
+            {/* Filtri */}
+            <div style={{ display: "flex", gap: "8px", padding: "16px", borderBottom: "1px solid var(--nx-border)" }}>
+              {["PENDING", "REVIEWED", "DISMISSED"].map(f => (
+                <button key={f} onClick={() => setReportFilter(f)}
+                  style={{ padding: "5px 14px", borderRadius: "999px", border: "none", fontSize: "12px", fontWeight: 600, cursor: "pointer", transition: "all var(--nx-transition)", background: reportFilter === f ? "var(--nx-grad-btn)" : "var(--nx-surface-2)", color: reportFilter === f ? "#fff" : "var(--nx-text-muted)" }}>
+                  {f === "PENDING" ? "⏳ In attesa" : f === "REVIEWED" ? "✅ Accettate" : "❌ Respinte"}
+                </button>
+              ))}
+            </div>
+
+            {reportsLoading ? (
+              <div style={{ padding: "48px 0", display: "flex", justifyContent: "center" }}>{SPINNER}</div>
+            ) : reports.length === 0 ? (
+              <div style={{ padding: "48px 0", textAlign: "center", color: "var(--nx-text-muted)", fontSize: "14px" }}>
+                Nessuna segnalazione {reportFilter === "PENDING" ? "in attesa" : reportFilter === "REVIEWED" ? "accettata" : "respinta"}
+              </div>
+            ) : (
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <thead>
+                    <tr>
+                      <TH>Segnalato da</TH>
+                      <TH>Post</TH>
+                      <TH center>Motivo</TH>
+                      <TH center>Data</TH>
+                      {reportFilter === "PENDING" && <TH center>Azioni</TH>}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {reports.map(r => (
+                      <tr key={r.id} style={{ transition: "background var(--nx-transition)" }}
+                        onMouseEnter={e => e.currentTarget.style.background = "rgba(124,58,237,0.03)"}
+                        onMouseLeave={e => e.currentTarget.style.background = "none"}>
+                        <TD><span style={{ fontWeight: 600 }}>@{r.reporterUsername}</span></TD>
+                        <td style={{ padding: "12px 14px", fontSize: "13px", color: "var(--nx-text-muted)", maxWidth: "240px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", borderBottom: "1px solid var(--nx-border)" }}>
+                          <span style={{ fontSize: "11px", color: "var(--nx-text-subtle)" }}>@{r.postAuthorUsername}: </span>
+                          {r.postContent || "—"}
+                        </td>
+                        <TD center>
+                          <span style={{ padding: "3px 10px", borderRadius: "999px", fontSize: "11px", fontWeight: 700, background: "rgba(239,68,68,0.1)", color: "#ef4444" }}>
+                            {r.reason?.replace("_", " ")}
+                          </span>
+                        </TD>
+                        <TD center muted>{r.createdAt ? new Date(r.createdAt).toLocaleDateString("it-IT") : "—"}</TD>
+                        {reportFilter === "PENDING" && (
+                          <td style={{ padding: "12px 14px", textAlign: "center", borderBottom: "1px solid var(--nx-border)" }}>
+                            <div style={{ display: "flex", gap: "6px", justifyContent: "center" }}>
+                              <button onClick={() => handleReportStatus(r.id, "REVIEWED")}
+                                style={{ padding: "4px 12px", borderRadius: "999px", border: "none", background: "rgba(16,185,129,0.1)", color: "#10b981", fontWeight: 700, fontSize: "12px", cursor: "pointer" }}>
+                                ✓ Accetta
+                              </button>
+                              <button onClick={() => handleReportStatus(r.id, "DISMISSED")}
+                                style={{ padding: "4px 12px", borderRadius: "999px", border: "none", background: "rgba(124,58,237,0.08)", color: "var(--nx-text-muted)", fontWeight: 700, fontSize: "12px", cursor: "pointer" }}>
+                                ✗ Respingi
+                              </button>
+                            </div>
+                          </td>
+                        )}
                       </tr>
                     ))}
                   </tbody>
