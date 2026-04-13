@@ -229,79 +229,9 @@ function CreatePostWithImages({ onPostCreated }) {
               </div>
             )}
 
-            {/* Barra inferiore */}
-            {hasContent && (
-              <div style={{
-                display: "flex", alignItems: "center", justifyContent: "space-between",
-                padding: "6px 10px 8px",
-                borderTop: "1px solid var(--nx-border)",
-              }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "2px" }}>
-                  <EmojiPickerButton
-                    onEmojiSelect={(emoji) => {
-                      setContent((prev) => prev + emoji);
-                      textareaRef.current?.focus();
-                    }}
-                  />
-                  {images.length < 5 && (
-                    <button type="button" onClick={() => fileInputRef.current?.click()}
-                      disabled={uploading}
-                      title="Aggiungi immagine"
-                      style={{
-                        padding: "6px", border: "none", background: "none", cursor: "pointer",
-                        color: "var(--nx-text-muted)", borderRadius: "var(--nx-radius-sm)",
-                        transition: "all var(--nx-transition)", display: "flex",
-                      }}
-                      onMouseEnter={e => { e.currentTarget.style.background = "rgba(124,58,237,0.08)"; e.currentTarget.style.color = "#7c3aed"; }}
-                      onMouseLeave={e => { e.currentTarget.style.background = "none"; e.currentTarget.style.color = "var(--nx-text-muted)"; }}>
-                      <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                    </button>
-                  )}
-                  {content.trim() && (
-                    <button type="button" onClick={handleImproveText}
-                      disabled={improvingAI || uploading}
-                      style={{
-                        display: "flex", alignItems: "center", gap: "4px",
-                        padding: "4px 10px", fontSize: "11px", fontWeight: 600,
-                        color: "#7c3aed", background: "rgba(124,58,237,0.08)",
-                        border: "1px solid rgba(124,58,237,0.2)",
-                        borderRadius: "var(--nx-radius-full)", cursor: "pointer",
-                        transition: "all var(--nx-transition)",
-                        opacity: improvingAI || uploading ? 0.5 : 1,
-                      }}
-                      onMouseEnter={e => e.currentTarget.style.background = "rgba(124,58,237,0.14)"}
-                      onMouseLeave={e => e.currentTarget.style.background = "rgba(124,58,237,0.08)"}>
-                      {improvingAI
-                        ? <><div style={{ width: "10px", height: "10px", border: "2px solid rgba(124,58,237,0.3)", borderTopColor: "#7c3aed", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} /><span>Miglioramento...</span></>
-                        : <><span>✨</span><span>Migliora</span></>
-                      }
-                    </button>
-                  )}
-                  {content.trim() && (
-                    <AIHashtagSuggester
-                      content={content}
-                      onHashtagsInsert={(text) => {
-                        setContent(prev => prev + text);
-                        textareaRef.current?.focus();
-                      }}
-                    />
-                  )}
-
-                  {/* Bottone sondaggio */}
-                  <button type="button" onClick={() => setShowPoll(s => !s)}
-                    style={{ display: "flex", alignItems: "center", gap: "5px", padding: "5px 10px", borderRadius: "var(--nx-radius-full)", border: "none", background: showPoll ? "rgba(124,58,237,0.15)" : "rgba(124,58,237,0.08)", color: showPoll ? "#7c3aed" : "var(--nx-text-muted)", fontSize: "12px", fontWeight: 600, cursor: "pointer", transition: "all var(--nx-transition)" }}>
-                    <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-                    </svg>
-                    Sondaggio
-                  </button>
-                </div>
-                {/* Form sondaggio */}
-                {showPoll && (
-                  <div style={{ margin: "12px 0 4px", background: "var(--nx-surface)", border: "1.5px solid rgba(124,58,237,0.25)", borderRadius: "var(--nx-radius-lg)", overflow: "hidden" }}>
+            {/* Form sondaggio — sezione separata */}
+            {showPoll && (
+              <div style={{ margin: "8px 0", background: "var(--nx-surface)", border: "1.5px solid rgba(124,58,237,0.25)", borderRadius: "var(--nx-radius-lg)", overflow: "hidden" }}>
 
                     {/* Header */}
                     <div style={{ padding: "12px 16px 10px", borderBottom: "1px solid var(--nx-border)", display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(124,58,237,0.04)" }}>
@@ -389,7 +319,78 @@ function CreatePostWithImages({ onPostCreated }) {
 
                     </div>
                   </div>
-                )}
+            )}
+
+            {/* Barra inferiore */}
+            {hasContent && (
+              <div style={{
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                padding: "6px 10px 8px",
+                borderTop: "1px solid var(--nx-border)",
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "2px" }}>
+                  <EmojiPickerButton
+                    onEmojiSelect={(emoji) => {
+                      setContent((prev) => prev + emoji);
+                      textareaRef.current?.focus();
+                    }}
+                  />
+                  {images.length < 5 && (
+                    <button type="button" onClick={() => fileInputRef.current?.click()}
+                      disabled={uploading}
+                      title="Aggiungi immagine"
+                      style={{
+                        padding: "6px", border: "none", background: "none", cursor: "pointer",
+                        color: "var(--nx-text-muted)", borderRadius: "var(--nx-radius-sm)",
+                        transition: "all var(--nx-transition)", display: "flex",
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.background = "rgba(124,58,237,0.08)"; e.currentTarget.style.color = "#7c3aed"; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = "none"; e.currentTarget.style.color = "var(--nx-text-muted)"; }}>
+                      <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </button>
+                  )}
+                  {content.trim() && (
+                    <button type="button" onClick={handleImproveText}
+                      disabled={improvingAI || uploading}
+                      style={{
+                        display: "flex", alignItems: "center", gap: "4px",
+                        padding: "4px 10px", fontSize: "11px", fontWeight: 600,
+                        color: "#7c3aed", background: "rgba(124,58,237,0.08)",
+                        border: "1px solid rgba(124,58,237,0.2)",
+                        borderRadius: "var(--nx-radius-full)", cursor: "pointer",
+                        transition: "all var(--nx-transition)",
+                        opacity: improvingAI || uploading ? 0.5 : 1,
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.background = "rgba(124,58,237,0.14)"}
+                      onMouseLeave={e => e.currentTarget.style.background = "rgba(124,58,237,0.08)"}>
+                      {improvingAI
+                        ? <><div style={{ width: "10px", height: "10px", border: "2px solid rgba(124,58,237,0.3)", borderTopColor: "#7c3aed", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} /><span>Miglioramento...</span></>
+                        : <><span>✨</span><span>Migliora</span></>
+                      }
+                    </button>
+                  )}
+                  {content.trim() && (
+                    <AIHashtagSuggester
+                      content={content}
+                      onHashtagsInsert={(text) => {
+                        setContent(prev => prev + text);
+                        textareaRef.current?.focus();
+                      }}
+                    />
+                  )}
+
+                  {/* Bottone sondaggio */}
+                  <button type="button" onClick={() => setShowPoll(s => !s)}
+                    style={{ display: "flex", alignItems: "center", gap: "5px", padding: "5px 10px", borderRadius: "var(--nx-radius-full)", border: "none", background: showPoll ? "rgba(124,58,237,0.15)" : "rgba(124,58,237,0.08)", color: showPoll ? "#7c3aed" : "var(--nx-text-muted)", fontSize: "12px", fontWeight: 600, cursor: "pointer", transition: "all var(--nx-transition)" }}>
+                    <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                    </svg>
+                    Sondaggio
+                  </button>
+                </div>
 
                 <button type="submit" disabled={uploading || !hasContent}
                   style={{
