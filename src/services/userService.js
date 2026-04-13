@@ -58,7 +58,7 @@ export const fetchUserById = async (userId) => {
 // ============================================
 export const updateUserProfile = async (profileData) => {
   try {
-    const response = await api.put("/users/profile", profileData);
+    const response = await api.put("/users/me", profileData);
 
     return {
       success: true,
