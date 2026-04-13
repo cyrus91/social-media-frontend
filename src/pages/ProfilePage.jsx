@@ -4,6 +4,7 @@ import Navbar from "../components/Navbar";
 import PostCard from "../components/PostCard";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { fetchUserProfile } from "../services/userService";
+import { getMyBookmarks } from "../services/bookmarkService";
 import useAuthStore from "../store/authStore";
 import toast from "react-hot-toast";
 import FollowButton from "../components/FollowButton";
@@ -26,6 +27,8 @@ function ProfilePage() {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [likedPosts, setLikedPosts] = useState([]);
   const [likedLoading, setLikedLoading] = useState(false);
+  const [bookmarks, setBookmarks] = useState([]);
+  const [bookmarksLoading, setBookmarksLoading] = useState(false);
   const [showFollowModal, setShowFollowModal] = useState(null);
 
   const isMyProfile = currentUser?.username === username;
@@ -92,6 +95,19 @@ function ProfilePage() {
     fetchLikedPosts();
     return () => { ignore = true; };
   }, [profile, activeTab]);
+
+  useEffect(() => {
+    if (!isMyProfile || activeTab !== "bookmarks") return;
+    let ignore = false;
+    async function fetchBookmarks() {
+      setBookmarksLoading(true);
+      const res = await getMyBookmarks(0, 100);
+      if (!ignore) setBookmarks(res.success ? res.data?.content || [] : []);
+      if (!ignore) setBookmarksLoading(false);
+    }
+    fetchBookmarks();
+    return () => { ignore = true; };
+  }, [activeTab, isMyProfile]);
 
   const handleLikeUpdate = (postId, isLiked) =>
     setPosts(prev => prev.map(p => p.id === postId ? { ...p, liked: isLiked, likeCount: isLiked ? p.likeCount + 1 : p.likeCount - 1 } : p));
@@ -218,12 +234,28 @@ function ProfilePage() {
             </div>
 
             {/* Name */}
-            <h1 style={{ fontWeight: 800, fontSize: "20px", color: "var(--nx-text)", marginBottom: "2px" }}>{profile.username}</h1>
+            <h1 style={{ fontWeight: 800, fontSize: "20px", color: "var(--nx-text)", marginBottom: "2px" }}>
+              {profile.displayName || profile.username}
+            </h1>
             <p style={{ fontSize: "12px", color: "var(--nx-text-muted)", marginBottom: "10px" }}>@{profile.username}</p>
 
             {/* Bio */}
             {profile.bio && (
               <p style={{ fontSize: "14px", color: "var(--nx-text)", marginBottom: "10px", lineHeight: 1.5 }}>{profile.bio}</p>
+            )}
+
+            {/* Website */}
+            {profile.website && (
+              <a href={profile.website.startsWith("http") ? profile.website : `https://${profile.website}`}
+                target="_blank" rel="noopener noreferrer"
+                style={{ display: "inline-flex", alignItems: "center", gap: "5px", fontSize: "13px", color: "#7c3aed", marginBottom: "10px", textDecoration: "none" }}
+                onMouseEnter={e => e.currentTarget.style.textDecoration = "underline"}
+                onMouseLeave={e => e.currentTarget.style.textDecoration = "none"}>
+                <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+                </svg>
+                {profile.website.replace(/^https?:\/\//, "")}
+              </a>
             )}
 
             {/* Join date */}
@@ -235,11 +267,12 @@ function ProfilePage() {
             </div>
 
             {/* Stats */}
-            <div style={{ display: "flex", gap: "24px" }}>
+            <div style={{ display: "flex", gap: "24px", flexWrap: "wrap" }}>
               {[
                 { value: profile.postCount || 0, label: "Post", onClick: null },
                 { value: profile.followerCount || 0, label: "Followers", onClick: () => setShowFollowModal("followers") },
                 { value: profile.followingCount || 0, label: "Following", onClick: () => setShowFollowModal("following") },
+                { value: posts.reduce((sum, p) => sum + (p.viewCount || 0), 0), label: "Visualizzazioni", onClick: null },
               ].map(({ value, label, onClick }) => (
                 <div key={label}
                   onClick={onClick}
@@ -256,9 +289,9 @@ function ProfilePage() {
 
         {/* Tabs */}
         <div style={{ background: "var(--nx-surface)", border: "1px solid var(--nx-border)", borderRadius: "var(--nx-radius-lg)", marginBottom: "16px", display: "flex", boxShadow: "var(--nx-shadow-sm)" }}>
-          {["posts", "likes", "media"].map(tab => (
+          {["posts", "likes", "media", ...(isMyProfile ? ["bookmarks"] : [])].map(tab => (
             <button key={tab} onClick={() => setActiveTab(tab)} style={TAB_STYLE(activeTab === tab)}>
-              {{ posts: "Post", likes: "Mi piace", media: "Media" }[tab]}
+              {{ posts: "Post", likes: "Mi piace", media: "Media", bookmarks: "Salvati" }[tab]}
             </button>
           ))}
         </div>
@@ -318,6 +351,16 @@ function ProfilePage() {
             </div>
           );
         })()}
+
+        {/* Bookmarks Tab — solo profilo proprio */}
+        {activeTab === "bookmarks" && isMyProfile && (
+          bookmarksLoading ? (
+            <div style={{ display: "flex", justifyContent: "center", padding: "48px 0" }}><LoadingSpinner /></div>
+          ) : bookmarks.length === 0 ? EMPTY_CARD("🔖", "Nessun post salvato", "Non hai ancora salvato nessun post.")
+          : bookmarks.map(post => (
+            <PostCard key={post.id} post={post} onLikeUpdate={handleLikeUpdate} onPostDeleted={(id) => setBookmarks(prev => prev.filter(p => p.id !== id))} />
+          ))
+        )}
       </div>
 
       {isMyProfile && (

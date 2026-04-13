@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { updateBio, uploadAvatar, deleteAvatar, deleteAccount } from "../services/userService";
+import { updateUserProfile, uploadAvatar, deleteAvatar, deleteAccount } from "../services/userService";
 import { changePassword } from "../services/authService";
 import useAuthStore from "../store/authStore";
 import toast from "react-hot-toast";
@@ -13,6 +13,8 @@ function EditProfileModal({ isOpen, onClose, currentProfile, onProfileUpdated })
   const navigate = useNavigate();
   const logout = useAuthStore((state) => state.logout);
   const [bio, setBio] = useState(currentProfile?.bio || "");
+  const [displayName, setDisplayName] = useState(currentProfile?.displayName || "");
+  const [website, setWebsite] = useState(currentProfile?.website || "");
   const [avatarFile, setAvatarFile] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(currentProfile?.avatarUrl || null);
   const [loading, setLoading] = useState(false);
@@ -61,8 +63,8 @@ function EditProfileModal({ isOpen, onClose, currentProfile, onProfileUpdated })
         if (!uploadResult.success) { toast.error(uploadResult.error || "Errore upload avatar"); setLoading(false); return; }
         toast.success("Avatar caricato!");
       }
-      const bioResult = await updateBio(bio);
-      if (!bioResult.success) { toast.error(bioResult.error || "Errore aggiornamento bio"); setLoading(false); return; }
+      const bioResult = await updateUserProfile({ bio, displayName, website });
+      if (!bioResult.success) { toast.error(bioResult.error || "Errore aggiornamento profilo"); setLoading(false); return; }
       toast.success("Profilo aggiornato!");
       if (onProfileUpdated) onProfileUpdated(bioResult.data);
       onClose();
@@ -139,6 +141,26 @@ function EditProfileModal({ isOpen, onClose, currentProfile, onProfileUpdated })
               onFocus={e => e.target.style.borderColor = "rgba(124,58,237,0.5)"}
               onBlur={e => e.target.style.borderColor = "var(--nx-input-border)"} />
             <p style={{ fontSize: "11px", color: "var(--nx-text-subtle)", textAlign: "right", marginTop: "4px" }}>{bio.length}/500</p>
+          </div>
+
+          {/* Nome completo */}
+          <div>
+            <label style={LABEL}>Nome completo</label>
+            <input value={displayName} onChange={e => setDisplayName(e.target.value)}
+              placeholder="Es. Mario Rossi" maxLength={100} disabled={loading}
+              style={{ ...INPUT_STYLE, padding: "10px 12px" }}
+              onFocus={e => e.target.style.borderColor = "rgba(124,58,237,0.5)"}
+              onBlur={e => e.target.style.borderColor = "var(--nx-input-border)"} />
+          </div>
+
+          {/* Sito web */}
+          <div>
+            <label style={LABEL}>Sito web</label>
+            <input value={website} onChange={e => setWebsite(e.target.value)}
+              placeholder="https://tuosito.com" maxLength={255} disabled={loading}
+              style={{ ...INPUT_STYLE, padding: "10px 12px" }}
+              onFocus={e => e.target.style.borderColor = "rgba(124,58,237,0.5)"}
+              onBlur={e => e.target.style.borderColor = "var(--nx-input-border)"} />
           </div>
 
           {/* Cambia Password */}
