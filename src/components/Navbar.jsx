@@ -106,11 +106,12 @@ function Navbar() {
           {/* Right side actions */}
           <div style={{ display: "flex", alignItems: "center", gap: "8px", marginLeft: "auto" }}>
 
-            {/* Theme Toggle */}
+            {/* Theme Toggle — solo desktop */}
             <button
               onClick={toggleTheme}
               title={theme === "dark" ? "Passa alla modalità chiara" : "Passa alla modalità scura"}
-              style={{ padding: "7px", borderRadius: "var(--nx-radius-sm)", background: "none", border: "none", cursor: "pointer", color: "var(--nx-text-muted)", display: "flex", alignItems: "center", justifyContent: "center", transition: "all var(--nx-transition)" }}
+              className="hidden md:flex"
+              style={{ padding: "7px", borderRadius: "var(--nx-radius-sm)", background: "none", border: "none", cursor: "pointer", color: "var(--nx-text-muted)", alignItems: "center", justifyContent: "center", transition: "all var(--nx-transition)" }}
               onMouseEnter={e => { e.currentTarget.style.background = "rgba(124,58,237,0.08)"; e.currentTarget.style.color = "#7c3aed"; }}
               onMouseLeave={e => { e.currentTarget.style.background = "none"; e.currentTarget.style.color = "var(--nx-text-muted)"; }}>
               {theme === "dark" ? (
