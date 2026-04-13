@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { renderTextWithHashtags } from "../utils/hashtagUtils";
 import { toggleLike, deletePost, viewPost } from "../services/postService";
 import { toggleBookmark } from "../services/bookmarkService";
+import { votePoll } from "../services/pollService";
 import toast from "react-hot-toast";
 import CommentSection from "./CommentSection";
 import useAuthStore from "../store/authStore";
@@ -309,6 +310,16 @@ function PostCard({ post, onLikeUpdate, onPostDeleted }) {
           </>
         )}
 
+        {/* ── Poll widget ── */}
+        {localPost.poll && <PollWidget poll={localPost.poll} onVote={async (optionId) => {
+          const res = await votePoll(localPost.poll.id, optionId);
+          if (res.success) {
+            setLocalPost(prev => ({ ...prev, poll: res.data }));
+          } else if (res.alreadyVoted) {
+            toast.error("Hai già votato in questo sondaggio");
+          }
+        }} />}
+
         {/* ── Actions ── */}
         <div style={{
           padding: "8px 12px", display: "flex", alignItems: "center",
@@ -498,6 +509,56 @@ function PostCard({ post, onLikeUpdate, onPostDeleted }) {
         </div>
       )}
     </>
+  );
+}
+
+function PollWidget({ poll, onVote }) {
+  const hasVoted = poll.votedOptionId != null;
+  const showResults = hasVoted || poll.expired;
+
+  const formatExpiry = () => {
+    if (poll.expired) return "Sondaggio terminato";
+    const diff = new Date(poll.expiresAt) - new Date();
+    const h = Math.floor(diff / 3600000);
+    const d = Math.floor(h / 24);
+    if (d > 0) return `${d} giorn${d === 1 ? "o" : "i"} rimanent${d === 1 ? "e" : "i"}`;
+    if (h > 0) return `${h} or${h === 1 ? "a" : "e"} rimanent${h === 1 ? "e" : "i"}`;
+    return "Meno di 1 ora";
+  };
+
+  return (
+    <div style={{ padding: "12px 16px", borderTop: "1px solid var(--nx-border)" }}>
+      <p style={{ fontWeight: 700, fontSize: "14px", color: "var(--nx-text)", marginBottom: "10px" }}>
+        📊 {poll.question}
+      </p>
+      <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+        {poll.options.map(opt => (
+          <div key={opt.id}>
+            {showResults ? (
+              <div style={{ position: "relative", borderRadius: "var(--nx-radius)", overflow: "hidden", border: `1.5px solid ${poll.votedOptionId === opt.id ? "#7c3aed" : "var(--nx-border)"}`, background: "var(--nx-surface-2)" }}>
+                <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${opt.percentage}%`, background: poll.votedOptionId === opt.id ? "rgba(124,58,237,0.2)" : "rgba(124,58,237,0.07)", transition: "width 0.5s ease", borderRadius: "var(--nx-radius)" }} />
+                <div style={{ position: "relative", padding: "8px 12px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ fontSize: "13px", fontWeight: poll.votedOptionId === opt.id ? 700 : 400, color: poll.votedOptionId === opt.id ? "#7c3aed" : "var(--nx-text)" }}>
+                    {poll.votedOptionId === opt.id && "✓ "}{opt.text}
+                  </span>
+                  <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--nx-text-muted)" }}>{Math.round(opt.percentage)}%</span>
+                </div>
+              </div>
+            ) : (
+              <button onClick={() => onVote(opt.id)}
+                style={{ width: "100%", padding: "8px 12px", borderRadius: "var(--nx-radius)", border: "1.5px solid var(--nx-border)", background: "var(--nx-surface-2)", color: "var(--nx-text)", fontSize: "13px", cursor: "pointer", textAlign: "left", transition: "all var(--nx-transition)" }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = "#7c3aed"; e.currentTarget.style.background = "rgba(124,58,237,0.06)"; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--nx-border)"; e.currentTarget.style.background = "var(--nx-surface-2)"; }}>
+                {opt.text}
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+      <p style={{ fontSize: "11px", color: "var(--nx-text-subtle)", marginTop: "8px" }}>
+        {poll.totalVotes} vot{poll.totalVotes === 1 ? "o" : "i"} · {formatExpiry()}
+      </p>
+    </div>
   );
 }
 

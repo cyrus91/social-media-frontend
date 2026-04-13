@@ -6,6 +6,7 @@ import EmojiPickerButton from "./EmojiPickerButton";
 import AICaptionGenerator from "./AICaptionGenerator";
 import AIHashtagSuggester from "./AIHashtagSuggester";
 import { aiService } from "../services/aiService";
+import { createPollForPost } from "../services/pollService";
 import { useMentionInput } from "../hooks/useMentionInput";
 import MentionSuggestions from "./MentionSuggestions";
 import MentionTextarea from "./MentionTextarea";
@@ -17,6 +18,10 @@ function CreatePostWithImages({ onPostCreated }) {
   const [previews, setPreviews] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [improvingAI, setImprovingAI] = useState(false);
+  const [showPoll, setShowPoll] = useState(false);
+  const [pollQuestion, setPollQuestion] = useState("");
+  const [pollOptions, setPollOptions] = useState(["", ""]);
+  const [pollDuration, setPollDuration] = useState(24);
   const fileInputRef = useRef(null);
   const textareaRef = useRef(null);
 
@@ -97,10 +102,24 @@ function CreatePostWithImages({ onPostCreated }) {
       const response = await api.post("/posts", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
+
+      // Se c'è un sondaggio, crealo subito dopo il post
+      if (showPoll && pollQuestion.trim() && pollOptions.filter(o => o.trim()).length >= 2) {
+        await createPollForPost(response.data.id, {
+          question: pollQuestion.trim(),
+          options: pollOptions.filter(o => o.trim()),
+          durationHours: pollDuration,
+        });
+      }
+
       toast.success("Post pubblicato!");
       setContent("");
       setImages([]);
       setPreviews([]);
+      setShowPoll(false);
+      setPollQuestion("");
+      setPollOptions(["", ""]);
+      setPollDuration(24);
       if (textareaRef.current) textareaRef.current.style.height = "auto";
       if (onPostCreated) onPostCreated(response.data);
     } catch (error) {
@@ -270,7 +289,69 @@ function CreatePostWithImages({ onPostCreated }) {
                       }}
                     />
                   )}
+
+                  {/* Bottone sondaggio */}
+                  <button type="button" onClick={() => setShowPoll(s => !s)}
+                    style={{ display: "flex", alignItems: "center", gap: "5px", padding: "5px 10px", borderRadius: "var(--nx-radius-full)", border: "none", background: showPoll ? "rgba(124,58,237,0.15)" : "rgba(124,58,237,0.08)", color: showPoll ? "#7c3aed" : "var(--nx-text-muted)", fontSize: "12px", fontWeight: 600, cursor: "pointer", transition: "all var(--nx-transition)" }}>
+                    <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                    </svg>
+                    Sondaggio
+                  </button>
                 </div>
+                {/* Form sondaggio */}
+                {showPoll && (
+                  <div style={{ margin: "12px 0", padding: "14px", background: "var(--nx-surface-2)", borderRadius: "var(--nx-radius)", border: "1px solid var(--nx-border)" }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
+                      <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--nx-text)" }}>📊 Sondaggio</span>
+                      <button type="button" onClick={() => setShowPoll(false)}
+                        style={{ background: "none", border: "none", cursor: "pointer", color: "var(--nx-text-muted)", fontSize: "16px" }}>✕</button>
+                    </div>
+
+                    {/* Domanda */}
+                    <input value={pollQuestion} onChange={e => setPollQuestion(e.target.value)}
+                      placeholder="Fai una domanda..." maxLength={300}
+                      style={{ width: "100%", padding: "8px 12px", background: "var(--nx-input-bg)", border: "1.5px solid var(--nx-input-border)", borderRadius: "var(--nx-radius)", color: "var(--nx-text)", fontSize: "13px", marginBottom: "8px", boxSizing: "border-box", outline: "none" }}
+                      onFocus={e => e.target.style.borderColor = "rgba(124,58,237,0.5)"}
+                      onBlur={e => e.target.style.borderColor = "var(--nx-input-border)"} />
+
+                    {/* Opzioni */}
+                    {pollOptions.map((opt, i) => (
+                      <div key={i} style={{ display: "flex", gap: "6px", marginBottom: "6px", alignItems: "center" }}>
+                        <input value={opt} onChange={e => setPollOptions(prev => prev.map((o, idx) => idx === i ? e.target.value : o))}
+                          placeholder={`Opzione ${i + 1}`} maxLength={150}
+                          style={{ flex: 1, padding: "7px 12px", background: "var(--nx-input-bg)", border: "1.5px solid var(--nx-input-border)", borderRadius: "var(--nx-radius)", color: "var(--nx-text)", fontSize: "13px", outline: "none" }}
+                          onFocus={e => e.target.style.borderColor = "rgba(124,58,237,0.5)"}
+                          onBlur={e => e.target.style.borderColor = "var(--nx-input-border)"} />
+                        {pollOptions.length > 2 && (
+                          <button type="button" onClick={() => setPollOptions(prev => prev.filter((_, idx) => idx !== i))}
+                            style={{ background: "none", border: "none", cursor: "pointer", color: "var(--nx-text-muted)", fontSize: "16px", padding: "4px" }}>✕</button>
+                        )}
+                      </div>
+                    ))}
+
+                    {pollOptions.length < 4 && (
+                      <button type="button" onClick={() => setPollOptions(prev => [...prev, ""])}
+                        style={{ fontSize: "12px", color: "#7c3aed", background: "none", border: "1px dashed rgba(124,58,237,0.3)", borderRadius: "var(--nx-radius)", padding: "5px 12px", cursor: "pointer", width: "100%", marginBottom: "10px" }}>
+                        + Aggiungi opzione
+                      </button>
+                    )}
+
+                    {/* Durata */}
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "8px" }}>
+                      <span style={{ fontSize: "12px", color: "var(--nx-text-muted)", flexShrink: 0 }}>Durata:</span>
+                      <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                        {[1, 6, 12, 24, 48, 72].map(h => (
+                          <button key={h} type="button" onClick={() => setPollDuration(h)}
+                            style={{ padding: "3px 10px", borderRadius: "999px", border: "none", fontSize: "11px", fontWeight: 600, cursor: "pointer", background: pollDuration === h ? "var(--nx-grad-btn)" : "var(--nx-surface)", color: pollDuration === h ? "#fff" : "var(--nx-text-muted)" }}>
+                            {h < 24 ? `${h}h` : `${h / 24}g`}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <button type="submit" disabled={uploading || !hasContent}
                   style={{
                     display: "flex", alignItems: "center", gap: "6px",
