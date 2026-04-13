@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import useAuthStore from "../store/authStore";
+import useThemeStore from "../store/themeStore";
 import toast from "react-hot-toast";
 import SearchBar from "./SearchBar";
 import NotificationBell from "./NotificationBell";
@@ -29,6 +30,7 @@ const NxNavLink = ({ to, children }) => {
 
 function Navbar() {
   const { user, logout } = useAuthStore();
+  const { theme, toggleTheme } = useThemeStore();
   const navigate = useNavigate();
   const location = useLocation();
   const [showDropdown, setShowDropdown] = useState(false);
@@ -103,6 +105,25 @@ function Navbar() {
 
           {/* Right side actions */}
           <div style={{ display: "flex", alignItems: "center", gap: "8px", marginLeft: "auto" }}>
+
+            {/* Theme Toggle */}
+            <button
+              onClick={toggleTheme}
+              title={theme === "dark" ? "Passa alla modalità chiara" : "Passa alla modalità scura"}
+              style={{ padding: "7px", borderRadius: "var(--nx-radius-sm)", background: "none", border: "none", cursor: "pointer", color: "var(--nx-text-muted)", display: "flex", alignItems: "center", justifyContent: "center", transition: "all var(--nx-transition)" }}
+              onMouseEnter={e => { e.currentTarget.style.background = "rgba(124,58,237,0.08)"; e.currentTarget.style.color = "#7c3aed"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "none"; e.currentTarget.style.color = "var(--nx-text-muted)"; }}>
+              {theme === "dark" ? (
+                <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="5"/>
+                  <path strokeLinecap="round" d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+                </svg>
+              ) : (
+                <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+                </svg>
+              )}
+            </button>
 
             {/* Notification Bell */}
             <div className="hidden md:block">
@@ -287,6 +308,20 @@ function Navbar() {
               <div style={{ padding: "4px 0" }}>
                 <NotificationBell isMobile={true} onClose={() => setShowMobileMenu(false)} />
               </div>
+              <button onClick={toggleTheme}
+                style={{ width: "100%", textAlign: "left", padding: "10px 4px", fontSize: "14px", fontWeight: 500, color: "var(--nx-text-muted)", background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "10px" }}>
+                {theme === "dark" ? (
+                  <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="5"/>
+                    <path strokeLinecap="round" d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+                  </svg>
+                ) : (
+                  <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+                  </svg>
+                )}
+                {theme === "dark" ? "Modalità chiara" : "Modalità scura"}
+              </button>
               <button onClick={handleLogout}
                 style={{ width: "100%", textAlign: "left", padding: "10px 4px", fontSize: "14px", fontWeight: 500, color: "#ef4444", background: "none", border: "none", cursor: "pointer" }}>
                 Logout

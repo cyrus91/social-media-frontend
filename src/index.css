@@ -70,9 +70,27 @@
     --nx-transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  /* Dark mode */
+  /* Dark mode — attivato da data-theme="dark" sull'elemento html */
+  [data-theme="dark"] {
+    --nx-bg:         #09090f;
+    --nx-surface:    #141420;
+    --nx-surface-2:  #1e1e30;
+    --nx-border:     rgba(124, 58, 237, 0.14);
+    --nx-border-hover: rgba(124, 58, 237, 0.32);
+    --nx-text:         #e8e6ff;
+    --nx-text-muted:   #6b6890;
+    --nx-text-subtle:  #4a4768;
+    --nx-input-bg:     rgba(124, 58, 237, 0.08);
+    --nx-input-border: rgba(124, 58, 237, 0.22);
+    --nx-shadow-sm: 0 1px 3px rgba(0,0,0,0.4);
+    --nx-shadow:    0 4px 16px rgba(0,0,0,0.5), 0 0 0 1px rgba(124,58,237,0.08);
+    --nx-shadow-lg: 0 12px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(124,58,237,0.1);
+    --nx-grad-subtle: linear-gradient(135deg, #1e1e30, #2d1b69);
+  }
+
+  /* Fallback: rispetta preferenza OS se l'utente non ha mai scelto */
   @media (prefers-color-scheme: dark) {
-    :root {
+    :root:not([data-theme="light"]):not([data-theme="dark"]) {
       --nx-bg:         #09090f;
       --nx-surface:    #141420;
       --nx-surface-2:  #1e1e30;
