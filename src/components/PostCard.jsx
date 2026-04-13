@@ -316,15 +316,7 @@ function PostCard({ post, onLikeUpdate, onPostDeleted }) {
           isAuthor={isMyPost}
           onUpdate={(updatedPoll) => setLocalPost(prev => ({ ...prev, poll: updatedPoll }))}
           onVote={async (optionId) => {
-            if (optionId === null) {
-              // Cambia voto: mostra di nuovo i bottoni resettando votedOptionId
-              setLocalPost(prev => ({
-                ...prev,
-                poll: { ...prev.poll, votedOptionId: null }
-              }));
-              return;
-            }
-            // Aggiornamento ottimistico immediato
+            // Aggiornamento ottimistico — decrementa il vecchio voto se presente
             setLocalPost(prev => {
               if (!prev.poll) return prev;
               const wasVoted = prev.poll.votedOptionId;
@@ -547,9 +539,10 @@ function PollWidget({ poll, onVote, onUpdate, isAuthor }) {
   const [editQuestion, setEditQuestion] = useState(poll.question);
   const [editOptions, setEditOptions] = useState(poll.options.map(o => o.text));
   const [saving, setSaving] = useState(false);
+  const [isChangingVote, setIsChangingVote] = useState(false);
 
   const hasVoted = poll.votedOptionId != null;
-  const showResults = hasVoted || poll.expired;
+  const showResults = (hasVoted && !isChangingVote) || poll.expired;
   const canEdit = isAuthor && poll.totalVotes === 0 && !poll.expired;
 
   const formatExpiry = () => {
@@ -658,7 +651,7 @@ function PollWidget({ poll, onVote, onUpdate, isAuthor }) {
                 </div>
               </div>
             ) : (
-              <button onClick={() => onVote(opt.id)}
+              <button onClick={() => { onVote(opt.id); setIsChangingVote(false); }}
                 style={{ width: "100%", padding: "8px 12px", borderRadius: "var(--nx-radius)", border: "1.5px solid var(--nx-border)", background: "var(--nx-surface-2)", color: "var(--nx-text)", fontSize: "13px", cursor: "pointer", textAlign: "left", transition: "all var(--nx-transition)" }}
                 onMouseEnter={e => { e.currentTarget.style.borderColor = "#7c3aed"; e.currentTarget.style.background = "rgba(124,58,237,0.06)"; }}
                 onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--nx-border)"; e.currentTarget.style.background = "var(--nx-surface-2)"; }}>
@@ -673,13 +666,22 @@ function PollWidget({ poll, onVote, onUpdate, isAuthor }) {
         <p style={{ fontSize: "11px", color: "var(--nx-text-subtle)", margin: 0 }}>
           {poll.totalVotes} vot{poll.totalVotes === 1 ? "o" : "i"} · {formatExpiry()}
         </p>
-        {hasVoted && !poll.expired && (
+        {hasVoted && !poll.expired && !isChangingVote && (
           <button
-            onClick={() => onVote(null)}
+            onClick={() => setIsChangingVote(true)}
             style={{ fontSize: "11px", color: "var(--nx-text-subtle)", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}
             onMouseEnter={e => e.currentTarget.style.color = "#7c3aed"}
             onMouseLeave={e => e.currentTarget.style.color = "var(--nx-text-subtle)"}>
             Cambia voto
+          </button>
+        )}
+        {isChangingVote && (
+          <button
+            onClick={() => setIsChangingVote(false)}
+            style={{ fontSize: "11px", color: "var(--nx-text-subtle)", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}
+            onMouseEnter={e => e.currentTarget.style.color = "#ef4444"}
+            onMouseLeave={e => e.currentTarget.style.color = "var(--nx-text-subtle)"}>
+            Annulla
           </button>
         )}
       </div>
