@@ -30,3 +30,14 @@ export const createPollForPost = async (postId, pollData) => {
     return { success: false };
   }
 };
+
+export const updatePoll = async (pollId, { question, options }) => {
+  try {
+    const res = await api.patch(`/polls/${pollId}`, { question, options });
+    return { success: true, data: res.data };
+  } catch (error) {
+    if (error.response?.status === 409)
+      return { success: false, hasVotes: true };
+    return { success: false };
+  }
+};
