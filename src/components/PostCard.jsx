@@ -312,11 +312,30 @@ function PostCard({ post, onLikeUpdate, onPostDeleted }) {
 
         {/* ── Poll widget ── */}
         {localPost.poll && <PollWidget poll={localPost.poll} onVote={async (optionId) => {
+          // Aggiornamento ottimistico immediato — non aspetta il backend
+          setLocalPost(prev => {
+            if (!prev.poll) return prev;
+            const newOptions = prev.poll.options.map(o =>
+              o.id === optionId ? { ...o, voteCount: (o.voteCount || 0) + 1 } : o
+            );
+            const total = newOptions.reduce((sum, o) => sum + (o.voteCount || 0), 0);
+            const withPct = newOptions.map(o => ({
+              ...o,
+              percentage: total > 0 ? (o.voteCount * 100.0 / total) : 0
+            }));
+            return {
+              ...prev,
+              poll: { ...prev.poll, options: withPct, totalVotes: total, votedOptionId: optionId }
+            };
+          });
+          // Chiama comunque il backend per registrare il voto
           const res = await votePoll(localPost.poll.id, optionId);
-          if (res.success) {
-            setLocalPost(prev => ({ ...prev, poll: res.data }));
-          } else if (res.alreadyVoted) {
-            toast.error("Hai già votato in questo sondaggio");
+          if (!res.success) {
+            if (res.alreadyVoted) {
+              toast.error("Hai già votato in questo sondaggio");
+              // Ripristina stato originale
+              setLocalPost(prev => ({ ...prev, poll: localPost.poll }));
+            }
           }
         }} />}
 
