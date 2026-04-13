@@ -4,11 +4,12 @@ import Navbar from "../components/Navbar";
 import PostCard from "../components/PostCard";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { fetchUserProfile } from "../services/userService";
+import { fetchLikedPosts } from "../services/userService";
+import { fetchPostCountByAuthor, fetchPostsByAuthor } from "../services/postService";
 import { getMyBookmarks } from "../services/bookmarkService";
 import useAuthStore from "../store/authStore";
 import toast from "react-hot-toast";
 import FollowButton from "../components/FollowButton";
-import api from "../services/api";
 import EditProfileModal from "../components/EditProfileModal";
 import { messagingService } from "../services/messagingService";
 import FollowListModal from "../components/FollowListModal";
@@ -34,12 +35,8 @@ function ProfilePage() {
   const isMyProfile = currentUser?.username === username;
 
   const fetchPostCount = useCallback(async (userId) => {
-    try {
-      const response = await api.get(`/posts/author/${userId}/count`);
-      setProfile((prev) => ({ ...prev, postCount: response.data.count }));
-    } catch (error) {
-      console.error("Errore nel caricamento del post count:", error);
-    }
+    const res = await fetchPostCountByAuthor(userId);
+    if (res.success) setProfile((prev) => ({ ...prev, postCount: res.data.count }));
   }, []);
 
   const loadProfile = useCallback(async () => {
@@ -58,41 +55,46 @@ function ProfilePage() {
 
   useEffect(() => {
     let ignore = false;
-    if (!ignore) loadProfile();
+    async function fetchProfile() {
+      setLoading(true);
+      setError(null);
+      const result = await fetchUserProfile(username);
+      if (!ignore) {
+        if (result.success) {
+          setProfile(result.data);
+          fetchPostCount(result.data.id);
+        } else {
+          setError(result.error);
+          toast.error("Utente non trovato");
+        }
+        setLoading(false);
+      }
+    }
+    fetchProfile();
     return () => { ignore = true; };
-  }, [loadProfile]);
+  }, [username, fetchPostCount]);
 
   useEffect(() => {
     if (!profile) return;
     let ignore = false;
-    async function fetchPosts() {
+    async function loadPosts() {
       setPostsLoading(true);
-      try {
-        const res = await api.get(`/posts/author/${profile.id}`, { params: { page: 0, size: 100 } });
-        if (!ignore) { setPosts(res.data.content || []); setPostsLoading(false); }
-      } catch {
-        if (!ignore) { setPosts([]); setPostsLoading(false); }
-      }
+      const res = await fetchPostsByAuthor(profile.id);
+      if (!ignore) { setPosts(res.success ? res.data?.content || [] : []); setPostsLoading(false); }
     }
-    fetchPosts();
+    loadPosts();
     return () => { ignore = true; };
   }, [profile]);
 
   useEffect(() => {
     if (!profile || activeTab !== "likes") return;
     let ignore = false;
-    async function fetchLikedPosts() {
+    async function loadLikedPosts() {
       setLikedLoading(true);
-      try {
-        const res = await api.get(`/likes/user/${profile.id}`, { params: { page: 0, size: 100 } });
-        if (!ignore) setLikedPosts(res.data.content || []);
-      } catch {
-        if (!ignore) setLikedPosts([]);
-      } finally {
-        if (!ignore) setLikedLoading(false);
-      }
+      const res = await fetchLikedPosts(profile.id);
+      if (!ignore) { setLikedPosts(res.success ? res.data?.content || [] : []); setLikedLoading(false); }
     }
-    fetchLikedPosts();
+    loadLikedPosts();
     return () => { ignore = true; };
   }, [profile, activeTab]);
 

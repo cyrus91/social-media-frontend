@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import toast from "react-hot-toast";
 import useAuthStore from "../store/authStore";
-import api from "../services/api";
+import { createPostWithImages as createPostAPI } from "../services/postService";
 import EmojiPickerButton from "./EmojiPickerButton";
 import AICaptionGenerator from "./AICaptionGenerator";
 import AIHashtagSuggester from "./AIHashtagSuggester";
@@ -96,12 +96,8 @@ function CreatePostWithImages({ onPostCreated }) {
     if (!hasContent) { toast.error("Scrivi qualcosa o aggiungi un'immagine"); return; }
     setUploading(true);
     try {
-      const formData = new FormData();
-      if (content.trim()) formData.append("content", content.trim());
-      images.forEach((img) => formData.append("images", img));
-      const response = await api.post("/posts", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      const response = await createPostAPI(content.trim(), images);
+      if (!response.success) throw new Error(response.error || "Errore nella pubblicazione");
 
       // Se c'è un sondaggio, crealo subito dopo il post
       if (showPoll && pollQuestion.trim() && pollOptions.filter(o => o.trim()).length >= 2) {

@@ -60,7 +60,10 @@ function Navbar() {
   const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + "/");
 
   return (
-    <nav style={{
+    <nav
+      role="navigation"
+      aria-label="Navigazione principale"
+      style={{
       position: "sticky", top: 0, zIndex: 50,
       background: "var(--nx-surface)",
       borderBottom: "1px solid var(--nx-border)",

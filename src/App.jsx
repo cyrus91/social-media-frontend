@@ -18,6 +18,7 @@ import OAuth2CallbackPage from "./pages/OAuth2CallbackPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import BookmarksPage from "./pages/BookmarksPage";
+import ErrorBoundary from "./components/ErrorBoundary";
 import { useMessagingWebSocket, requestNotificationPermission } from "./hooks/useMessagingWebSocket";
 import useAuthStore from "./store/authStore";
 
@@ -64,8 +65,24 @@ function AppInner() {
 
 function App() {
   return (
-    <BrowserRouter>
-      <AppInner />
+    <ErrorBoundary>
+      <BrowserRouter>
+        {/* Skip-to-content per accessibilità — tastiera e screen reader */}
+        <a
+          href="#main-content"
+          style={{
+            position: "absolute", top: "-100%", left: "8px", zIndex: 9999,
+            padding: "8px 16px", background: "var(--nx-grad-btn)", color: "#fff",
+            borderRadius: "0 0 var(--nx-radius) var(--nx-radius)", fontWeight: 700,
+            fontSize: "13px", textDecoration: "none",
+            transition: "top 0.15s",
+          }}
+          onFocus={e => e.currentTarget.style.top = "0"}
+          onBlur={e => e.currentTarget.style.top = "-100%"}
+        >
+          Vai al contenuto principale
+        </a>
+        <AppInner />
       <Toaster
         position="top-right"
         reverseOrder={false}
@@ -82,7 +99,8 @@ function App() {
           },
         }}
       />
-    </BrowserRouter>
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 }
 

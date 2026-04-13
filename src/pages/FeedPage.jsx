@@ -20,7 +20,7 @@ function FeedPage() {
   return (
     <div className="nx-page">
       <Navbar />
-
+      <main id="main-content" aria-label="Feed principale">
       <div style={{ maxWidth: "680px", margin: "0 auto", padding: "20px 16px 60px" }}>
 
         {/* Create post */}
@@ -85,6 +85,7 @@ function FeedPage() {
           </>
         )}
       </div>
+      </main>
     </div>
   );
 }

@@ -292,3 +292,26 @@ export const viewPost = async (postId) => {
     await api.post(`/posts/${postId}/view`);
   } catch { /* silenzioso — non blocca l'esperienza */ }
 };
+// ============================================
+// GET - Post count per autore
+// ============================================
+export const fetchPostCountByAuthor = async (userId) => {
+  try {
+    const res = await api.get(`/posts/author/${userId}/count`);
+    return { success: true, data: res.data };
+  } catch {
+    return { success: false, data: null };
+  }
+};
+
+// ============================================
+// GET - Post di un autore (paginati)
+// ============================================
+export const fetchPostsByAuthor = async (userId, page = 0, size = 100) => {
+  try {
+    const res = await api.get(`/posts/author/${userId}`, { params: { page, size } });
+    return { success: true, data: res.data };
+  } catch {
+    return { success: false, data: null };
+  }
+};

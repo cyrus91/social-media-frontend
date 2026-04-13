@@ -345,3 +345,14 @@ export const deleteAccount = async () => {
     };
   }
 };
+// ============================================
+// GET - Post piaciuti da un utente
+// ============================================
+export const fetchLikedPosts = async (userId, page = 0, size = 100) => {
+  try {
+    const res = await api.get(`/likes/user/${userId}`, { params: { page, size } });
+    return { success: true, data: res.data };
+  } catch {
+    return { success: false, data: null };
+  }
+};
