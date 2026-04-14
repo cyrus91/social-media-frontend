@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, startTransition } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { renderTextWithHashtags } from "../utils/hashtagUtils";
 import { toggleLike, deletePost, viewPost } from "../services/postService";
@@ -545,17 +545,24 @@ function PollWidget({ poll, onVote, onUpdate, isAuthor }) {
   const [editOptions, setEditOptions] = useState(poll.options.map(o => o.text));
   const [saving, setSaving] = useState(false);
   const [isChangingVote, setIsChangingVote] = useState(false);
-  const [prevPollKey, setPrevPollKey] = useState(() => `${poll.id}-${poll.question}-${poll.options.length}`);
+  // Stato locale per tracciare il voto appena effettuato senza dipendere da poll.votedOptionId
+  // che potrebbe aggiornarsi in un render successivo
+  const [hasVotedLocally, setHasVotedLocally] = useState(poll.votedOptionId != null);
 
-  // Sincronizza gli stati interni quando il prop poll cambia (es. dopo onUpdate)
-  const pollKey = `${poll.id}-${poll.question}-${poll.options.length}`;
-  if (pollKey !== prevPollKey) {
-    setPrevPollKey(pollKey);
-    setEditQuestion(poll.question);
-    setEditOptions(poll.options.map(o => o.text));
-  }
+  // Sincronizza quando poll prop cambia (es. dopo onUpdate o caricamento iniziale)
+  useEffect(() => {
+    startTransition(() => {
+      setEditQuestion(poll.question);
+      setEditOptions(poll.options.map(o => o.text));
+      if (poll.votedOptionId != null) setHasVotedLocally(true);
+      if (poll.totalVotes === 0 && poll.votedOptionId == null) {
+        setHasVotedLocally(false);
+        setIsChangingVote(false);
+      }
+    });
+  }, [poll.id, poll.question, poll.options.length, poll.votedOptionId, poll.totalVotes]);
 
-  const hasVoted = poll.votedOptionId != null;
+  const hasVoted = poll.votedOptionId != null || hasVotedLocally;
   const showResults = (hasVoted && !isChangingVote) || poll.expired;
   const canEdit = isAuthor && poll.totalVotes === 0 && !poll.expired;
 
@@ -665,7 +672,7 @@ function PollWidget({ poll, onVote, onUpdate, isAuthor }) {
                 </div>
               </div>
             ) : (
-              <button onClick={() => { onVote(opt.id); setIsChangingVote(false); }}
+              <button onClick={() => { onVote(opt.id); setHasVotedLocally(true); setIsChangingVote(false); }}
                 style={{ width: "100%", padding: "8px 12px", borderRadius: "var(--nx-radius)", border: "1.5px solid var(--nx-border)", background: "var(--nx-surface-2)", color: "var(--nx-text)", fontSize: "13px", cursor: "pointer", textAlign: "left", transition: "all var(--nx-transition)" }}
                 onMouseEnter={e => { e.currentTarget.style.borderColor = "#7c3aed"; e.currentTarget.style.background = "rgba(124,58,237,0.06)"; }}
                 onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--nx-border)"; e.currentTarget.style.background = "var(--nx-surface-2)"; }}>
