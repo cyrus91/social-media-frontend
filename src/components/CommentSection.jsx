@@ -16,6 +16,13 @@ import PostCardHeader from "./PostCardHeader";
 import PollWidget from "./PollWidget";
 
 function PostCard({ post, onLikeUpdate, onPostDeleted }) {
+  // Guard difensiva — PostCard non deve renderizzare senza dati validi
+  if (!post || !post.id) return null;
+
+  return <PostCardInner post={post} onLikeUpdate={onLikeUpdate} onPostDeleted={onPostDeleted} />;
+}
+
+function PostCardInner({ post, onLikeUpdate, onPostDeleted }) {
   const currentUser = useAuthStore((state) => state.user);
   const navigate = useNavigate();
   const [isLiked, setIsLiked] = useState(post.liked || false);
