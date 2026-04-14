@@ -16,13 +16,19 @@ import PostCardHeader from "./PostCardHeader";
 import PollWidget from "./PollWidget";
 
 function PostCard({ post, onLikeUpdate, onPostDeleted }) {
+  // Guard difensiva — PostCard non deve renderizzare senza dati validi
+  if (!post || !post.id) return null;
+
+  return <PostCardInner post={post} onLikeUpdate={onLikeUpdate} onPostDeleted={onPostDeleted} />;
+}
+
+function PostCardInner({ post, onLikeUpdate, onPostDeleted }) {
   const currentUser = useAuthStore((state) => state.user);
   const navigate = useNavigate();
   const [isLiked, setIsLiked] = useState(post.liked || false);
   const [likeCount, setLikeCount] = useState(post.likeCount || 0);
   const [isLiking, setIsLiking] = useState(false);
   const [commentCount, setCommentCount] = useState(post.commentCount ?? 0);
-  const [showMenu, setShowMenu] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -38,12 +44,10 @@ function PostCard({ post, onLikeUpdate, onPostDeleted }) {
   const [isBookmarked, setIsBookmarked] = useState(post.bookmarked || false);
   const [isBookmarking, setIsBookmarking] = useState(false);
   const cardRef = useRef(null);
-  const menuRef = useRef(null);
   const isMyPost = currentUser?.username === post.authorUsername;
 
   useEffect(() => {
     const handler = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target)) setShowMenu(false);
       if (shareRef.current && !shareRef.current.contains(e.target)) setShowShareMenu(false);
     };
     document.addEventListener("mousedown", handler);
@@ -159,17 +163,10 @@ function PostCard({ post, onLikeUpdate, onPostDeleted }) {
   };
 
   const handleReportPost = () => {
-    setShowMenu(false);
     setShowReportModal(true);
   };
 
   // ─── Stili condivisi ───────────────────────────────────────
-  const menuItemStyle = (danger) => ({
-    width: "100%", display: "flex", alignItems: "center", gap: "10px",
-    padding: "9px 14px", fontSize: "13px", fontWeight: 500, background: "none",
-    border: "none", cursor: "pointer", textAlign: "left", borderRadius: "var(--nx-radius-sm)",
-    color: danger ? "#ef4444" : "var(--nx-text)", transition: "background var(--nx-transition)",
-  });
 
   const actionBtnStyle = (active) => ({
     display: "flex", alignItems: "center", gap: "6px",
