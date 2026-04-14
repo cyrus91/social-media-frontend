@@ -129,7 +129,7 @@ function CommentItem({ comment, user, postId, onReact, onReplyCreated, depth = 0
     if (!replyText.trim()) return;
     setSubmittingReply(true);
     const targetId = rootId || localComment.id;
-    const res = await createComment(postId, replyText.trim(), targetId);
+    const res = await createComment({ postId, content: replyText.trim(), parentId: targetId });
     if (res.success) {
       const newReply = res.data;
       if (depth === 0) {

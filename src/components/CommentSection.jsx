@@ -51,9 +51,9 @@ function CommentSection({ postId, initialCommentCount = 0, onCommentCountChange,
     setSubmitting(true);
     let res;
     if (imageFile) {
-      res = await createCommentWithImage(postId, text.trim(), null, imageFile);
+      res = await createCommentWithImage({ postId, content: text.trim(), parentId: null, imageFile });
     } else {
-      res = await createComment(postId, text.trim(), null);
+      res = await createComment({ postId, content: text.trim(), parentId: null });
     }
     if (res.success) {
       setComments(prev => [...prev, res.data]);
