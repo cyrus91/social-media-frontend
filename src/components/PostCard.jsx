@@ -22,7 +22,7 @@ function PostCard({ post, onLikeUpdate, onPostDeleted }) {
   const [likeCount, setLikeCount] = useState(post.likeCount || 0);
   const [isLiking, setIsLiking] = useState(false);
   const [commentCount, setCommentCount] = useState(post.commentCount ?? 0);
-  const [_showMenu, setShowMenu] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -163,6 +163,14 @@ function PostCard({ post, onLikeUpdate, onPostDeleted }) {
     setShowReportModal(true);
   };
 
+  // ─── Stili condivisi ───────────────────────────────────────
+  const menuItemStyle = (danger) => ({
+    width: "100%", display: "flex", alignItems: "center", gap: "10px",
+    padding: "9px 14px", fontSize: "13px", fontWeight: 500, background: "none",
+    border: "none", cursor: "pointer", textAlign: "left", borderRadius: "var(--nx-radius-sm)",
+    color: danger ? "#ef4444" : "var(--nx-text)", transition: "background var(--nx-transition)",
+  });
+
   const actionBtnStyle = (active) => ({
     display: "flex", alignItems: "center", gap: "6px",
     padding: "7px 10px", borderRadius: "var(--nx-radius-sm)",
@@ -217,7 +225,7 @@ function PostCard({ post, onLikeUpdate, onPostDeleted }) {
           isAuthor={isMyPost}
           onUpdate={(updatedPoll) => setLocalPost(prev => ({ ...prev, poll: updatedPoll }))}
           onVote={async (optionId) => {
-            // Aggiornamento ottimistico — decrementa il vecchio voto se presente
+            // Aggiornamento ottimistico immediato
             setLocalPost(prev => {
               if (!prev.poll) return prev;
               const wasVoted = prev.poll.votedOptionId;
@@ -237,9 +245,14 @@ function PostCard({ post, onLikeUpdate, onPostDeleted }) {
                 poll: { ...prev.poll, options: withPct, totalVotes: total, votedOptionId: optionId }
               };
             });
-            // Chiama il backend
+            // Chiama il backend e aggiorna con dati reali
             const res = await votePoll(localPost.poll.id, optionId);
-            if (!res.success) toast.error("Errore nel voto");
+            if (res.success && res.data) {
+              // Sovrascrive con la risposta reale del server (percentuali precise)
+              setLocalPost(prev => ({ ...prev, poll: res.data }));
+            } else if (!res.success) {
+              toast.error("Errore nel voto");
+            }
           }}
         />}
 
