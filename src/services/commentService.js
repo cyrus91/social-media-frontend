@@ -27,12 +27,13 @@ export const fetchCommentsByPost = async (postId) => {
 // ============================================
 // POST - Crea nuovo commento
 // ============================================
-export const createComment = async ({ postId, content, parentId = null }) => {
+export const createComment = async ({ postId, content, parentId = null, replyToCommentId = null }) => {
   try {
     const response = await api.post("/comments", {
       postId,
       content,
       parentId,
+      ...(replyToCommentId && { replyToCommentId }),
     });
 
     return {

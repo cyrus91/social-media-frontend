@@ -166,14 +166,16 @@ function CommentItem({ comment, user, postId, onReact, onReplyCreated, depth = 0
     if (e?.preventDefault) e.preventDefault();
     if (!replyText.trim() && !replyImageFile) return;
     setSubmittingReply(true);
-    // Se siamo in una reply (depth>0), rispondiamo al commento root, non alla reply stessa
+    // parentId punta sempre al root comment (per threading/display)
+    // replyToCommentId indica il commento specifico a cui si risponde (per notifiche)
     const targetParentId = depth > 0 && rootId ? rootId : comment.id;
+    const replyToCommentId = depth > 0 ? comment.id : null;
     try {
       let result;
       if (replyImageFile) {
         result = await createCommentWithImage({ postId, content: replyText.trim() || null, parentId: targetParentId, imageFile: replyImageFile });
       } else {
-        result = await createComment({ postId, content: replyText.trim(), parentId: targetParentId });
+        result = await createComment({ postId, content: replyText.trim(), parentId: targetParentId, replyToCommentId });
       }
       if (result.success) {
         const newReply = {
