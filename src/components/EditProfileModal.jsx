@@ -136,6 +136,7 @@ function EditProfileModal({ isOpen, onClose, currentProfile, onProfileUpdated })
           <div>
             <label style={LABEL}>Bio</label>
             <textarea value={bio} onChange={e => setBio(e.target.value)}
+              aria-label="Bio"
               placeholder="Raccontaci qualcosa di te..." maxLength={500} rows={4} disabled={loading}
               style={INPUT_STYLE}
               onFocus={e => e.target.style.borderColor = "rgba(124,58,237,0.5)"}
@@ -147,6 +148,7 @@ function EditProfileModal({ isOpen, onClose, currentProfile, onProfileUpdated })
           <div>
             <label style={LABEL}>Nome completo</label>
             <input value={displayName} onChange={e => setDisplayName(e.target.value)}
+              aria-label="Nome completo"
               placeholder="Es. Mario Rossi" maxLength={100} disabled={loading}
               style={{ ...INPUT_STYLE, padding: "10px 12px" }}
               onFocus={e => e.target.style.borderColor = "rgba(124,58,237,0.5)"}
@@ -157,6 +159,7 @@ function EditProfileModal({ isOpen, onClose, currentProfile, onProfileUpdated })
           <div>
             <label style={LABEL}>Sito web</label>
             <input value={website} onChange={e => setWebsite(e.target.value)}
+              aria-label="Sito web"
               placeholder="https://tuosito.com" maxLength={255} disabled={loading}
               style={{ ...INPUT_STYLE, padding: "10px 12px" }}
               onFocus={e => e.target.style.borderColor = "rgba(124,58,237,0.5)"}

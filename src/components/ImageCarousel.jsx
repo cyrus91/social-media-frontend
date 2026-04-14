@@ -22,13 +22,16 @@ function ImageCarousel({ images, onImageClick }) {
           - Desktop: 16:9 (più orizzontale, usa spazio schermo)
         */}
         <div className="relative w-full aspect-4/3 md:aspect-video overflow-hidden bg-black/95">
-          <img
-            src={images[0]}
-            alt="Post"
-            className="absolute inset-0 w-full h-full object-cover cursor-pointer transition-transform hover:scale-[1.02] active:scale-100"
-            onClick={() => onImageClick && onImageClick(0)}
-            loading="lazy"
-          />
+          {images.map((image, index) => (
+            <img
+              key={index}
+              src={image}
+              alt={`Immagine del post ${index + 1}`}
+              className="absolute inset-0 w-full h-full object-cover cursor-pointer transition-transform hover:scale-[1.02] active:scale-100"
+              onClick={() => onImageClick && onImageClick(index)}
+              loading="lazy"
+            />
+          ))}
         </div>
       </div>
     );
@@ -46,13 +49,13 @@ function ImageCarousel({ images, onImageClick }) {
         <Swiper
           modules={[Navigation, Pagination, Keyboard]}
           navigation={{
-            nextEl: '.swiper-button-next-custom',
-            prevEl: '.swiper-button-prev-custom',
+            nextEl: ".swiper-button-next-custom",
+            prevEl: ".swiper-button-prev-custom",
           }}
           pagination={{
             clickable: true,
             dynamicBullets: true,
-            el: '.swiper-pagination-custom',
+            el: ".swiper-pagination-custom",
           }}
           keyboard={{
             enabled: true,
@@ -64,7 +67,6 @@ function ImageCarousel({ images, onImageClick }) {
           loop={false}
           grabCursor={true}
           touchRatio={1.5}>
-          
           {images.map((image, index) => (
             <SwiperSlide key={index} className="h-full">
               <img
@@ -80,19 +82,37 @@ function ImageCarousel({ images, onImageClick }) {
         </Swiper>
 
         {/* Custom Navigation Buttons (migliore UX) */}
-        <button 
+        <button
           className="swiper-button-prev-custom absolute left-2 top-1/2 -translate-y-1/2 z-20 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition opacity-0 group-hover:opacity-100 hidden md:block"
           aria-label="Foto precedente">
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+          <svg
+            className="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2.5}
+              d="M15 19l-7-7 7-7"
+            />
           </svg>
         </button>
-        
-        <button 
+
+        <button
           className="swiper-button-next-custom absolute right-2 top-1/2 -translate-y-1/2 z-20 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition opacity-0 group-hover:opacity-100 hidden md:block"
           aria-label="Foto successiva">
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+          <svg
+            className="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2.5}
+              d="M9 5l7 7-7 7"
+            />
           </svg>
         </button>
 

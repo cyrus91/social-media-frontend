@@ -99,8 +99,8 @@ function EditPostModal({ isOpen, onClose, post, onPostUpdated }) {
         <div style={{ overflowY: "auto", padding: "20px", display: "flex", flexDirection: "column", gap: "16px" }}>
           {/* Textarea */}
           <div>
-            <label style={{ fontSize: "12px", fontWeight: 700, color: "var(--nx-text-muted)", display: "block", marginBottom: "6px" }}>Contenuto</label>
-            <textarea value={content} onChange={e => setContent(e.target.value)} rows={4}
+            <label htmlFor="edit-post-content" style={{ fontSize: "12px", fontWeight: 700, color: "var(--nx-text-muted)", display: "block", marginBottom: "6px" }}>Contenuto</label>
+            <textarea id="edit-post-content" value={content} onChange={e => setContent(e.target.value)} rows={4}
               placeholder="Modifica il contenuto del post..."
               style={{ width: "100%", background: "var(--nx-input-bg)", border: "1.5px solid var(--nx-input-border)", borderRadius: "var(--nx-radius)", padding: "10px 12px", fontSize: "13px", color: "var(--nx-text)", outline: "none", resize: "none", transition: "border-color var(--nx-transition)" }}
               onFocus={e => e.target.style.borderColor = "rgba(124,58,237,0.5)"}
