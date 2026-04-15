@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { login, resendVerification } from "../services/authService";
 import useAuthStore from "../store/authStore";
 import toast from "react-hot-toast";
@@ -7,6 +7,8 @@ import NexusLogo from "../components/NexusLogo";
 
 function LoginPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isBanned = searchParams.get("banned") === "1";
   const authLogin = useAuthStore((state) => state.login);
 
   const [username, setUsername] = useState("");
@@ -65,6 +67,16 @@ function LoginPage() {
 
         {/* Form card */}
         <div className="nx-card" style={{ padding: "32px" }}>
+          {/* Banner utente bannato */}
+          {isBanned && (
+            <div style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: "var(--nx-radius)", padding: "14px 16px", marginBottom: "20px", display: "flex", alignItems: "flex-start", gap: "10px" }}>
+              <span style={{ fontSize: "18px", flexShrink: 0 }}>🚫</span>
+              <div>
+                <p style={{ fontWeight: 700, fontSize: "13px", color: "#dc2626", marginBottom: "2px" }}>Account sospeso</p>
+                <p style={{ fontSize: "12px", color: "#dc2626", opacity: 0.8 }}>Il tuo account è stato bannato. Contatta il supporto per maggiori informazioni.</p>
+              </div>
+            </div>
+          )}
           <form onSubmit={handleSubmit}>
             {error && (
               <div style={{

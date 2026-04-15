@@ -168,8 +168,10 @@ function NotificationBell(props) {
   };
 
   const handleToggle = async () => {
-    if (!isOpen) await loadNotifications();
-    setIsOpen(!isOpen);
+    const opening = !isOpen;
+    setIsOpen(opening);
+    // Carica notifiche in background solo quando si apre
+    if (opening) loadNotifications();
   };
 
   const handleNotificationClick = async (notification) => {

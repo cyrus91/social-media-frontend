@@ -1,27 +1,13 @@
-import { useState, useEffect, startTransition } from "react";
+import { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
+import api from "../services/api";
 import toast from "react-hot-toast";
 import useAuthStore from "../store/authStore";
 import { getReports, updateReportStatus } from "../services/reportService";
-import {
-  fetchAdminStats, fetchAdminUsers, fetchAdminPosts,
-  toggleBanUser, changeUserRole, deleteAdminUser, deleteAdminPost
-} from "../services/adminService";
+import ConfirmModal from "../components/ConfirmModal";
 
 const SPINNER = (
   <div style={{ width: "22px", height: "22px", border: "3px solid rgba(124,58,237,0.2)", borderTopColor: "#7c3aed", borderRadius: "50%", animation: "spin 0.7s linear infinite", margin: "0 auto" }} />
-);
-
-// Componenti tabella dichiarati fuori per evitare ricreazione ad ogni render
-const TH = ({ children, center }) => (
-  <th style={{ padding: "10px 14px", textAlign: center ? "center" : "left", fontSize: "11px", fontWeight: 700, color: "var(--nx-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", background: "var(--nx-surface-2)", borderBottom: "1px solid var(--nx-border)" }}>
-    {children}
-  </th>
-);
-const TD = ({ children, center, muted }) => (
-  <td style={{ padding: "12px 14px", textAlign: center ? "center" : "left", fontSize: "13px", color: muted ? "var(--nx-text-muted)" : "var(--nx-text)", borderBottom: "1px solid var(--nx-border)" }}>
-    {children}
-  </td>
 );
 
 function AdminPage() {
@@ -35,11 +21,23 @@ function AdminPage() {
   const [reports, setReports] = useState([]);
   const [reportFilter, setReportFilter] = useState("PENDING");
   const [reportsLoading, setReportsLoading] = useState(false);
+  // ConfirmModal state
+  const [confirm, setConfirm] = useState(null); // { title, message, confirmLabel, danger, onConfirm }
+
+  const showConfirm = (opts) => new Promise(resolve => {
+    setConfirm({ ...opts, onConfirm: () => { setConfirm(null); resolve(true); }, onCancel: () => { setConfirm(null); resolve(false); } });
+  });
+
+  useEffect(() => { fetchStats(); }, []);
+  useEffect(() => {
+    if (activeTab === "users") fetchUsers();
+    if (activeTab === "posts") fetchPosts();
+    if (activeTab === "reports") fetchReports();
+  }, [activeTab, reportFilter]);
 
   const fetchStats = async () => {
-    const res = await fetchAdminStats();
-    if (res.success) setStats(res.data);
-    else toast.error("Errore caricamento statistiche");
+    try { const res = await api.get("/admin/stats"); setStats(res.data); }
+    catch { toast.error("Errore caricamento statistiche"); }
   };
 
   const fetchReports = async () => {
@@ -56,65 +54,70 @@ function AdminPage() {
       toast.success(status === "REVIEWED" ? "Segnalazione accettata" : "Segnalazione respinta");
     }
   };
-
   const fetchUsers = async () => {
     setLoading(true);
-    const res = await fetchAdminUsers();
-    if (res.success) setUsers(res.data?.content || res.data || []);
-    else toast.error("Errore caricamento utenti");
-    setLoading(false);
+    try { const res = await api.get("/admin/users"); setUsers(res.data); }
+    catch { toast.error("Errore caricamento utenti"); }
+    finally { setLoading(false); }
   };
-
   const fetchPosts = async () => {
     setLoading(true);
-    const res = await fetchAdminPosts();
-    if (res.success) setPosts(res.data?.content || res.data || []);
-    else toast.error("Errore caricamento post");
-    setLoading(false);
+    try { const res = await api.get("/admin/posts"); setPosts(res.data); }
+    catch { toast.error("Errore caricamento post"); }
+    finally { setLoading(false); }
   };
 
   const handleBan = async (userId, username, banned) => {
-    if (!confirm(`${banned ? "Sbanna" : "Banna"} @${username}?`)) return;
-    const res = await toggleBanUser(userId);
-    if (res.success) {
+    const ok = await showConfirm({
+      title: banned ? `Sbanna @${username}?` : `Banna @${username}?`,
+      message: banned ? "L'utente riacquisterà l'accesso a Nexus." : "L'utente non potrà più accedere a Nexus.",
+      confirmLabel: banned ? "Sbanna" : "Banna",
+      danger: !banned,
+    });
+    if (!ok) return;
+    try {
+      const res = await api.put(`/admin/users/${userId}/ban`);
       setUsers(prev => prev.map(u => u.id === userId ? { ...u, banned: res.data.banned } : u));
       toast.success(`@${username} ${res.data.banned ? "bannato" : "sbannato"}`);
-    } else toast.error("Errore");
+    } catch (e) { toast.error(e.response?.data?.message || "Errore"); }
   };
-
   const handleRole = async (userId, username, currentRole) => {
     const newRole = currentRole === "ADMIN" ? "USER" : "ADMIN";
-    if (!confirm(`Cambia ruolo di @${username} a ${newRole}?`)) return;
-    const res = await changeUserRole(userId, newRole);
-    if (res.success) {
+    const ok = await showConfirm({
+      title: `Cambia ruolo di @${username}?`,
+      message: `Il ruolo verrà cambiato da ${currentRole || "USER"} a ${newRole}.`,
+      confirmLabel: "Cambia ruolo",
+      danger: false,
+    });
+    if (!ok) return;
+    try {
+      const res = await api.put(`/admin/users/${userId}/role`, null, { params: { role: newRole } });
       setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: res.data.role } : u));
       toast.success(`Ruolo di @${username} aggiornato a ${newRole}`);
-    } else toast.error("Errore");
+    } catch (e) { toast.error(e.response?.data?.message || "Errore"); }
   };
-
   const handleDeleteUser = async (userId, username) => {
-    if (!confirm(`Elimina definitivamente @${username}? Questa azione è irreversibile.`)) return;
-    const res = await deleteAdminUser(userId);
-    if (res.success) { setUsers(prev => prev.filter(u => u.id !== userId)); toast.success(`@${username} eliminato`); fetchStats(); }
-    else toast.error("Errore");
-  };
-
-  const handleDeletePost = async (postId) => {
-    if (!confirm("Elimina questo post?")) return;
-    const res = await deleteAdminPost(postId);
-    if (res.success) { setPosts(prev => prev.filter(p => p.id !== postId)); toast.success("Post eliminato"); fetchStats(); }
-    else toast.error("Errore");
-  };
-
-  // useEffect dopo le funzioni per evitare "accessed before declaration"
-  useEffect(() => { startTransition(() => { fetchStats(); }); }, []); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => {
-    startTransition(() => {
-      if (activeTab === "users") fetchUsers();
-      if (activeTab === "posts") fetchPosts();
-      if (activeTab === "reports") fetchReports();
+    const ok = await showConfirm({
+      title: `Elimina @${username}?`,
+      message: "Questa azione è irreversibile. Tutti i dati dell'utente verranno cancellati.",
+      confirmLabel: "Elimina definitivamente",
+      danger: true,
     });
-  }, [activeTab, reportFilter]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (!ok) return;
+    try { await api.delete(`/admin/users/${userId}`); setUsers(prev => prev.filter(u => u.id !== userId)); toast.success(`@${username} eliminato`); fetchStats(); }
+    catch (e) { toast.error(e.response?.data?.message || "Errore"); }
+  };
+  const handleDeletePost = async (postId) => {
+    const ok = await showConfirm({
+      title: "Elimina post?",
+      message: "Il post verrà rimosso definitivamente.",
+      confirmLabel: "Elimina",
+      danger: true,
+    });
+    if (!ok) return;
+    try { await api.delete(`/admin/posts/${postId}`); setPosts(prev => prev.filter(p => p.id !== postId)); toast.success("Post eliminato"); fetchStats(); }
+    catch (e) { toast.error(e.response?.data?.message || "Errore"); }
+  };
 
   const filteredUsers = users.filter(u =>
     u.username.toLowerCase().includes(search.toLowerCase()) ||
@@ -135,6 +138,17 @@ function AdminPage() {
     { id: "posts", label: "📝 Post" },
     { id: "reports", label: "🚩 Segnalazioni" },
   ];
+
+  const TH = ({ children, center }) => (
+    <th style={{ padding: "10px 14px", textAlign: center ? "center" : "left", fontSize: "11px", fontWeight: 700, color: "var(--nx-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", background: "var(--nx-surface-2)", borderBottom: "1px solid var(--nx-border)" }}>
+      {children}
+    </th>
+  );
+  const TD = ({ children, center, muted }) => (
+    <td style={{ padding: "12px 14px", textAlign: center ? "center" : "left", fontSize: "13px", color: muted ? "var(--nx-text-muted)" : "var(--nx-text)", borderBottom: "1px solid var(--nx-border)" }}>
+      {children}
+    </td>
+  );
 
   return (
     <div className="nx-page">
@@ -230,11 +244,14 @@ function AdminPage() {
                                 onMouseEnter={e => e.currentTarget.style.opacity = "0.75"} onMouseLeave={e => e.currentTarget.style.opacity = "1"}>
                                 {user.banned ? "Sbanna" : "Banna"}
                               </button>
-                              <button onClick={() => handleRole(user.id, user.username, user.role)}
-                                style={{ padding: "3px 10px", borderRadius: "var(--nx-radius-sm)", fontSize: "11px", fontWeight: 700, cursor: "pointer", border: "none", background: "rgba(124,58,237,0.1)", color: "#7c3aed", transition: "opacity var(--nx-transition)" }}
-                                onMouseEnter={e => e.currentTarget.style.opacity = "0.75"} onMouseLeave={e => e.currentTarget.style.opacity = "1"}>
-                                {user.role === "ADMIN" ? "→ USER" : "→ ADMIN"}
-                              </button>
+                              {/* Cambio ruolo disabilitato per utenti bannati */}
+                              {!user.banned && (
+                                <button onClick={() => handleRole(user.id, user.username, user.role)}
+                                  style={{ padding: "3px 10px", borderRadius: "var(--nx-radius-sm)", fontSize: "11px", fontWeight: 700, cursor: "pointer", border: "none", background: "rgba(124,58,237,0.1)", color: "#7c3aed", transition: "opacity var(--nx-transition)" }}
+                                  onMouseEnter={e => e.currentTarget.style.opacity = "0.75"} onMouseLeave={e => e.currentTarget.style.opacity = "1"}>
+                                  {user.role === "ADMIN" ? "→ USER" : "→ ADMIN"}
+                                </button>
+                              )}
                               <button onClick={() => handleDeleteUser(user.id, user.username)}
                                 style={{ padding: "3px 10px", borderRadius: "var(--nx-radius-sm)", fontSize: "11px", fontWeight: 700, cursor: "pointer", border: "none", background: "rgba(239,68,68,0.1)", color: "#ef4444", transition: "opacity var(--nx-transition)" }}
                                 onMouseEnter={e => e.currentTarget.style.opacity = "0.75"} onMouseLeave={e => e.currentTarget.style.opacity = "1"}>
@@ -364,6 +381,19 @@ function AdminPage() {
           </div>
         )}
       </div>
+
+      {/* Modale conferma azioni admin */}
+      {confirm && (
+        <ConfirmModal
+          isOpen={true}
+          title={confirm.title}
+          message={confirm.message}
+          confirmLabel={confirm.confirmLabel}
+          danger={confirm.danger}
+          onConfirm={confirm.onConfirm}
+          onCancel={confirm.onCancel}
+        />
+      )}
     </div>
   );
 }

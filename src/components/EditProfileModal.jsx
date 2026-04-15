@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { updateUserProfile, uploadAvatar, deleteAvatar, deleteAccount } from "../services/userService";
 import { changePassword } from "../services/authService";
@@ -28,6 +28,18 @@ function EditProfileModal({ isOpen, onClose, currentProfile, onProfileUpdated })
   const [showPwdSection, setShowPwdSection] = useState(false);
   const isOAuthUser = currentProfile?.passwordHash?.startsWith?.("OAUTH2_NO_PASSWORD_") ||
     !currentProfile?.passwordHash;
+
+  // ESC chiude il modale + blocca scroll body
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKey = (e) => { if (e.key === "Escape" && !loading) onClose(); };
+    document.addEventListener("keydown", handleKey);
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", handleKey);
+      document.body.style.overflow = "";
+    };
+  }, [isOpen, loading, onClose]);
 
   if (!isOpen) return null;
 
@@ -136,7 +148,6 @@ function EditProfileModal({ isOpen, onClose, currentProfile, onProfileUpdated })
           <div>
             <label style={LABEL}>Bio</label>
             <textarea value={bio} onChange={e => setBio(e.target.value)}
-              aria-label="Bio"
               placeholder="Raccontaci qualcosa di te..." maxLength={500} rows={4} disabled={loading}
               style={INPUT_STYLE}
               onFocus={e => e.target.style.borderColor = "rgba(124,58,237,0.5)"}
@@ -148,7 +159,6 @@ function EditProfileModal({ isOpen, onClose, currentProfile, onProfileUpdated })
           <div>
             <label style={LABEL}>Nome completo</label>
             <input value={displayName} onChange={e => setDisplayName(e.target.value)}
-              aria-label="Nome completo"
               placeholder="Es. Mario Rossi" maxLength={100} disabled={loading}
               style={{ ...INPUT_STYLE, padding: "10px 12px" }}
               onFocus={e => e.target.style.borderColor = "rgba(124,58,237,0.5)"}
@@ -159,7 +169,6 @@ function EditProfileModal({ isOpen, onClose, currentProfile, onProfileUpdated })
           <div>
             <label style={LABEL}>Sito web</label>
             <input value={website} onChange={e => setWebsite(e.target.value)}
-              aria-label="Sito web"
               placeholder="https://tuosito.com" maxLength={255} disabled={loading}
               style={{ ...INPUT_STYLE, padding: "10px 12px" }}
               onFocus={e => e.target.style.borderColor = "rgba(124,58,237,0.5)"}
