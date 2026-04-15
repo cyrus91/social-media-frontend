@@ -56,13 +56,13 @@ function AdminPage() {
   };
   const fetchUsers = async () => {
     setLoading(true);
-    try { const res = await api.get("/admin/users"); setUsers(res.data); }
+    try { const res = await api.get("/admin/users"); setUsers(res.data?.content || res.data || []); }
     catch { toast.error("Errore caricamento utenti"); }
     finally { setLoading(false); }
   };
   const fetchPosts = async () => {
     setLoading(true);
-    try { const res = await api.get("/admin/posts"); setPosts(res.data); }
+    try { const res = await api.get("/admin/posts"); setPosts(res.data?.content || res.data || []); }
     catch { toast.error("Errore caricamento post"); }
     finally { setLoading(false); }
   };
