@@ -130,6 +130,16 @@ api.interceptors.response.use(
       }
     }
 
+    // Utente bannato — il backend ritorna 403 con messaggio "banned"
+    if (error.response?.status === 403) {
+      const message = error.response?.data?.message || "";
+      if (message.toLowerCase().includes("ban") || message.toLowerCase().includes("sosp")) {
+        forceLogout();
+        setTimeout(() => { window.location.href = "/login?banned=1"; }, 200);
+        return Promise.reject(error);
+      }
+    }
+
     return Promise.reject(error);
   },
 );
