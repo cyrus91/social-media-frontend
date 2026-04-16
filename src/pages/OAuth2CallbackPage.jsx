@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import useAuthStore from "../store/authStore";
+import api from "../services/api";
 import LoadingSpinner from "../components/LoadingSpinner";
 import toast from "react-hot-toast";
 
@@ -10,8 +11,7 @@ function OAuth2CallbackPage() {
   const { loginWithTokens } = useAuthStore();
 
   useEffect(() => {
-    const token = searchParams.get("token");
-    const refreshToken = searchParams.get("refreshToken");
+    const code = searchParams.get("code");
     const error = searchParams.get("error");
 
     if (error) {
@@ -20,20 +20,27 @@ function OAuth2CallbackPage() {
       return;
     }
 
-    if (!token || !refreshToken) {
+    if (!code) {
       toast.error("Risposta OAuth2 non valida.");
       navigate("/login");
       return;
     }
 
-    // Salva i token e recupera il profilo utente
-    loginWithTokens(token, refreshToken)
+    api.get("/auth/oauth2/token", { params: { code } })
+      .then(({ data }) => loginWithTokens(data.token, data.refreshToken))
       .then(() => {
         toast.success("Benvenuto su Nexus! 🎉");
         navigate("/feed");
       })
-      .catch(() => {
-        toast.error("Errore durante il login. Riprova.");
+      .catch((err) => {
+        const isExpired =
+          err.response?.status === 410 ||
+          err.response?.data?.error === "INVALID_OR_EXPIRED_CODE";
+        toast.error(
+          isExpired
+            ? "Il link di accesso è scaduto. Effettua di nuovo il login."
+            : "Errore durante il login. Riprova."
+        );
         navigate("/login");
       });
   }, []);
